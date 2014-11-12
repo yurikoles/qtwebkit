@@ -66,9 +66,11 @@ static const QString toNormalizedQString(const TextRun& run)
         : toNormalizedQStringImpl(run.characters16(), run.length());
 }
 
-static QTextLine setupLayout(QTextLayout* layout, const TextRun& style)
+static QTextLine setupLayout(QTextLayout* layout, const TextRun& style, bool shouldSetDirection)
 {
-    int flags = style.rtl() ? Qt::TextForceRightToLeft : Qt::TextForceLeftToRight;
+    int flags = 0;
+    if (shouldSetDirection || style.directionalOverride())
+        flags |= style.rtl() ? Qt::TextForceRightToLeft : Qt::TextForceLeftToRight;
     if (style.expansion())
         flags |= Qt::TextJustificationForced;
     layout->setCacheEnabled(true);
@@ -193,7 +195,7 @@ public:
         m_layout.setText(string);
         m_layout.setRawFont(font.rawFont());
         font.initFormatForTextLayout(&m_layout, run);
-        m_line = setupLayout(&m_layout, run);
+        m_line = setupLayout(&m_layout, run, false);
     }
 
     float width(unsigned from, unsigned len, HashSet<const Font*>* fallbackFonts)
@@ -245,7 +247,7 @@ void FontCascade::drawComplexText(GraphicsContext& ctx, const TextRun& run, cons
     QTextLayout layout(string);
     layout.setRawFont(rawFont());
     initFormatForTextLayout(&layout, run);
-    QTextLine line = setupLayout(&layout, run);
+    QTextLine line = setupLayout(&layout, run, true);
     const QPointF adjustedPoint(point.x(), point.y() - line.ascent());
 
     QList<QGlyphRun> runs = line.glyphRuns(from, to - from);
@@ -268,7 +270,7 @@ float FontCascade::floatWidthForComplexText(const TextRun& run, HashSet<const Fo
     QTextLayout layout(string);
     layout.setRawFont(rawFont());
     initFormatForTextLayout(&layout, run);
-    QTextLine line = setupLayout(&layout, run);
+    QTextLine line = setupLayout(&layout, run, false);
     float x1 = line.cursorToX(0);
     float x2 = line.cursorToX(run.length());
     float width = qAbs(x2 - x1);
@@ -283,7 +285,7 @@ int FontCascade::offsetForPositionForComplexText(const TextRun& run, float posit
     QTextLayout layout(string);
     layout.setRawFont(rawFont());
     initFormatForTextLayout(&layout, run);
-    QTextLine line = setupLayout(&layout, run);
+    QTextLine line = setupLayout(&layout, run, false);
     return line.xToCursor(position);
 }
 
@@ -294,7 +296,7 @@ void FontCascade::adjustSelectionRectForComplexText(const TextRun& run, LayoutRe
     QTextLayout layout(string);
     layout.setRawFont(rawFont());
     initFormatForTextLayout(&layout, run);
-    QTextLine line = setupLayout(&layout, run);
+    QTextLine line = setupLayout(&layout, run, false);
 
     float x1 = line.cursorToX(from);
     float x2 = line.cursorToX(to);
