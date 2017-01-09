@@ -1114,6 +1114,11 @@ class Port(object):
             return True
         return False
 
+    def _is_darwin_php_version_7(self):
+        if self._filesystem.exists("/usr/libexec/apache2/libphp7.so"):
+            return True
+        return False
+
     # FIXME: This belongs on some platform abstraction instead of Port.
     def _is_redhat_based(self):
         return self._filesystem.exists('/etc/redhat-release')
@@ -1133,6 +1138,11 @@ class Port(object):
             return "-php7"
         return ""
 
+    def _darwin_php_version(self):
+        if self._is_darwin_php_version_7():
+            return "-php7"
+        return ""
+
     def _fedora_php_version(self):
         if self._is_fedora_php_version_7():
             return "-php7"
@@ -1142,6 +1152,8 @@ class Port(object):
     def _apache_config_file_name_for_platform(self, sys_platform):
         if sys_platform == 'cygwin' or sys_platform.startswith('win'):
             return 'apache' + self._apache_version() + '-httpd-win.conf'
+        if sys_platform == 'darwin':
+            return 'apache' + self._apache_version() + self._darwin_php_version() + '-httpd.conf'
         if sys_platform.startswith('linux'):
             if self._is_redhat_based():
                 return 'fedora-httpd-' + self._apache_version() + self._fedora_php_version() + '.conf'
