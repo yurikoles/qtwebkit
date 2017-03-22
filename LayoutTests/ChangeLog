@@ -1,3 +1,14 @@
+2017-03-21  Sergio Villar Senin  <svillar@igalia.com>
+
+        All http/ tests with PHP fail in Debian unstable with php7
+        https://bugs.webkit.org/show_bug.cgi?id=169913
+
+        Reviewed by Michael Catanzaro.
+
+        The problem is that the configuration file was still checking for php5 instead of php7.
+
+        * http/conf/debian-httpd-2.4-php7.conf:
+
 2017-05-21  Saam Barati  <sbarati@apple.com>
 
         We incorrectly throw a syntax error when declaring a top level for-loop iteration variable the same as a parameter
