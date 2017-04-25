@@ -379,6 +379,13 @@ class PortTest(unittest.TestCase):
             self.assertEqual(port._build_path(), '/my-build-directory/Release')
 
 
+    def test_jhbuild_wrapper(self):
+        port = self.make_port(port_name='foo')
+        port.port_name = 'foo'
+        self.assertFalse(port._should_use_jhbuild())
+        port._filesystem.maybe_make_directory(port.path_from_webkit_base('WebKitBuild', 'Dependencies%s' % port.port_name.upper()))
+        self.assertTrue(port._should_use_jhbuild())
+
 class NaturalCompareTest(unittest.TestCase):
     def setUp(self):
         self._port = TestPort(MockSystemHost())
