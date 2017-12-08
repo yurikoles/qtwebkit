@@ -80,7 +80,7 @@ class SimpleHTTPServerDriver(HTTPServerDriver):
 
     def fetch_result(self):
         (stdout, stderr) = self._server_process.communicate()
-        print stderr
+        print(stderr)
         return stdout
 
     def kill_server(self):
