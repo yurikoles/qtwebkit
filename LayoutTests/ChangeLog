@@ -1,3 +1,9 @@
+2018-12-31  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        Unreviewed. Support PHP 7.3 in Debian.
+
+        * http/conf/debian-httpd-2.4-php7.3.conf: Added.
+
 2018-06-11  Philippe Normand  <pnormand@igalia.com>
 
         [webkitpy] PHP7.2 support on Debian platforms
