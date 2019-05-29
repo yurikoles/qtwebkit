@@ -1,5 +1,27 @@
 2019-05-28  Fujii Hironori  <Hironori.Fujii@sony.com>
 
+        [WinCairo] ASSERTION FAILED: !m_preparingToPlay in MediaPlayerPrivateMediaFoundation::prepareToPlay
+        https://bugs.webkit.org/show_bug.cgi?id=190747
+
+        Reviewed by Alex Christensen.
+
+        HTMLMediaElement::prepareToPlay had a assertion ensuring that it
+        was not called twice. However, it was called twice. The first from
+        HTMLMediaElement::load, the second from
+        MediaPlayerPrivateMediaFoundation::onTopologySet.
+
+        prepareToPlay started loading. And, loading should be started
+        after onTopologySet is called back.
+
+        Covered by existing tests.
+
+        * platform/graphics/win/MediaPlayerPrivateMediaFoundation.cpp:
+        (WebCore::MediaPlayerPrivateMediaFoundation::onTopologySet): Moved code from prepareToPlay.
+        (WebCore::MediaPlayerPrivateMediaFoundation::prepareToPlay): Deleted and moved the code to onTopologySet.
+        * platform/graphics/win/MediaPlayerPrivateMediaFoundation.h: Removed prepareToPlay declaration.
+
+2019-05-28  Fujii Hironori  <Hironori.Fujii@sony.com>
+
         [WinCairo][MediaFoundation] Assertion failure in MediaPlayerPrivateMediaFoundation::Direct3DPresenter::presentSample
         https://bugs.webkit.org/show_bug.cgi?id=198290
 
