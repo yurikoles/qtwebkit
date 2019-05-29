@@ -1,3 +1,16 @@
+2019-05-28  Fujii Hironori  <Hironori.Fujii@sony.com>
+
+        [WinCairo][MediaFoundation] Assertion failure in MediaPlayerPrivateMediaFoundation::Direct3DPresenter::presentSample
+        https://bugs.webkit.org/show_bug.cgi?id=198290
+
+        Reviewed by Per Arne Vollan.
+
+        Covered by existing tests.
+
+        * platform/graphics/win/MediaPlayerPrivateMediaFoundation.cpp:
+        (WebCore::MediaPlayerPrivateMediaFoundation::Direct3DPresenter::presentSample):
+        Call clear() of m_memSurface before assigning new value.
+
 2018-02-27  Milan Crha  <mcrha@redhat.com>
 
         Potential privacy issue: DNS prefetching can be re-enabled
