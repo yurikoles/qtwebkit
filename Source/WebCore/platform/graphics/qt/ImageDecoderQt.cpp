@@ -40,8 +40,7 @@
 namespace WebCore {
 
 ImageDecoderQt::ImageDecoderQt(AlphaOption alphaOption, GammaAndColorProfileOption gammaAndColorProfileOption)
-    : m_premultiplyAlpha(alphaOption == AlphaOption::Premultiplied)
-    , m_ignoreGammaAndColorProfile(gammaAndColorProfileOption == GammaAndColorProfileOption::Ignored)
+    : ScalableImageDecoder(alphaOption, gammaAndColorProfileOption)
     , m_repetitionCount(RepetitionCountNone)
 {
 }
@@ -150,7 +149,7 @@ void ImageDecoderQt::clearFrameBufferCache(size_t /*index*/)
 {
 }
 
-ScalableImageDecoderFrame* ImageDecoderQt::frameBufferAtIndex(size_t index) const
+ScalableImageDecoderFrame* ImageDecoderQt::frameBufferAtIndex(size_t index)
 {
     // In case the ImageDecoderQt got recreated we don't know
     // yet how many images we are going to have and need to
@@ -315,12 +314,6 @@ ImageOrientation ImageDecoderQt::frameOrientationAtIndex(size_t index) const
     return buffer ? buffer->orientation() : ImageOrientation();
 }
 
-Seconds ImageDecoderQt::frameDurationAtIndex(size_t index) const
-{
-    ScalableImageDecoderFrame* buffer = frameBufferAtIndex(index);
-    return buffer ? buffer->duration() : 100_ms;
-}
-
 bool ImageDecoderQt::frameAllowSubsamplingAtIndex(size_t) const
 {
     notImplemented();
@@ -340,12 +333,6 @@ unsigned ImageDecoderQt::frameBytesAtIndex(size_t index, SubsamplingLevel subsam
 
     auto frameSize = frameSizeAtIndex(index, subsamplingLevel);
     return (frameSize.area() * 4).unsafeGet();
-}
-
-size_t ImageDecoderQt::bytesDecodedToDetermineProperties() const
-{
-    // Set to match value used for CoreGraphics.
-    return 13088;
 }
 
 EncodedDataStatus ImageDecoderQt::encodedDataStatus() const

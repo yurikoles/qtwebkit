@@ -27,7 +27,7 @@
 #ifndef ImageDecoderQt_h
 #define ImageDecoderQt_h
 
-#include "ImageDecoder.h"
+#include "ScalableImageDecoder.h"
 #include "ScalableImageDecoderFrame.h"
 #include "ImageSource.h"
 #include <QtCore/QBuffer>
@@ -39,7 +39,7 @@
 namespace WebCore {
 
 
-class ImageDecoderQt final : public ImageDecoder {
+class ImageDecoderQt final : public ScalableImageDecoder {
     WTF_MAKE_FAST_ALLOCATED;
 public:
     ImageDecoderQt(AlphaOption alphaOption, GammaAndColorProfileOption gammaAndColorProfileOption);
@@ -65,7 +65,6 @@ public:
     bool frameIsCompleteAtIndex(size_t) const final;
     ImageOrientation frameOrientationAtIndex(size_t) const final;
 
-    Seconds frameDurationAtIndex(size_t) const final;
     bool frameHasAlphaAtIndex(size_t) const final;
     bool frameAllowSubsamplingAtIndex(size_t) const final;
     unsigned frameBytesAtIndex(size_t, SubsamplingLevel = SubsamplingLevel::Default) const final;
@@ -76,9 +75,7 @@ public:
     bool isAllDataReceived() const final { return m_isAllDataReceived; }
     void clearFrameBufferCache(size_t clearBeforeFrame) final;
 
-    ScalableImageDecoderFrame* frameBufferAtIndex(size_t index) const;
-
-    size_t bytesDecodedToDetermineProperties() const final;
+    ScalableImageDecoderFrame* frameBufferAtIndex(size_t index) final;
 
     bool failed() const { return m_encodedDataStatus == EncodedDataStatus::Error; }
 
@@ -117,6 +114,7 @@ protected:
 private:
     ImageDecoderQt(const ImageDecoderQt&);
     ImageDecoderQt &operator=(const ImageDecoderQt&);
+    void tryDecodeSize(bool allDataReceived) override { decode(true, allDataReceived); }
 
     void internalDecodeSize() const;
     void internalReadImage(size_t) const;
