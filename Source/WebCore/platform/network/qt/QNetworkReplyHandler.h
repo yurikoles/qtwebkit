@@ -193,7 +193,7 @@ private:
     void prepareFormElements();
     void moveToNextElement();
     qint64 computeSize();
-    void openFileForCurrentElement();
+    void openFileForCurrentElement(const FormDataElement::EncodedFileData&);
     void prepareCurrentElement();
 
 private:
