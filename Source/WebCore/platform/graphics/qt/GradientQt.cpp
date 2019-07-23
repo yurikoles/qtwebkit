@@ -138,4 +138,11 @@ void Gradient::fill(GraphicsContext& context, const FloatRect& rect)
     context.platformContext()->fillRect(rect, *platformGradient());
 }
 
+QBrush Gradient::createBrush()
+{
+    QBrush brush(*platformGradient());
+    brush.setTransform(gradientSpaceTransform());
+    return brush;
+}
+
 } //namespace

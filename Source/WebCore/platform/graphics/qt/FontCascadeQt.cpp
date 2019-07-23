@@ -81,11 +81,8 @@ static QTextLine setupLayout(QTextLayout* layout, const TextRun& style)
 
 static QPen fillPenForContext(GraphicsContext& ctx)
 {
-    if (ctx.fillGradient()) {
-        QBrush brush(*ctx.fillGradient()->platformGradient());
-        brush.setTransform(ctx.fillGradient()->gradientSpaceTransform());
-        return QPen(brush, 0);
-    }
+    if (ctx.fillGradient())
+        return QPen(ctx.fillGradient()->createBrush(), 0);
 
     if (ctx.fillPattern()) {
         return QPen(QBrush(ctx.fillPattern()->createPlatformPattern()), 0);
@@ -96,11 +93,8 @@ static QPen fillPenForContext(GraphicsContext& ctx)
 
 static QPen strokePenForContext(GraphicsContext& ctx)
 {
-    if (ctx.strokeGradient()) {
-        QBrush brush(*ctx.strokeGradient()->platformGradient());
-        brush.setTransform(ctx.strokeGradient()->gradientSpaceTransform());
-        return QPen(brush, ctx.strokeThickness());
-    }
+    if (ctx.strokeGradient())
+        return QPen(ctx.strokeGradient()->createBrush(), ctx.strokeThickness());
 
     if (ctx.strokePattern()) {
         QBrush brush(ctx.strokePattern()->createPlatformPattern());

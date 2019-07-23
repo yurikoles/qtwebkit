@@ -122,7 +122,7 @@ public:
     void setSpreadMethod(GradientSpreadMethod);
     GradientSpreadMethod spreadMethod() const { return m_spreadMethod; }
 
-    // Qt and CG need to transform the gradient at draw time.
+    // CG needs to transform the gradient at draw time.
     void setGradientSpaceTransform(const AffineTransform& gradientSpaceTransformation);
     const AffineTransform& gradientSpaceTransform() const { return m_gradientSpaceTransformation; }
 
@@ -139,6 +139,8 @@ public:
     PlatformGradient createPlatformGradientIfNecessary(ID2D1RenderTarget*);
 #elif USE(CAIRO)
     PlatformGradient createPlatformGradient(float globalAlpha);
+#elif PLATFORM(QT)
+    QBrush createBrush();
 #endif
 
 private:
