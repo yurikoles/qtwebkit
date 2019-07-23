@@ -23,7 +23,6 @@
 #include "BitmapTexturePool.h"
 #include "FilterOperations.h"
 #include "GraphicsLayer.h"
-#include "TextureMapperImageBuffer.h"
 #include "Timer.h"
 
 namespace WebCore {
@@ -39,10 +38,8 @@ RefPtr<BitmapTexture> TextureMapper::acquireTextureFromPool(const IntSize& size,
     return selectedTexture;
 }
 
-std::unique_ptr<TextureMapper> TextureMapper::create(AccelerationMode mode)
+std::unique_ptr<TextureMapper> TextureMapper::create()
 {
-    if (mode == SoftwareMode)
-        return std::make_unique<TextureMapperImageBuffer>();
     return platformCreateAccelerated();
 }
 
