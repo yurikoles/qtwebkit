@@ -28,8 +28,6 @@
 #include "config.h"
 #include "Sound.h"
 
-#include "../platform/NotImplemented.h"
-
 namespace PAL {
 
 void systemBeep()
@@ -37,7 +35,7 @@ void systemBeep()
     // FIXME: Not implemented in Qt 5 right now. The implementation in QApplication:beep()
     // is empty. If anyone is going to bother implementing this via QPlatformNativeInterface, then
     // we could use that here.
-    notImplemented();
+    WTFReportNotImplementedYet(__FILE__, __LINE__, WTF_PRETTY_FUNCTION);
 }
 
 }
