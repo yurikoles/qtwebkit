@@ -6,5 +6,5 @@ TARGET = hybridPixmap
 SOURCES += widget.cpp
 HEADERS += widget.h
 FORMS += widget.ui
-RESOURCES += resources.qrc
+RESOURCES += tst_hybridPixmap.qrc
 CONFIG += console
