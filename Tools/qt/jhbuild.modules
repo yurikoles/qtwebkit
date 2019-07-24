@@ -54,6 +54,8 @@
       href="http://mesa.freedesktop.org"/>
   <repository type="tarball" name="llvm.org"
       href="http://llvm.org"/>
+  <repository type="tarball" name="openssl"
+      href="https://ftp.openssl.org/source/"/>
 
   <autotools id="fonts" supports-non-srcdir-builds="no"
              skip-autogen="true">
@@ -200,6 +202,7 @@
     </if>
     <dependencies>
       <dep package="gst-plugins-base"/>
+      <dep package="openssl"/>
     </dependencies>
     <branch module="gst-plugins-bad/gst-plugins-bad-${version}.tar.xz" version="1.8.0"
             repo="gstreamer"
@@ -248,6 +251,14 @@
     <dependencies>
       <dep package="llvm"/>
     </dependencies>
+  </autotools>
+
+  <autotools id="openssl" autogenargs="" autogen-sh="./Configure" supports-non-srcdir-builds="no"
+             autogen-template="%(srcdir)s/%(autogen-sh)s shared --prefix=%(prefix)s enable-unit-test no-ssl3-method enable-rfc3779 enable-cms linux-x86_64"
+	     makeinstallargs="install INSTALL_PREFIX='$(DESTDIR)'">
+    <branch repo="openssl"
+            module="old/1.0.2/openssl-1.0.2r.tar.gz" version="1.0.2r" checkoutdir="openssl-1.0.2r"
+            hash="sha256:ae51d08bba8a83958e894946f15303ff894d75c2b8bbd44a852b64e3fe11d0d6"/>
   </autotools>
 
 </moduleset>
