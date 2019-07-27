@@ -461,7 +461,7 @@ QWebSettings* QWebSettings::globalSettings()
     \value JavascriptCanOpenWindows Specifies whether JavaScript programs
         can open popup windows without user interaction. This is disabled by default.
     \value JavascriptCanCloseWindows Specifies whether JavaScript programs
-        can close windows. This is disabled by default.
+        can close windows. This is enabled by default.
     \value JavascriptCanAccessClipboard Specifies whether JavaScript programs
         can read or write to the clipboard. This is disabled by default.
     \value DeveloperExtrasEnabled Enables extra tools for Web developers.
@@ -600,6 +600,7 @@ QWebSettings::QWebSettings()
     d->attributes.insert(QWebSettings::FullScreenSupportEnabled, true);
     d->attributes.insert(QWebSettings::ImagesEnabled, true);
     d->attributes.insert(QWebSettings::AllowRunningInsecureContent, false);
+    d->attributes.insert(QWebSettings::JavascriptCanCloseWindows, true);
     d->offlineStorageDefaultQuota = 5 * 1024 * 1024;
     d->defaultTextEncoding = QLatin1String("iso-8859-1");
     d->thirdPartyCookiePolicy = AlwaysAllowThirdPartyCookies;
