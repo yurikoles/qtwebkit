@@ -68,6 +68,7 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/qt/KeyedEncoderQt.h
     platform/qt/PlatformGestureEvent.h
     platform/qt/QStyleFacade.h
+    platform/qt/QStyleHelpers.h
     platform/qt/QWebPageClient.h
     platform/qt/ThirdPartyCookiesQt.h
     platform/qt/UserAgentQt.h
@@ -167,6 +168,7 @@ list(APPEND WebCore_SOURCES
     platform/qt/PasteboardQt.cpp
     platform/qt/PlatformKeyboardEventQt.cpp
     platform/qt/PlatformScreenQt.cpp
+    platform/qt/QStyleHelpers.cpp
     platform/qt/RenderThemeQStyle.cpp
     platform/qt/RenderThemeQt.cpp
     platform/qt/RenderThemeQtMobile.cpp

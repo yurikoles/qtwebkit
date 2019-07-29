@@ -30,6 +30,7 @@
 #include <WebCore/HTMLElement.h>
 #include <WebCore/JSDocument.h>
 #include <WebCore/JSElement.h>
+#include <WebCore/QStyleHelpers.h>
 #include <WebCore/RenderElement.h>
 #include <WebCore/ScriptController.h>
 #include <WebCore/ScriptSourceCode.h>
@@ -765,59 +766,13 @@ QString QWebElement::styleProperty(const QString &name, StyleResolveStrategy str
     if (!m_element || !m_element->isStyledElement())
         return QString();
 
-    CSSPropertyID propID = cssPropertyID(name);
-
-    if (!propID)
-        return QString();
-
-    if (strategy == InlineStyle) {
-        const StyleProperties* style = static_cast<StyledElement*>(m_element)->inlineStyle();
-        if (!style)
-            return QString();
-        return style->getPropertyValue(propID);
-    }
-
-    if (strategy == CascadedStyle) {
-        const StyleProperties* style = static_cast<StyledElement*>(m_element)->inlineStyle();
-        if (style && style->propertyIsImportant(propID))
-            return style->getPropertyValue(propID);
-
-        // We are going to resolve the style property by walking through the
-        // list of non-inline matched CSS rules for the element, looking for
-        // the highest priority definition.
-
-        // Get an array of matched CSS rules for the given element sorted
-        // by importance and inheritance order. This include external CSS
-        // declarations, as well as embedded and inline style declarations.
-
-        Document& document = m_element->document();
-        Vector<RefPtr<StyleRule>> rules = document.ensureStyleResolver().styleRulesForElement(m_element, StyleResolver::AuthorCSSRules | StyleResolver::CrossOriginCSSRules);
-        for (int i = rules.size(); i > 0; --i) {
-            if (!rules[i - 1]->isStyleRule())
-                continue;
-            StyleRule* styleRule = static_cast<StyleRule*>(rules[i - 1].get());
-
-            if (styleRule->properties().propertyIsImportant(propID))
-                return styleRule->properties().getPropertyValue(propID);
-
-            if (!style || style->getPropertyValue(propID).isEmpty())
-                style = &styleRule->properties();
-        }
-
-        if (!style)
-            return QString();
-        return style->getPropertyValue(propID);
-    }
-
-    if (strategy == ComputedStyle) {
-        if (!m_element || !m_element->isStyledElement())
-            return QString();
-
-        RefPtr<CSSComputedStyleDeclaration> style = CSSComputedStyleDeclaration::create(m_element, true);
-        if (!propID || !style)
-            return QString();
-
-        return style->getPropertyValue(propID);
+    switch (strategy) {
+    case InlineStyle:
+        return QStyleHelpers::getInlineStyleProperty(*m_element, String(name)); // QTFIXME: More efficient QString to StringView conversion?
+    case CascadedStyle:
+        return QStyleHelpers::getCascadedStyleProperty(*m_element, String(name));
+    case ComputedStyle:
+        return QStyleHelpers::getComputedStyleProperty(*m_element, String(name));
     }
 
     return QString();
@@ -848,8 +803,7 @@ void QWebElement::setStyleProperty(const QString &name, const QString &value)
         adjustedValue = adjustedValue.trimmed();
     }
 
-    CSSPropertyID propID = cssPropertyID(name);
-    static_cast<StyledElement*>(m_element)->setInlineStyleProperty(propID, adjustedValue, important);
+    QStyleHelpers::setInlineStyleProperty(*m_element, String(name), adjustedValue, important);
 }
 
 /*!

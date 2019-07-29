@@ -64,6 +64,7 @@
 #include <WebCore/MouseEvent.h>
 #include <WebCore/PluginData.h>
 #include <WebCore/QNetworkReplyHandler.h>
+#include <WebCore/QStyleHelpers.h>
 #include <WebCore/QWebPageClient.h>
 #include <WebCore/ResourceHandle.h>
 #include <WebCore/ResourceHandleInternal.h>
@@ -1404,7 +1405,7 @@ RefPtr<Widget> FrameLoaderClientQt::createPlugin(const IntSize& pluginSize, HTML
         if (widget && equalLettersIgnoringASCIICase(mimeType, "application/x-qt-styled-widget")) {
 
             StringBuilder styleSheet;
-            styleSheet.append(element->getAttribute("style"));
+            styleSheet.append(element.getAttribute("style"));
             if (!styleSheet.isEmpty())
                 styleSheet.append(';');
 
@@ -1413,7 +1414,7 @@ RefPtr<Widget> FrameLoaderClientQt::createPlugin(const IntSize& pluginSize, HTML
 
                 styleSheet.append(getPropertyName(property));
                 styleSheet.append(':');
-                styleSheet.append(CSSComputedStyleDeclaration::create(element)->getPropertyValue(property));
+                styleSheet.append(QStyleHelpers::getComputedStyleProperty(element, property));
                 styleSheet.append(';');
             }
 
