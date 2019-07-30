@@ -99,10 +99,10 @@ private Q_SLOTS:
     void loadInSignalHandlers();
 
 private:
-    QWebView* m_view;
-    QWebPage* m_page;
-    QWebView* m_inputFieldsTestView;
-    int m_inputFieldTestPaintCount;
+    QWebView* m_view { nullptr };
+    QWebPage* m_page { nullptr };
+    QWebView* m_inputFieldsTestView { nullptr };
+    int m_inputFieldTestPaintCount { 0 };
 };
 
 bool tst_QWebFrame::eventFilter(QObject* watched, QEvent* event)
@@ -463,7 +463,7 @@ void tst_QWebFrame::setHtmlWithBaseURL()
 
     QDir::setCurrent(TESTS_SOURCE_DIR);
 
-    QString html("<html><body><p>hello world</p><img src='resources/image2.png'/></body></html>");
+    QString html("<html><body><p>hello world</p><img src='qwebframe/resources/image.png'/></body></html>");
 
     QWebPage page;
     QWebFrame* frame = page.mainFrame();
@@ -1268,7 +1268,7 @@ void tst_QWebFrame::setUrlHistory()
     QCOMPARE(spy.count(), expectedLoadFinishedCount);
     QCOMPARE(frame->url(), url);
     QCOMPARE(frame->requestedUrl(), url);
-    QCOMPARE(m_page->history()->count(), 0);
+    QCOMPARE(m_page->history()->count(), 1);
 
     url = QUrl("qrc:/test1.html");
     frame->setUrl(url);
@@ -1277,14 +1277,14 @@ void tst_QWebFrame::setUrlHistory()
     QCOMPARE(spy.count(), expectedLoadFinishedCount);
     QCOMPARE(frame->url(), url);
     QCOMPARE(frame->requestedUrl(), url);
-    QCOMPARE(m_page->history()->count(), 1);
+    QCOMPARE(m_page->history()->count(), 2);
 
     frame->setUrl(QUrl());
     expectedLoadFinishedCount++;
     QCOMPARE(spy.count(), expectedLoadFinishedCount);
     QCOMPARE(frame->url(), aboutBlank);
     QCOMPARE(frame->requestedUrl(), QUrl());
-    QCOMPARE(m_page->history()->count(), 1);
+    QCOMPARE(m_page->history()->count(), 2);
 
     // Loading same page as current in history, so history count doesn't change.
     url = QUrl("qrc:/test1.html");
@@ -1294,7 +1294,7 @@ void tst_QWebFrame::setUrlHistory()
     QCOMPARE(spy.count(), expectedLoadFinishedCount);
     QCOMPARE(frame->url(), url);
     QCOMPARE(frame->requestedUrl(), url);
-    QCOMPARE(m_page->history()->count(), 1);
+    QCOMPARE(m_page->history()->count(), 2);
 
     url = QUrl("qrc:/test2.html");
     frame->setUrl(url);
@@ -1303,7 +1303,7 @@ void tst_QWebFrame::setUrlHistory()
     QCOMPARE(spy.count(), expectedLoadFinishedCount);
     QCOMPARE(frame->url(), url);
     QCOMPARE(frame->requestedUrl(), url);
-    QCOMPARE(m_page->history()->count(), 2);
+    QCOMPARE(m_page->history()->count(), 3);
 }
 
 void tst_QWebFrame::setUrlUsingStateObject()
