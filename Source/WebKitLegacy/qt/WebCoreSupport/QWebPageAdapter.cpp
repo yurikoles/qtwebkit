@@ -713,7 +713,7 @@ void QWebPageAdapter::inputMethodEvent(QInputMethodEvent *ev)
                 RenderObject* caretRenderer = frame.selection().caretRendererWithoutUpdatingLayout();
                 if (caretRenderer) {
                     QColor qcolor = a.value.value<QColor>();
-                    caretRenderer->style().setColor(Color(makeRGBA(qcolor.red(), qcolor.green(), qcolor.blue(), qcolor.alpha())));
+//                    caretRenderer->style().setColor(qcolor);
                 }
             }
             break;
@@ -1272,7 +1272,8 @@ QString QWebPageAdapter::contextMenuItemTagForAction(QWebPageAdapter::MenuAction
         *checkable = true;
         return contextMenuItemTagToggleMediaLoop();
     case ToggleMediaPlayPause:
-        return contextMenuItemTagMediaPlayPause();
+        return QString();
+//        return contextMenuItemTagMediaPlayPause();
     case ToggleMediaMute:
         *checkable = true;
         return contextMenuItemTagMediaMute();
