@@ -61,6 +61,12 @@ typedef struct _SoupCookieJar SoupCookieJar;
 #include "CookieStorageObserver.h"
 #endif
 
+#if PLATFORM(QT)
+QT_BEGIN_NAMESPACE
+class QNetworkCookieJar;
+QT_END_NAMESPACE
+#endif
+
 namespace WebCore {
 
 class CurlProxySettings;
@@ -119,6 +125,7 @@ public:
     ~NetworkStorageSession();
 
     NetworkingContext* context() const;
+    QNetworkCookieJar* cookieJar() const;
 #endif
 
     WEBCORE_EXPORT bool cookiesEnabled() const;
