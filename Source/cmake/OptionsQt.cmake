@@ -602,6 +602,7 @@ endif ()
 find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
 
 CHECK_QT5_PRIVATE_INCLUDE_DIRS(Gui private/qhexstring_p.h)
+CHECK_QT5_PRIVATE_INCLUDE_DIRS(Network private/http2protocol_p.h)
 if (ENABLE_WEBKIT2)
     CHECK_QT5_PRIVATE_INCLUDE_DIRS(Quick private/qsgrendernode_p.h)
 endif ()
