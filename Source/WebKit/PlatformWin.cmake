@@ -1,493 +1,393 @@
+set(WebKit_OUTPUT_NAME WebKit2)
+set(WebKit_WebProcess_OUTPUT_NAME WebKitWebProcess)
+set(WebKit_NetworkProcess_OUTPUT_NAME WebKitNetworkProcess)
+set(WebKit_PluginProcess_OUTPUT_NAME WebKitPluginProcess)
+
+add_definitions(-DBUILDING_WEBKIT)
+
+list(APPEND WebKit_SOURCES
+    NetworkProcess/Classifier/WebResourceLoadStatisticsStore.cpp
+    NetworkProcess/Classifier/WebResourceLoadStatisticsTelemetry.cpp
+
+    NetworkProcess/WebStorage/StorageManager.cpp
+
+    NetworkProcess/win/NetworkProcessMainWin.cpp
+
+    Platform/IPC/win/AttachmentWin.cpp
+    Platform/IPC/win/ConnectionWin.cpp
+
+    Platform/classifier/ResourceLoadStatisticsClassifier.cpp
+
+    Platform/win/LoggingWin.cpp
+    Platform/win/ModuleWin.cpp
+    Platform/win/SharedMemoryWin.cpp
+
+    Shared/API/c/curl/WKCertificateInfoCurl.cpp
+
+    Shared/Plugins/Netscape/NetscapePluginModuleNone.cpp
+
+    Shared/win/AuxiliaryProcessMainWin.cpp
+    Shared/win/NativeWebKeyboardEventWin.cpp
+    Shared/win/NativeWebMouseEventWin.cpp
+    Shared/win/NativeWebTouchEventWin.cpp
+    Shared/win/NativeWebWheelEventWin.cpp
+    Shared/win/WebEventFactory.cpp
+
+    UIProcess/BackingStore.cpp
+    UIProcess/DefaultUndoController.cpp
+    UIProcess/LegacySessionStateCodingNone.cpp
+    UIProcess/WebGrammarDetail.cpp
+    UIProcess/WebViewportAttributes.cpp
+
+    UIProcess/API/C/WKViewportAttributes.cpp
+
+    UIProcess/API/C/curl/WKProtectionSpaceCurl.cpp
+    UIProcess/API/C/curl/WKWebsiteDataStoreRefCurl.cpp
+
+    UIProcess/API/C/win/WKView.cpp
+
+    UIProcess/API/win/APIWebsiteDataStoreWin.cpp
+
+    UIProcess/CoordinatedGraphics/DrawingAreaProxyCoordinatedGraphics.cpp
+
+    UIProcess/Launcher/win/ProcessLauncherWin.cpp
+
+    UIProcess/WebsiteData/curl/WebsiteDataStoreCurl.cpp
+
+    UIProcess/WebsiteData/win/WebsiteDataStoreWin.cpp
+
+    UIProcess/win/PageClientImpl.cpp
+    UIProcess/win/TextCheckerWin.cpp
+    UIProcess/win/WebContextMenuProxyWin.cpp
+    UIProcess/win/WebInspectorProxyWin.cpp
+    UIProcess/win/WebPageProxyWin.cpp
+    UIProcess/win/WebPopupMenuProxyWin.cpp
+    UIProcess/win/WebPreferencesWin.cpp
+    UIProcess/win/WebProcessPoolWin.cpp
+    UIProcess/win/WebView.cpp
+
+    WebProcess/InjectedBundle/win/InjectedBundleWin.cpp
+
+    WebProcess/MediaCache/WebMediaKeyStorageManager.cpp
+
+    WebProcess/Plugins/Netscape/NetscapePluginNone.cpp
+    WebProcess/Plugins/Netscape/win/PluginProxyWin.cpp
+
+    WebProcess/WebCoreSupport/win/WebContextMenuClientWin.cpp
+    WebProcess/WebCoreSupport/win/WebPopupMenuWin.cpp
+
+    WebProcess/WebPage/AcceleratedSurface.cpp
+
+    WebProcess/WebPage/CoordinatedGraphics/CompositingCoordinator.cpp
+    WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphics.cpp
+    WebProcess/WebPage/CoordinatedGraphics/LayerTreeHost.cpp
+
+    WebProcess/WebPage/win/WebInspectorUIWin.cpp
+    WebProcess/WebPage/win/WebPageWin.cpp
+
+    WebProcess/win/WebProcessMainWin.cpp
+    WebProcess/win/WebProcessWin.cpp
+)
+
+# DerivedSources/JavaScriptCore/inspector/InspectorBackendCommands.js is
+# expected in DerivedSources/WebInspectorUI/UserInterface/Protocol/.
+add_custom_command(
+    OUTPUT ${DERIVED_SOURCES_WEBINSPECTORUI_DIR}/UserInterface/Protocol/InspectorBackendCommands.js
+    DEPENDS ${JavaScriptCore_DERIVED_SOURCES_DIR}/inspector/InspectorBackendCommands.js
+    COMMAND cp ${JavaScriptCore_DERIVED_SOURCES_DIR}/inspector/InspectorBackendCommands.js ${DERIVED_SOURCES_WEBINSPECTORUI_DIR}/UserInterface/Protocol/InspectorBackendCommands.js
+)
+
+list(APPEND WebKit_INCLUDE_DIRECTORIES
+    "${WEBKIT_DIR}/NetworkProcess/win"
+    "${WEBKIT_DIR}/Platform/classifier"
+    "${WEBKIT_DIR}/PluginProcess/win"
+    "${WEBKIT_DIR}/Shared/API/c/win"
+    "${WEBKIT_DIR}/Shared/CoordinatedGraphics"
+    "${WEBKIT_DIR}/Shared/CoordinatedGraphics/threadedcompositor"
+    "${WEBKIT_DIR}/Shared/Plugins/win"
+    "${WEBKIT_DIR}/Shared/unix"
+    "${WEBKIT_DIR}/Shared/win"
+    "${WEBKIT_DIR}/UIProcess/API/C/cairo"
+    "${WEBKIT_DIR}/UIProcess/API/C/curl"
+    "${WEBKIT_DIR}/UIProcess/API/C/win"
+    "${WEBKIT_DIR}/UIProcess/API/cpp/win"
+    "${WEBKIT_DIR}/UIProcess/API/win"
+    "${WEBKIT_DIR}/UIProcess/CoordinatedGraphics"
+    "${WEBKIT_DIR}/UIProcess/Plugins/win"
+    "${WEBKIT_DIR}/UIProcess/win"
+    "${WEBKIT_DIR}/WebProcess/InjectedBundle/API/win"
+    "${WEBKIT_DIR}/WebProcess/InjectedBundle/API/win/DOM"
+    "${WEBKIT_DIR}/WebProcess/win"
+    "${WEBKIT_DIR}/WebProcess/WebCoreSupport/win"
+    "${WEBKIT_DIR}/WebProcess/WebPage/CoordinatedGraphics"
+    "${WEBKIT_DIR}/WebProcess/WebPage/win"
+    "${WEBKIT_DIR}/win"
+)
+
+list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES
+    ${CAIRO_INCLUDE_DIRS}
+)
+
+set(WebKitCommonIncludeDirectories ${WebKit_INCLUDE_DIRECTORIES})
+set(WebKitCommonSystemIncludeDirectories ${WebKit_SYSTEM_INCLUDE_DIRECTORIES})
+
+list(APPEND WebProcess_SOURCES
+    WebProcess/EntryPoint/win/WebProcessMain.cpp
+)
+
+list(APPEND NetworkProcess_SOURCES
+    NetworkProcess/EntryPoint/win/NetworkProcessMain.cpp
+)
+
+if (${ENABLE_PLUGIN_PROCESS})
+    list(APPEND PluginProcess_SOURCES
+    )
+endif ()
+
 if (${WTF_PLATFORM_WIN_CAIRO})
-    add_definitions(-DUSE_CAIRO=1 -DUSE_CURL=1 -DWEBKIT_EXPORTS=1)
-    list(APPEND WebKitLegacy_PRIVATE_INCLUDE_DIRECTORIES
-        ${CAIRO_INCLUDE_DIRS}
-        "${WEBKIT_LIBRARIES_DIR}/include"
-    )
-    list(APPEND WebKitLegacy_SOURCES_Classes
-        win/WebDownloadCURL.cpp
-        win/WebURLAuthenticationChallengeSenderCURL.cpp
-    )
-    list(APPEND WebKitLegacy_LIBRARIES
-        ${OPENSSL_LIBRARIES}
-        PRIVATE mfuuid.lib
-        PRIVATE strmiids.lib
-    )
-else ()
-    list(APPEND WebKitLegacy_SOURCES_Classes
-        win/WebDownloadCFNet.cpp
-        win/WebURLAuthenticationChallengeSenderCFNet.cpp
-    )
-    list(APPEND WebKitLegacy_LIBRARIES
-        PRIVATE CFNetwork${DEBUG_SUFFIX}
-        PRIVATE CoreGraphics${DEBUG_SUFFIX}
-        PRIVATE CoreText${DEBUG_SUFFIX}
-        PRIVATE QuartzCore${DEBUG_SUFFIX}
-        PRIVATE libdispatch${DEBUG_SUFFIX}
-        PRIVATE ${LIBXML2_LIBRARIES}
-        PRIVATE ${LIBXSLT_LIBRARIES}
-        PRIVATE ${SQLITE_LIBRARIES}
-        PRIVATE ${ZLIB_LIBRARIES}
-    )
-endif ()
+    add_definitions(-DUSE_CAIRO=1 -DUSE_CURL=1)
 
-add_custom_command(
-    OUTPUT ${WebKitLegacy_DERIVED_SOURCES_DIR}/WebKitVersion.h
-    MAIN_DEPENDENCY ${WEBKITLEGACY_DIR}/scripts/generate-webkitversion.pl
-    DEPENDS ${WEBKITLEGACY_DIR}/mac/Configurations/Version.xcconfig
-    COMMAND ${PERL_EXECUTABLE} ${WEBKITLEGACY_DIR}/scripts/generate-webkitversion.pl --config ${WEBKITLEGACY_DIR}/mac/Configurations/Version.xcconfig --outputDir ${WebKitLegacy_DERIVED_SOURCES_DIR}
-    VERBATIM)
-list(APPEND WebKitLegacy_SOURCES ${WebKitLegacy_DERIVED_SOURCES_DIR}/WebKitVersion.h)
+    list(APPEND WebKit_SOURCES
+        NetworkProcess/Cookies/curl/WebCookieManagerCurl.cpp
 
-list(APPEND WebKitLegacy_PRIVATE_INCLUDE_DIRECTORIES
-    "${CMAKE_BINARY_DIR}/../include/private"
-    "${CMAKE_BINARY_DIR}/../include/private/JavaScriptCore"
-    "${CMAKE_BINARY_DIR}/../include/private/WebCore"
-    "${WEBKITLEGACY_DIR}/win"
-    "${WEBKITLEGACY_DIR}/win/plugins"
-    "${WEBKITLEGACY_DIR}/win/WebCoreSupport"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/include"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces"
-)
+        NetworkProcess/cache/NetworkCacheDataCurl.cpp
+        NetworkProcess/cache/NetworkCacheIOChannelCurl.cpp
 
-list(APPEND WebKitLegacy_INCLUDES
-    win/CFDictionaryPropertyBag.h
-    win/COMEnumVariant.h
-    win/COMPropertyBag.h
-    win/COMVariantSetter.h
-    win/CodeAnalysisConfig.h
-    win/DOMCSSClasses.h
-    win/DOMCoreClasses.h
-    win/DOMEventsClasses.h
-    win/DOMHTMLClasses.h
-    win/DefaultDownloadDelegate.h
-    win/DefaultPolicyDelegate.h
-    win/ForEachCoClass.h
-    win/FullscreenVideoController.h
-    win/MarshallingHelpers.h
-    win/MemoryStream.h
-    win/ProgIDMacros.h
-    win/WebActionPropertyBag.h
-    win/WebApplicationCache.h
-    win/WebArchive.h
-    win/WebBackForwardList.h
-    win/WebCache.h
-    win/WebCachedFramePlatformData.h
-    win/WebCoreStatistics.h
-    win/WebDataSource.h
-    win/WebDatabaseManager.h
-    win/WebDocumentLoader.h
-    win/WebDownload.h
-    win/WebDropSource.h
-    win/WebElementPropertyBag.h
-    win/WebError.h
-    win/WebFrame.h
-    win/WebFramePolicyListener.h
-    win/WebGeolocationPolicyListener.h
-    win/WebGeolocationPosition.h
-    win/WebHTMLRepresentation.h
-    win/WebHistory.h
-    win/WebHistoryItem.h
-    win/WebJavaScriptCollector.h
-    win/WebKitCOMAPI.h
-    win/WebKitClassFactory.h
-    win/WebKitDLL.h
-    win/WebKitGraphics.h
-    win/WebKitLogging.h
-    win/WebKitStatistics.h
-    win/WebKitStatisticsPrivate.h
-    win/WebKitSystemBits.h
-    win/WebLocalizableStrings.h
-    win/WebMutableURLRequest.h
-    win/WebNavigationData.h
-    win/WebNotification.h
-    win/WebNotificationCenter.h
-    win/WebPreferenceKeysPrivate.h
-    win/WebPreferences.h
-    win/WebResource.h
-    win/WebScriptObject.h
-    win/WebScriptWorld.h
-    win/WebSecurityOrigin.h
-    win/WebSerializedJSValue.h
-    win/WebTextRenderer.h
-    win/WebURLAuthenticationChallenge.h
-    win/WebURLAuthenticationChallengeSender.h
-    win/WebURLCredential.h
-    win/WebURLProtectionSpace.h
-    win/WebURLResponse.h
-    win/WebUserContentURLPattern.h
-    win/WebView.h
-    win/WebWorkersPrivate.h
-)
+        NetworkProcess/curl/NetworkDataTaskCurl.cpp
+        NetworkProcess/curl/NetworkProcessCurl.cpp
+        NetworkProcess/curl/NetworkSessionCurl.cpp
+        NetworkProcess/curl/RemoteNetworkingContextCurl.cpp
 
-list(APPEND WebKitLegacy_SOURCES_Classes
-    win/AccessibleBase.cpp
-    win/AccessibleDocument.cpp
-    win/AccessibleImage.cpp
-    win/AccessibleTextImpl.cpp
-    win/BackForwardList.cpp
-    win/CFDictionaryPropertyBag.cpp
-    win/DOMCSSClasses.cpp
-    win/DOMCoreClasses.cpp
-    win/DOMEventsClasses.cpp
-    win/DOMHTMLClasses.cpp
-    win/DefaultDownloadDelegate.cpp
-    win/DefaultPolicyDelegate.cpp
-    win/ForEachCoClass.cpp
-    win/FullscreenVideoController.cpp
-    win/MarshallingHelpers.cpp
-    win/MemoryStream.cpp
-    win/WebActionPropertyBag.cpp
-    win/WebApplicationCache.cpp
-    win/WebArchive.cpp
-    win/WebBackForwardList.cpp
-    win/WebCache.cpp
-    win/WebCoreStatistics.cpp
-    win/WebDataSource.cpp
-    win/WebDatabaseManager.cpp
-    win/WebDocumentLoader.cpp
-    win/WebDownload.cpp
-    win/WebDropSource.cpp
-    win/WebElementPropertyBag.cpp
-    win/WebError.cpp
-    win/WebFrame.cpp
-    win/WebFramePolicyListener.cpp
-    win/WebGeolocationPolicyListener.cpp
-    win/WebGeolocationPosition.cpp
-    win/WebHTMLRepresentation.cpp
-    win/WebHistory.cpp
-    win/WebHistoryItem.cpp
-    win/WebInspector.cpp
-    win/WebJavaScriptCollector.cpp
-    win/WebKitCOMAPI.cpp
-    win/WebKitClassFactory.cpp
-    win/WebKitDLL.cpp
-    win/WebKitLogging.cpp
-    win/WebKitMessageLoop.cpp
-    win/WebKitStatistics.cpp
-    win/WebKitSystemBits.cpp
-    win/WebLocalizableStrings.cpp
-    win/WebMutableURLRequest.cpp
-    win/WebNavigationData.cpp
-    win/WebNodeHighlight.cpp
-    win/WebNotification.cpp
-    win/WebNotificationCenter.cpp
-    win/WebPreferences.cpp
-    win/WebResource.cpp
-    win/WebScriptObject.cpp
-    win/WebScriptWorld.cpp
-    win/WebSecurityOrigin.cpp
-    win/WebSerializedJSValue.cpp
-    win/WebTextRenderer.cpp
-    win/WebURLAuthenticationChallenge.cpp
-    win/WebURLAuthenticationChallengeSender.cpp
-    win/WebURLCredential.cpp
-    win/WebURLProtectionSpace.cpp
-    win/WebURLResponse.cpp
-    win/WebUserContentURLPattern.cpp
-    win/WebView.cpp
-    win/WebWorkersPrivate.cpp
+        Shared/API/c/cairo/WKImageCairo.cpp
 
-    win/plugins/PluginDatabase.cpp
-    win/plugins/PluginDatabaseWin.cpp
-    win/plugins/PluginDebug.cpp
-    win/plugins/PluginMainThreadScheduler.cpp
-    win/plugins/PluginMessageThrottlerWin.cpp
-    win/plugins/PluginPackage.cpp
-    win/plugins/PluginPackageWin.cpp
-    win/plugins/PluginStream.cpp
-    win/plugins/PluginView.cpp
-    win/plugins/PluginViewWin.cpp
-    win/plugins/npapi.cpp
+        Shared/cairo/ShareableBitmapCairo.cpp
 
-    win/storage/WebDatabaseProvider.cpp
-)
+        Shared/curl/WebCoreArgumentCodersCurl.cpp
 
-list(APPEND WebKitLegacy_SOURCES_WebCoreSupport
-    win/WebCoreSupport/AcceleratedCompositingContext.cpp
-    win/WebCoreSupport/EmbeddedWidget.cpp
-    win/WebCoreSupport/EmbeddedWidget.h
-    win/WebCoreSupport/WebChromeClient.cpp
-    win/WebCoreSupport/WebChromeClient.h
-    win/WebCoreSupport/WebContextMenuClient.cpp
-    win/WebCoreSupport/WebContextMenuClient.h
-    win/WebCoreSupport/WebDesktopNotificationsDelegate.cpp
-    win/WebCoreSupport/WebDesktopNotificationsDelegate.h
-    win/WebCoreSupport/WebDragClient.cpp
-    win/WebCoreSupport/WebDragClient.h
-    win/WebCoreSupport/WebEditorClient.cpp
-    win/WebCoreSupport/WebEditorClient.h
-    win/WebCoreSupport/WebFrameLoaderClient.cpp
-    win/WebCoreSupport/WebFrameLoaderClient.h
-    win/WebCoreSupport/WebFrameNetworkingContext.cpp
-    win/WebCoreSupport/WebFrameNetworkingContext.h
-    win/WebCoreSupport/WebGeolocationClient.cpp
-    win/WebCoreSupport/WebGeolocationClient.h
-    win/WebCoreSupport/WebInspectorClient.cpp
-    win/WebCoreSupport/WebInspectorClient.h
-    win/WebCoreSupport/WebInspectorDelegate.cpp
-    win/WebCoreSupport/WebInspectorDelegate.h
-    win/WebCoreSupport/WebPlatformStrategies.cpp
-    win/WebCoreSupport/WebPlatformStrategies.h
-    win/WebCoreSupport/WebPluginInfoProvider.cpp
-    win/WebCoreSupport/WebPluginInfoProvider.h
-    win/WebCoreSupport/WebVisitedLinkStore.cpp
-    win/WebCoreSupport/WebVisitedLinkStore.h
-)
+        UIProcess/Automation/cairo/WebAutomationSessionCairo.cpp
 
-if (USE_CF)
-    list(APPEND WebKitLegacy_SOURCES_Classes
-        cf/WebCoreSupport/WebInspectorClientCF.cpp
+        UIProcess/cairo/BackingStoreCairo.cpp
+
+        WebProcess/WebCoreSupport/curl/WebFrameNetworkingContext.cpp
     )
 
-    list(APPEND WebKitLegacy_LIBRARIES
-        ${COREFOUNDATION_LIBRARY}
+    list(APPEND WebKit_INCLUDE_DIRECTORIES
+        "${WEBKIT_DIR}/NetworkProcess/curl"
+        "${WEBKIT_DIR}/WebProcess/WebCoreSupport/curl"
+    )
+
+    list(APPEND WebKit_LIBRARIES
+        PRIVATE
+            ${OPENSSL_LIBRARIES}
+            mfuuid.lib
+            strmiids.lib
     )
 endif ()
 
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    enable_language(ASM_MASM)
-    if (MSVC)
-        set(MASM_EXECUTABLE ml64)
-        set(MASM_FLAGS /c /Fo)
-        add_custom_command(
-            OUTPUT ${WebKitLegacy_DERIVED_SOURCES_DIR}/PaintHooks.obj
-            MAIN_DEPENDENCY win/plugins/PaintHooks.asm
-            COMMAND ${MASM_EXECUTABLE} ${MASM_FLAGS}
-                ${WebKitLegacy_DERIVED_SOURCES_DIR}/PaintHooks.obj
-                ${CMAKE_CURRENT_SOURCE_DIR}/win/plugins/PaintHooks.asm
-            VERBATIM)
-        list(APPEND WebKitLegacy_SOURCES
-            ${WebKitLegacy_DERIVED_SOURCES_DIR}/PaintHooks.obj
-        )
-    else ()
-        list(APPEND WebKitLegacy_SOURCES
-            win/plugins/PaintHooks.asm
-        )
-    endif ()
+if (ENABLE_REMOTE_INSPECTOR)
+    list(APPEND WebKit_SOURCES
+        UIProcess/socket/RemoteInspectorClient.cpp
+        UIProcess/socket/RemoteInspectorProtocolHandler.cpp
+
+        UIProcess/win/RemoteWebInspectorProxyWin.cpp
+    )
+
+    list(APPEND WebKit_INCLUDE_DIRECTORIES
+        "${WEBKIT_DIR}/UIProcess/socket"
+    )
 endif ()
 
-if (COMPILER_IS_GCC_OR_CLANG)
-    WEBKIT_ADD_TARGET_CXX_FLAGS(WebKitLegacy -Wno-overloaded-virtual)
+set(SharedWebKitLibraries
+    ${WebKit_LIBRARIES}
+)
+
+WEBKIT_WRAP_SOURCELIST(${WebKit_SOURCES})
+
+# Temporarily list out shared headers here
+set(WebKit_PUBLIC_FRAMEWORK_HEADERS
+    Shared/API/c/WKArray.h
+    Shared/API/c/WKBase.h
+    Shared/API/c/WKCertificateInfo.h
+    Shared/API/c/WKConnectionRef.h
+    Shared/API/c/WKContextMenuItem.h
+    Shared/API/c/WKContextMenuItemTypes.h
+    Shared/API/c/WKData.h
+    Shared/API/c/WKDeclarationSpecifiers.h
+    Shared/API/c/WKDeprecated.h
+    Shared/API/c/WKDiagnosticLoggingResultType.h
+    Shared/API/c/WKDictionary.h
+    Shared/API/c/WKErrorRef.h
+    Shared/API/c/WKEvent.h
+    Shared/API/c/WKFindOptions.h
+    Shared/API/c/WKGeometry.h
+    Shared/API/c/WKImage.h
+    Shared/API/c/WKMutableArray.h
+    Shared/API/c/WKMutableDictionary.h
+    Shared/API/c/WKNumber.h
+    Shared/API/c/WKPageLoadTypes.h
+    Shared/API/c/WKPageLoadTypesPrivate.h
+    Shared/API/c/WKPageVisibilityTypes.h
+    Shared/API/c/WKPluginInformation.h
+    Shared/API/c/WKSecurityOriginRef.h
+    Shared/API/c/WKSerializedScriptValue.h
+    Shared/API/c/WKString.h
+    Shared/API/c/WKStringPrivate.h
+    Shared/API/c/WKType.h
+    Shared/API/c/WKURL.h
+    Shared/API/c/WKURLRequest.h
+    Shared/API/c/WKURLResponse.h
+    Shared/API/c/WKUserContentInjectedFrames.h
+    Shared/API/c/WKUserScriptInjectionTime.h
+
+    UIProcess/API/C/WKAuthenticationChallenge.h
+    UIProcess/API/C/WKAuthenticationDecisionListener.h
+    UIProcess/API/C/WKBackForwardListItemRef.h
+    UIProcess/API/C/WKBackForwardListRef.h
+    UIProcess/API/C/WKContext.h
+    UIProcess/API/C/WKContextConfigurationRef.h
+    UIProcess/API/C/WKContextConnectionClient.h
+    UIProcess/API/C/WKContextDownloadClient.h
+    UIProcess/API/C/WKContextHistoryClient.h
+    UIProcess/API/C/WKContextInjectedBundleClient.h
+    UIProcess/API/C/WKContextPrivate.h
+    UIProcess/API/C/WKCookieManager.h
+    UIProcess/API/C/WKCredential.h
+    UIProcess/API/C/WKCredentialTypes.h
+    UIProcess/API/C/WKDownload.h
+    UIProcess/API/C/WKFormSubmissionListener.h
+    UIProcess/API/C/WKFrame.h
+    UIProcess/API/C/WKFrameHandleRef.h
+    UIProcess/API/C/WKFrameInfoRef.h
+    UIProcess/API/C/WKFramePolicyListener.h
+    UIProcess/API/C/WKGeolocationManager.h
+    UIProcess/API/C/WKGeolocationPermissionRequest.h
+    UIProcess/API/C/WKGeolocationPosition.h
+    UIProcess/API/C/WKHitTestResult.h
+    UIProcess/API/C/WKIconDatabase.h
+    UIProcess/API/C/WKInspector.h
+    UIProcess/API/C/WKLayoutMode.h
+    UIProcess/API/C/WKMessageListener.h
+    UIProcess/API/C/WKMockDisplay.h
+    UIProcess/API/C/WKMockMediaDevice.h
+    UIProcess/API/C/WKNativeEvent.h
+    UIProcess/API/C/WKNavigationActionRef.h
+    UIProcess/API/C/WKNavigationDataRef.h
+    UIProcess/API/C/WKNavigationRef.h
+    UIProcess/API/C/WKNavigationResponseRef.h
+    UIProcess/API/C/WKNotification.h
+    UIProcess/API/C/WKNotificationManager.h
+    UIProcess/API/C/WKNotificationPermissionRequest.h
+    UIProcess/API/C/WKNotificationProvider.h
+    UIProcess/API/C/WKOpenPanelParametersRef.h
+    UIProcess/API/C/WKOpenPanelResultListener.h
+    UIProcess/API/C/WKPage.h
+    UIProcess/API/C/WKPageConfigurationRef.h
+    UIProcess/API/C/WKPageContextMenuClient.h
+    UIProcess/API/C/WKPageDiagnosticLoggingClient.h
+    UIProcess/API/C/WKPageFindClient.h
+    UIProcess/API/C/WKPageFindMatchesClient.h
+    UIProcess/API/C/WKPageFormClient.h
+    UIProcess/API/C/WKPageGroup.h
+    UIProcess/API/C/WKPageInjectedBundleClient.h
+    UIProcess/API/C/WKPageLoaderClient.h
+    UIProcess/API/C/WKPageNavigationClient.h
+    UIProcess/API/C/WKPagePolicyClient.h
+    UIProcess/API/C/WKPagePrivate.h
+    UIProcess/API/C/WKPageRenderingProgressEvents.h
+    UIProcess/API/C/WKPageStateClient.h
+    UIProcess/API/C/WKPageUIClient.h
+    UIProcess/API/C/WKPluginLoadPolicy.h
+    UIProcess/API/C/WKPreferencesRef.h
+    UIProcess/API/C/WKPreferencesRefPrivate.h
+    UIProcess/API/C/WKProcessTerminationReason.h
+    UIProcess/API/C/WKProtectionSpace.h
+    UIProcess/API/C/WKProtectionSpaceTypes.h
+    UIProcess/API/C/WKResourceCacheManager.h
+    UIProcess/API/C/WKSessionStateRef.h
+    UIProcess/API/C/WKTestingSupport.h
+    UIProcess/API/C/WKTextChecker.h
+    UIProcess/API/C/WKUserContentControllerRef.h
+    UIProcess/API/C/WKUserContentExtensionStoreRef.h
+    UIProcess/API/C/WKUserMediaPermissionCheck.h
+    UIProcess/API/C/WKUserMediaPermissionRequest.h
+    UIProcess/API/C/WKUserScriptRef.h
+    UIProcess/API/C/WKViewportAttributes.h
+    UIProcess/API/C/WKWebsiteDataStoreRef.h
+    UIProcess/API/C/WKWebsitePolicies.h
+    UIProcess/API/C/WKWindowFeaturesRef.h
+    UIProcess/API/C/WebKit2_C.h
+
+    UIProcess/API/cpp/WKRetainPtr.h
+
+    WebProcess/InjectedBundle/API/c/WKBundle.h
+    WebProcess/InjectedBundle/API/c/WKBundleAPICast.h
+    WebProcess/InjectedBundle/API/c/WKBundleBackForwardList.h
+    WebProcess/InjectedBundle/API/c/WKBundleBackForwardListItem.h
+    WebProcess/InjectedBundle/API/c/WKBundleDOMWindowExtension.h
+    WebProcess/InjectedBundle/API/c/WKBundleFileHandleRef.h
+    WebProcess/InjectedBundle/API/c/WKBundleFrame.h
+    WebProcess/InjectedBundle/API/c/WKBundleFramePrivate.h
+    WebProcess/InjectedBundle/API/c/WKBundleHitTestResult.h
+    WebProcess/InjectedBundle/API/c/WKBundleInitialize.h
+    WebProcess/InjectedBundle/API/c/WKBundleInspector.h
+    WebProcess/InjectedBundle/API/c/WKBundleNavigationAction.h
+    WebProcess/InjectedBundle/API/c/WKBundleNavigationActionPrivate.h
+    WebProcess/InjectedBundle/API/c/WKBundleNodeHandle.h
+    WebProcess/InjectedBundle/API/c/WKBundleNodeHandlePrivate.h
+    WebProcess/InjectedBundle/API/c/WKBundlePage.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageBanner.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageContextMenuClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageEditorClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageFormClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageFullScreenClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageGroup.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageLoaderClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageOverlay.h
+    WebProcess/InjectedBundle/API/c/WKBundlePagePolicyClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePagePrivate.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageResourceLoadClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePageUIClient.h
+    WebProcess/InjectedBundle/API/c/WKBundlePrivate.h
+    WebProcess/InjectedBundle/API/c/WKBundleRangeHandle.h
+    WebProcess/InjectedBundle/API/c/WKBundleScriptWorld.h
+)
+
+# Windows specific
+list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
+    Shared/API/c/win/WKBaseWin.h
+
+    UIProcess/API/C/win/WKView.h
+)
+
+set(WebKit_FORWARDING_HEADERS_DIRECTORIES
+    Shared/API/c
+
+    Shared/API/c/cairo
+    Shared/API/c/cf
+    Shared/API/c/win
+
+    UIProcess/API/C
+    UIProcess/API/cpp
+
+    UIProcess/API/C/win
+
+    WebProcess/InjectedBundle/API/c
+)
+
+if (${WTF_PLATFORM_WIN_CAIRO})
+    list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
+        Shared/API/c/cairo/WKImageCairo.h
+
+        Shared/API/c/curl/WKCertificateInfoCurl.h
+
+        UIProcess/API/C/curl/WKProtectionSpaceCurl.h
+        UIProcess/API/C/curl/WKWebsiteDataStoreRefCurl.h
+    )
 endif ()
 
-list(APPEND WebKitLegacy_SOURCES ${WebKitLegacy_INCLUDES} ${WebKitLegacy_SOURCES_Classes} ${WebKitLegacy_SOURCES_WebCoreSupport})
-
-source_group(Includes FILES ${WebKitLegacy_INCLUDES})
-source_group(Classes FILES ${WebKitLegacy_SOURCES_Classes})
-source_group(WebCoreSupport FILES ${WebKitLegacy_SOURCES_WebCoreSupport})
-
-# Build the COM interface:
-macro(GENERATE_INTERFACE _infile _defines _depends)
-    get_filename_component(_filewe ${_infile} NAME_WE)
-    add_custom_command(
-        OUTPUT  ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/${_filewe}.h
-        MAIN_DEPENDENCY ${_infile}
-        DEPENDS ${_depends}
-        COMMAND midl.exe /I "${CMAKE_CURRENT_SOURCE_DIR}/win/Interfaces" /I "${CMAKE_CURRENT_SOURCE_DIR}/win/Interfaces/Accessible2" /I "${WebKitLegacy_DERIVED_SOURCES_DIR}/include" /I "${CMAKE_CURRENT_SOURCE_DIR}/win" /WX /char signed /env win32 /tlb "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_filewe}.tlb" /out "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces" /h "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/${_filewe}.h" /iid "${_filewe}_i.c" ${_defines} "${CMAKE_CURRENT_SOURCE_DIR}/${_infile}"
-        USES_TERMINAL VERBATIM)
-    set_source_files_properties(${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/${_filewe}.h PROPERTIES GENERATED TRUE)
-    set_source_files_properties(${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/${_filewe}_i.c PROPERTIES GENERATED TRUE)
-endmacro()
-
-set(MIDL_DEFINES /D\ \"__PRODUCTION__=01\")
-
-set(WEBKITLEGACY_IDL_DEPENDENCIES
-    win/Interfaces/AccessibleComparable.idl
-    win/Interfaces/DOMCSS.idl
-    win/Interfaces/DOMCore.idl
-    win/Interfaces/DOMEvents.idl
-    win/Interfaces/DOMExtensions.idl
-    win/Interfaces/DOMHTML.idl
-    win/Interfaces/DOMPrivate.idl
-    win/Interfaces/DOMRange.idl
-    win/Interfaces/DOMWindow.idl
-    win/Interfaces/IGEN_DOMObject.idl
-    win/Interfaces/IWebArchive.idl
-    win/Interfaces/IWebBackForwardList.idl
-    win/Interfaces/IWebBackForwardListPrivate.idl
-    win/Interfaces/IWebCache.idl
-    win/Interfaces/IWebCoreStatistics.idl
-    win/Interfaces/IWebDataSource.idl
-    win/Interfaces/IWebDatabaseManager.idl
-    win/Interfaces/IWebDesktopNotificationsDelegate.idl
-    win/Interfaces/IWebDocument.idl
-    win/Interfaces/IWebDownload.idl
-    win/Interfaces/IWebEditingDelegate.idl
-    win/Interfaces/IWebEmbeddedView.idl
-    win/Interfaces/IWebError.idl
-    win/Interfaces/IWebErrorPrivate.idl
-    win/Interfaces/IWebFormDelegate.idl
-    win/Interfaces/IWebFrame.idl
-    win/Interfaces/IWebFrameLoadDelegate.idl
-    win/Interfaces/IWebFrameLoadDelegatePrivate.idl
-    win/Interfaces/IWebFrameLoadDelegatePrivate2.idl
-    win/Interfaces/IWebFramePrivate.idl
-    win/Interfaces/IWebFrameView.idl
-    win/Interfaces/IWebGeolocationPolicyListener.idl
-    win/Interfaces/IWebGeolocationPosition.idl
-    win/Interfaces/IWebGeolocationProvider.idl
-    win/Interfaces/IWebHTMLRepresentation.idl
-    win/Interfaces/IWebHTTPURLResponse.idl
-    win/Interfaces/IWebHistory.idl
-    win/Interfaces/IWebHistoryDelegate.idl
-    win/Interfaces/IWebHistoryItem.idl
-    win/Interfaces/IWebHistoryItemPrivate.idl
-    win/Interfaces/IWebHistoryPrivate.idl
-    win/Interfaces/IWebInspector.idl
-    win/Interfaces/IWebInspectorPrivate.idl
-    win/Interfaces/IWebJavaScriptCollector.idl
-    win/Interfaces/IWebKitStatistics.idl
-    win/Interfaces/IWebMutableURLRequest.idl
-    win/Interfaces/IWebMutableURLRequestPrivate.idl
-    win/Interfaces/IWebNavigationData.idl
-    win/Interfaces/IWebNotification.idl
-    win/Interfaces/IWebNotificationCenter.idl
-    win/Interfaces/IWebNotificationObserver.idl
-    win/Interfaces/IWebPolicyDelegate.idl
-    win/Interfaces/IWebPolicyDelegatePrivate.idl
-    win/Interfaces/IWebPreferences.idl
-    win/Interfaces/IWebPreferencesPrivate.idl
-    win/Interfaces/IWebResource.idl
-    win/Interfaces/IWebResourceLoadDelegate.idl
-    win/Interfaces/IWebResourceLoadDelegatePrivate.idl
-    win/Interfaces/IWebResourceLoadDelegatePrivate2.idl
-    win/Interfaces/IWebScriptObject.idl
-    win/Interfaces/IWebScriptWorld.idl
-    win/Interfaces/IWebSecurityOrigin.idl
-    win/Interfaces/IWebSerializedJSValue.idl
-    win/Interfaces/IWebSerializedJSValuePrivate.idl
-    win/Interfaces/IWebTextRenderer.idl
-    win/Interfaces/IWebUIDelegate.idl
-    win/Interfaces/IWebUIDelegate2.idl
-    win/Interfaces/IWebUIDelegatePrivate.idl
-    win/Interfaces/IWebURLAuthenticationChallenge.idl
-    win/Interfaces/IWebURLRequest.idl
-    win/Interfaces/IWebURLResponse.idl
-    win/Interfaces/IWebURLResponsePrivate.idl
-    win/Interfaces/IWebUndoManager.idl
-    win/Interfaces/IWebUndoTarget.idl
-    win/Interfaces/IWebUserContentURLPattern.idl
-    win/Interfaces/IWebView.idl
-    win/Interfaces/IWebViewPrivate.idl
-    win/Interfaces/IWebWorkersPrivate.idl
-    win/Interfaces/JavaScriptCoreAPITypes.idl
-    win/Interfaces/WebKit.idl
-    win/Interfaces/WebScrollbarTypes.idl
-
-    win/Interfaces/Accessible2/Accessible2.idl
-    win/Interfaces/Accessible2/Accessible2_2.idl
-    win/Interfaces/Accessible2/AccessibleApplication.idl
-    win/Interfaces/Accessible2/AccessibleEditableText.idl
-    win/Interfaces/Accessible2/AccessibleRelation.idl
-    win/Interfaces/Accessible2/AccessibleStates.idl
-    win/Interfaces/Accessible2/AccessibleText.idl
-    win/Interfaces/Accessible2/AccessibleText2.idl
-    win/Interfaces/Accessible2/IA2CommonTypes.idl
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/include/autoversion.h"
-)
-
-add_custom_command(
-    OUTPUT ${WebKitLegacy_DERIVED_SOURCES_DIR}/include/autoversion.h
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND ${PERL_EXECUTABLE} ${WEBKIT_LIBRARIES_DIR}/tools/scripts/auto-version.pl ${WebKitLegacy_DERIVED_SOURCES_DIR}
-    VERBATIM)
-
-GENERATE_INTERFACE(win/Interfaces/WebKit.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleApplication.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/Accessible2.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/Accessible2_2.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleRelation.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleStates.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/IA2CommonTypes.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleEditableText.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleText.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-GENERATE_INTERFACE(win/Interfaces/Accessible2/AccessibleText2.idl ${MIDL_DEFINES} "${WEBKITLEGACY_IDL_DEPENDENCIES}")
-
-add_library(WebKitLegacyGUID STATIC
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/WebKit.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleApplication.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2_2.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleRelation.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleStates.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/IA2CommonTypes.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleEditableText.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText2.h"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/WebKit_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleApplication_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2_2_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleRelation_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleEditableText_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText_i.c"
-    "${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText2_i.c"
-)
-set_target_properties(WebKitLegacyGUID PROPERTIES OUTPUT_NAME WebKitGUID${DEBUG_SUFFIX})
-
-list(APPEND WebKitLegacy_LIBRARIES
-    PRIVATE Comctl32
-    PRIVATE Comsupp
-    PRIVATE Crypt32
-    PRIVATE D2d1
-    PRIVATE Dwrite
-    PRIVATE dxguid
-    PRIVATE Iphlpapi
-    PRIVATE Psapi
-    PRIVATE Rpcrt4
-    PRIVATE Shlwapi
-    PRIVATE Usp10
-    PRIVATE Version
-    PRIVATE Winmm
-    PRIVATE WebKitGUID${DEBUG_SUFFIX}
-    PRIVATE WindowsCodecs
-)
-
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-
-# We need the webkit libraries to come before the system default libraries to prevent symbol conflicts with uuid.lib.
-# To do this we add system default libs as webkit libs and zero out system default libs.
-string(REPLACE " " "\;" CXX_LIBS ${CMAKE_CXX_STANDARD_LIBRARIES})
-list(APPEND WebKitLegacy_LIBRARIES ${CXX_LIBS})
-set(CMAKE_CXX_STANDARD_LIBRARIES "")
-
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${MSVC_RUNTIME_LINKER_FLAGS}")
-
-# If this directory isn't created before midl runs and attempts to output WebKit.tlb,
-# It fails with an unusual error - midl failed - failed to save all changes
-file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-file(MAKE_DIRECTORY ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces)
-
-set(WebKitLegacy_PUBLIC_FRAMEWORK_HEADERS
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/Accessible2_2.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleApplication.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleEditableText.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleRelation.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleStates.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/AccessibleText2.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/IA2CommonTypes.h
-    ${WebKitLegacy_DERIVED_SOURCES_DIR}/Interfaces/WebKit.h
-
-    win/AccessibleBase.h
-    win/AccessibleDocument.h
-    win/CFDictionaryPropertyBag.h
-    win/WebDataSource.h
-    win/WebFrame.h
-    win/WebKitCOMAPI.h
-)
-
-WEBKIT_MAKE_FORWARDING_HEADERS(WebKitLegacyGUID
-    TARGET_NAME WebKitLegacyFrameworkHeaders
-    DESTINATION ${WebKitLegacy_FRAMEWORK_HEADERS_DIR}/WebKitLegacy
-    FILES ${WebKitLegacy_PUBLIC_FRAMEWORK_HEADERS}
+WEBKIT_MAKE_FORWARDING_HEADERS(WebKit
+    TARGET_NAME WebKitFrameworkHeaders
+    DESTINATION ${WebKit_FRAMEWORK_HEADERS_DIR}/WebKit
+    FILES ${WebKit_PUBLIC_FRAMEWORK_HEADERS}
     FLATTENED
-)
-add_dependencies(WebKitLegacyFrameworkHeaders WebCorePrivateFrameworkHeaders)
-
-set(WebKitLegacy_OUTPUT_NAME
-    WebKit${DEBUG_SUFFIX}
 )
