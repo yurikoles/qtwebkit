@@ -14,7 +14,16 @@ set(PROJECT_VERSION_STRING "${PROJECT_VERSION}")
 set(QT_CONAN_DIR "" CACHE PATH "Directory containing conanbuildinfo.cmake and conanfile.txt")
 if (QT_CONAN_DIR)
     include("${QT_CONAN_DIR}/conanbuildinfo.cmake")
+
+    # Remove this workaround when libxslt package is fixed
+    string(REPLACE "include/libxslt" "include" replace_CONAN_INCLUDE_DIRS ${CONAN_INCLUDE_DIRS})
+    set(CONAN_INCLUDE_DIRS ${replace_CONAN_INCLUDE_DIRS})
+
+    # Remove this workaround when libxml2 package is fixed
+    set(_BACKUP_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
     conan_basic_setup()
+    set(CMAKE_MODULE_PATH ${_BACKUP_CMAKE_MODULE_PATH})
+    unset(_BACKUP_CMAKE_MODULE_PATH)
 
     install(CODE "
         set(_conan_imports_dest \${CMAKE_INSTALL_PREFIX})
@@ -602,6 +611,9 @@ endif ()
 find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
 
 CHECK_QT5_PRIVATE_INCLUDE_DIRS(Gui private/qhexstring_p.h)
+if (Qt5_VERSION VERSION_GREATER 5.10.1)
+    CHECK_QT5_PRIVATE_INCLUDE_DIRS(Network private/http2protocol_p.h)
+endif ()
 if (ENABLE_WEBKIT2)
     CHECK_QT5_PRIVATE_INCLUDE_DIRS(Quick private/qsgrendernode_p.h)
 endif ()
