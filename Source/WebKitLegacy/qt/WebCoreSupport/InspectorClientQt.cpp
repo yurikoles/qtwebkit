@@ -262,7 +262,7 @@ void InspectorClientQt::sendMessageToFrontend(const String& message)
         return;
 
     Page* frontendPage = m_frontendWebPage->page;
-    doDispatchMessageOnFrontendPage(frontendPage, message);
+    m_frontendClient->dispatchMessageAsync(message);
 }
 
 InspectorFrontendClientQt::InspectorFrontendClientQt(QWebPageAdapter* inspectedWebPage, InspectorController* inspectedPageController, std::unique_ptr<QObject> inspectorView, WebCore::Page* inspectorPage, InspectorClientQt* inspectorClient)
