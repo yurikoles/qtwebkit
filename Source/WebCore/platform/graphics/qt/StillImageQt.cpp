@@ -74,7 +74,7 @@ NativeImagePtr StillImage::nativeImageForCurrentFrame(const GraphicsContext*)
 }
 
 ImageDrawResult StillImage::draw(GraphicsContext& ctxt, const FloatRect& dst,
-    const FloatRect& src, CompositeOperator op, BlendMode blendMode, DecodingMode, ImageOrientationDescription)
+    const FloatRect& src, CompositeOperator op, BlendMode blendMode, DecodingMode, ImageOrientation)
 {
     if (m_pixmap->isNull())
         return ImageDrawResult::DidNothing;

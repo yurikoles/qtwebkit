@@ -64,7 +64,7 @@ Color nativeImageSinglePixelSolidColor(const NativeImagePtr& image)
     return QColor::fromRgba(image->toImage().pixel(0, 0));
 }
 
-void drawNativeImage(const NativeImagePtr& image, GraphicsContext& ctxt, const FloatRect& destRect, const FloatRect& srcRect, const IntSize& srcSize, CompositeOperator op, BlendMode blendMode, const ImageOrientation&)
+void drawNativeImage(const NativeImagePtr& image, GraphicsContext& ctxt, const FloatRect& destRect, const FloatRect& srcRect, const IntSize& srcSize, CompositeOperator op, BlendMode blendMode, ImageOrientation)
 {
     // QTFIXME: Handle imageSize? See e.g. NativeImageDirect2D
 
