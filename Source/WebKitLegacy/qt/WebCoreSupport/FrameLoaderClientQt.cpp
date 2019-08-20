@@ -243,8 +243,7 @@ Optional<FrameIdentifier> FrameLoaderClientQt::frameID() const
 
 PAL::SessionID FrameLoaderClientQt::sessionID() const
 {
-    RELEASE_ASSERT_NOT_REACHED();
-    return PAL::SessionID::defaultSessionID();
+    return m_frame && m_frame->page() ? m_frame->page()->sessionID() : PAL::SessionID::defaultSessionID();
 }
 
 void FrameLoaderClientQt::savePlatformDataToCachedFrame(CachedFrame*) 
