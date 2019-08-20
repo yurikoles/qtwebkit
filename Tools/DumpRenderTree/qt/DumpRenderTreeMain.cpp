@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
 
     QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
 
-    WTFInstallReportBacktraceOnCrashHook();
+    // QTFIXME
+//    WTFInstallReportBacktraceOnCrashHook();
 
     QStringList args = app.arguments();
     if (args.count() < (!suppressQtDebugOutput ? 3 : 2)) {
