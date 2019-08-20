@@ -236,7 +236,7 @@ Optional<PageIdentifier> FrameLoaderClientQt::pageID() const
     return WTF::nullopt;
 }
 
-Optional<uint64_t> FrameLoaderClientQt::frameID() const
+Optional<FrameIdentifier> FrameLoaderClientQt::frameID() const
 {
     return WTF::nullopt;
 }

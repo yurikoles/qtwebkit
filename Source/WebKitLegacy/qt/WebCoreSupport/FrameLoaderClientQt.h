@@ -80,7 +80,7 @@ public:
     void makeRepresentation(DocumentLoader*) override { }
 
     Optional<PageIdentifier> pageID() const final;
-    Optional<uint64_t> frameID() const final;
+    Optional<FrameIdentifier> frameID() const final;
     PAL::SessionID sessionID() const final;
 
     void forceLayoutForNonHTML() override;
