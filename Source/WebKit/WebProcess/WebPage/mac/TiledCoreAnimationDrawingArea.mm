@@ -87,7 +87,7 @@ TiledCoreAnimationDrawingArea::TiledCoreAnimationDrawingArea(WebPage& webPage, c
     [m_hostingLayer setOpaque:YES];
     [m_hostingLayer setGeometryFlipped:YES];
 
-    m_layerFlushRunLoopObserver = std::make_unique<WebCore::RunLoopObserver>(static_cast<CFIndex>(RunLoopObserver::WellKnownRunLoopOrders::LayerFlush), [this]() {
+    m_layerFlushRunLoopObserver = makeUnique<WebCore::RunLoopObserver>(static_cast<CFIndex>(RunLoopObserver::WellKnownRunLoopOrders::LayerFlush), [this]() {
         this->layerFlushRunLoopCallback();
     });
 
@@ -597,7 +597,7 @@ void TiledCoreAnimationDrawingArea::updateGeometry(const IntSize& viewSize, bool
     IntSize size = viewSize;
     IntSize contentSize = IntSize(-1, -1);
 
-    if (!m_webPage.viewLayoutSize().width() || m_webPage.autoSizingShouldExpandToViewHeight())
+    if (!m_webPage.minimumSizeForAutoLayout().width() || m_webPage.autoSizingShouldExpandToViewHeight())
         m_webPage.setSize(size);
 
     FrameView* frameView = m_webPage.mainFrameView();
@@ -607,7 +607,7 @@ void TiledCoreAnimationDrawingArea::updateGeometry(const IntSize& viewSize, bool
 
     m_webPage.layoutIfNeeded();
 
-    if (m_webPage.viewLayoutSize().width() && frameView) {
+    if (m_webPage.minimumSizeForAutoLayout().width() && frameView) {
         contentSize = frameView->autoSizingIntrinsicContentSize();
         size = contentSize;
     }

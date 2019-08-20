@@ -1326,7 +1326,7 @@ RefPtr<DataTransfer> ReplaceSelectionCommand::inputEventDataTransfer() const
     if (isEditingTextAreaOrTextInput())
         return CompositeEditCommand::inputEventDataTransfer();
 
-    return DataTransfer::createForInputEvent(m_documentFragmentPlainText, m_documentFragmentHTMLMarkup);
+    return DataTransfer::createForInputEvent(document(), m_documentFragmentPlainText, m_documentFragmentHTMLMarkup);
 }
 
 bool ReplaceSelectionCommand::shouldRemoveEndBR(Node* endBR, const VisiblePosition& originalVisPosBeforeEndBR)
@@ -1631,7 +1631,7 @@ void ReplaceSelectionCommand::updateNodesInserted(Node *node)
 ReplacementFragment* ReplaceSelectionCommand::ensureReplacementFragment()
 {
     if (!m_replacementFragment)
-        m_replacementFragment = std::make_unique<ReplacementFragment>(m_documentFragment.get(), endingSelection());
+        m_replacementFragment = makeUnique<ReplacementFragment>(m_documentFragment.get(), endingSelection());
     return m_replacementFragment.get();
 }
 

@@ -171,7 +171,7 @@ String capitalize(const String& string, UChar previousCharacter)
     int32_t endOfWord;
     for (endOfWord = ubrk_next(breakIterator); endOfWord != UBRK_DONE; startOfWord = endOfWord, endOfWord = ubrk_next(breakIterator)) {
         if (startOfWord) // Do not append the first character, since it's the previous character, not from this string.
-            result.append(u_totitle(stringImpl[startOfWord - 1]));
+            result.appendCharacter(u_totitle(stringImpl[startOfWord - 1]));
         for (int i = startOfWord + 1; i < endOfWord; i++)
             result.append(stringImpl[i - 1]);
     }
@@ -1311,7 +1311,7 @@ void RenderText::dirtyLineBoxes(bool fullLayout)
 
 std::unique_ptr<InlineTextBox> RenderText::createTextBox()
 {
-    return std::make_unique<InlineTextBox>(*this);
+    return makeUnique<InlineTextBox>(*this);
 }
 
 void RenderText::positionLineBox(InlineTextBox& textBox)
@@ -1489,14 +1489,15 @@ unsigned RenderText::countRenderedCharacterOffsetsUntil(unsigned offset) const
 
 bool RenderText::containsRenderedCharacterOffset(unsigned offset) const
 {
-    ASSERT(!simpleLineLayout());
+    if (auto* layout = simpleLineLayout())
+        return SimpleLineLayout::containsOffset(*this, *layout, offset, SimpleLineLayout::OffsetType::CharacterOffset);
     return m_lineBoxes.containsOffset(*this, offset, RenderTextLineBoxes::CharacterOffset);
 }
 
 bool RenderText::containsCaretOffset(unsigned offset) const
 {
     if (auto* layout = simpleLineLayout())
-        return SimpleLineLayout::containsCaretOffset(*this, *layout, offset);
+        return SimpleLineLayout::containsOffset(*this, *layout, offset, SimpleLineLayout::OffsetType::CaretOffset);
     return m_lineBoxes.containsOffset(*this, offset, RenderTextLineBoxes::CaretOffset);
 }
 
@@ -1544,7 +1545,7 @@ void RenderText::momentarilyRevealLastTypedCharacter(unsigned offsetAfterLastTyp
         return;
     auto& secureTextTimer = secureTextTimers().add(this, nullptr).iterator->value;
     if (!secureTextTimer)
-        secureTextTimer = std::make_unique<SecureTextTimer>(*this);
+        secureTextTimer = makeUnique<SecureTextTimer>(*this);
     secureTextTimer->restart(offsetAfterLastTypedCharacter);
 }
 

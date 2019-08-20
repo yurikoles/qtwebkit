@@ -811,6 +811,26 @@ CodeBlock::~CodeBlock()
 {
     VM& vm = *m_vm;
 
+#if ENABLE(DFG_JIT)
+    // The JITCode (and its corresponding DFG::CommonData) may outlive the CodeBlock by
+    // a short amount of time after the CodeBlock is destructed. For example, the
+    // Interpreter::execute methods will ref JITCode before invoking it. This can
+    // result in the JITCode having a non-zero refCount when its owner CodeBlock is
+    // destructed.
+    //
+    // Hence, we cannot rely on DFG::CommonData destruction to clear these now invalid
+    // watchpoints in a timely manner. We'll ensure they are cleared here eagerly.
+    //
+    // We only need to do this for a DFG/FTL CodeBlock because only these will have a
+    // DFG:CommonData. Hence, the LLInt and Baseline will not have any of these watchpoints.
+    //
+    // Note also that the LLIntPrototypeLoadAdaptiveStructureWatchpoint is also related
+    // to the CodeBlock. However, its lifecycle is tied directly to the CodeBlock, and
+    // will be automatically cleared when the CodeBlock destructs.
+
+    if (JITCode::isOptimizingJIT(jitType()))
+        jitCode()->dfgCommon()->clearWatchpoints();
+#endif
     vm.heap.codeBlockSet().remove(this);
     
     if (UNLIKELY(vm.m_perBytecodeProfiler))
@@ -1337,7 +1357,7 @@ void CodeBlock::finalizeLLIntInlineCaches()
 CodeBlock::JITData& CodeBlock::ensureJITDataSlow(const ConcurrentJSLocker&)
 {
     ASSERT(!m_jitData);
-    m_jitData = std::make_unique<JITData>();
+    m_jitData = makeUnique<JITData>();
     return *m_jitData;
 }
 
@@ -1550,7 +1570,7 @@ unsigned CodeBlock::rareCaseProfileCountForBytecodeOffset(const ConcurrentJSLock
 void CodeBlock::setCalleeSaveRegisters(RegisterSet calleeSaveRegisters)
 {
     ConcurrentJSLocker locker(m_lock);
-    ensureJITData(locker).m_calleeSaveRegisters = std::make_unique<RegisterAtOffsetList>(calleeSaveRegisters);
+    ensureJITData(locker).m_calleeSaveRegisters = makeUnique<RegisterAtOffsetList>(calleeSaveRegisters);
 }
 
 void CodeBlock::setCalleeSaveRegisters(std::unique_ptr<RegisterAtOffsetList> registerAtOffsetList)
@@ -1790,7 +1810,7 @@ void CodeBlock::ensureCatchLivenessIsComputedForBytecodeOffsetSlow(const OpCatch
     for (int i = 0; i < numParameters(); ++i)
         liveOperands.append(virtualRegisterForArgument(i));
 
-    auto profiles = std::make_unique<ValueProfileAndOperandBuffer>(liveOperands.size());
+    auto profiles = makeUnique<ValueProfileAndOperandBuffer>(liveOperands.size());
     RELEASE_ASSERT(profiles->m_size == liveOperands.size());
     for (unsigned i = 0; i < profiles->m_size; ++i)
         profiles->m_buffer.get()[i].m_operand = liveOperands[i].offset();

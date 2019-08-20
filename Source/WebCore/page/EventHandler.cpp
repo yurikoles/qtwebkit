@@ -394,7 +394,7 @@ EventHandler::EventHandler(Frame& frame)
 #if PLATFORM(MAC)
     , m_pendingMomentumWheelEventsTimer(*this, &EventHandler::clearLatchedState)
 #endif
-    , m_autoscrollController(std::make_unique<AutoscrollController>())
+    , m_autoscrollController(makeUnique<AutoscrollController>())
 #if !ENABLE(IOS_TOUCH_EVENTS)
     , m_fakeMouseMoveEventTimer(*this, &EventHandler::fakeMouseMoveEventTimerFired)
 #endif
@@ -3967,7 +3967,7 @@ bool EventHandler::handleDrag(const MouseEventWithHitTestResults& event, CheckDr
     // This does work only if we missed a dragEnd. Do it anyway, just to make sure the old dataTransfer gets numbed.
     invalidateDataTransfer();
 
-    dragState().dataTransfer = DataTransfer::createForDrag();
+    dragState().dataTransfer = DataTransfer::createForDrag(*m_frame.document());
     HasNonDefaultPasteboardData hasNonDefaultPasteboardData = HasNonDefaultPasteboardData::No;
     
     if (dragState().shouldDispatchEvents) {

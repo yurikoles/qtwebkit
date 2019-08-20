@@ -680,14 +680,6 @@ WebGLCanvas WebGLRenderingContextBase::canvas()
     return &downcast<HTMLCanvasElement>(base);
 }
 
-HTMLCanvasElement* WebGLRenderingContextBase::htmlCanvas()
-{
-    auto& base = canvasBase();
-    if (!is<HTMLCanvasElement>(base))
-        return nullptr;
-    return &downcast<HTMLCanvasElement>(base);
-}
-
 OffscreenCanvas* WebGLRenderingContextBase::offscreenCanvas()
 {
     auto& base = canvasBase();
@@ -803,8 +795,8 @@ void WebGLRenderingContextBase::initializeNewContext()
     m_context->viewport(0, 0, canvasSize.width(), canvasSize.height());
     m_context->scissor(0, 0, canvasSize.width(), canvasSize.height());
 
-    m_context->setContextLostCallback(std::make_unique<WebGLRenderingContextLostCallback>(this));
-    m_context->setErrorMessageCallback(std::make_unique<WebGLRenderingContextErrorMessageCallback>(this));
+    m_context->setContextLostCallback(makeUnique<WebGLRenderingContextLostCallback>(this));
+    m_context->setErrorMessageCallback(makeUnique<WebGLRenderingContextErrorMessageCallback>(this));
 }
 
 void WebGLRenderingContextBase::setupFlags()
@@ -1093,12 +1085,7 @@ void WebGLRenderingContextBase::reshape(int width, int height)
     height = clamp(height, 1, maxHeight);
 
     if (m_needsUpdate) {
-        auto* canvas = htmlCanvas();
-        if (canvas) {
-            RenderBox* renderBox = htmlCanvas()->renderBox();
-            if (renderBox && renderBox->hasAcceleratedCompositing())
-                renderBox->contentChanged(CanvasChanged);
-        }
+        notifyCanvasContentChanged();
         m_needsUpdate = false;
     }
 
@@ -1583,7 +1570,7 @@ void WebGLRenderingContextBase::compileShader(WebGLShader* shader)
         Ref<Inspector::ScriptCallStack> stackTrace = Inspector::createScriptCallStack(JSExecState::currentState());
 
         for (auto& error : getShaderInfoLog(shader).split('\n'))
-            canvas->document().addConsoleMessage(std::make_unique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, MessageLevel::Error, "WebGL: " + error, stackTrace.copyRef()));
+            canvas->document().addConsoleMessage(makeUnique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, MessageLevel::Error, "WebGL: " + error, stackTrace.copyRef()));
     }
 }
 
@@ -5812,9 +5799,9 @@ void WebGLRenderingContextBase::printToConsole(MessageLevel level, const String&
     // Error messages can occur during function calls, so show stack traces for them.
     if (level == MessageLevel::Error) {
         Ref<Inspector::ScriptCallStack> stackTrace = Inspector::createScriptCallStack(JSExecState::currentState());
-        consoleMessage = std::make_unique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, level, message, WTFMove(stackTrace));
+        consoleMessage = makeUnique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, level, message, WTFMove(stackTrace));
     } else
-        consoleMessage = std::make_unique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, level, message);
+        consoleMessage = makeUnique<Inspector::ConsoleMessage>(MessageSource::Rendering, MessageType::Log, level, message);
 
     auto* canvas = htmlCanvas();
     if (canvas)

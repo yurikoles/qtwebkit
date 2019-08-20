@@ -65,7 +65,7 @@ void HeapSnapshotBuilder::buildSnapshot()
 
     PreventCollectionScope preventCollectionScope(m_profiler.vm().heap);
 
-    m_snapshot = std::make_unique<HeapSnapshot>(m_profiler.mostRecentSnapshot());
+    m_snapshot = makeUnique<HeapSnapshot>(m_profiler.mostRecentSnapshot());
     {
         m_profiler.setActiveSnapshotBuilder(this);
         m_profiler.vm().heap.collectNow(Sync, CollectionScope::Full);
@@ -412,7 +412,7 @@ String HeapSnapshotBuilder::json(Function<bool (const HeapSnapshotNode&)> allowN
 
         void* wrappedAddress = 0;
         unsigned labelIndex = 0;
-        if (!node.cell->isString()) {
+        if (!node.cell->isString() && !node.cell->isBigInt()) {
             Structure* structure = node.cell->structure(vm);
             if (!structure || !structure->globalObject())
                 flags |= static_cast<unsigned>(NodeFlags::Internal);

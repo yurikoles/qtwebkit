@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2017 Apple, Inc. All rights reserved.
+ * Copyright (C) 2006-2019 Apple, Inc. All rights reserved.
  * Copyright (C) 2009, 2010, 2011 Appcelerator, Inc. All rights reserved.
  * Copyright (C) 2011 Brent Fulgham. All rights reserved.
  *
@@ -202,6 +202,10 @@
 #include "AcceleratedCompositingContext.h"
 #endif
 
+#if USE(DIRECT2D)
+#include <WebCore/PlatformContextDirect2D.h>
+#endif
+
 #if ENABLE(FULLSCREEN_API)
 #include <WebCore/FullScreenController.h>
 #endif
@@ -235,7 +239,9 @@ using JSC::JSLock;
 
 static String webKitVersionString();
 
+#if USE(CF)
 static const CFStringRef WebKitLocalCacheDefaultsKey = CFSTR("WebKitLocalCache");
+#endif
 static HMODULE accessibilityLib;
 
 static HashSet<WebView*>& pendingDeleteBackingStoreSet()
@@ -872,13 +878,6 @@ bool WebView::ensureBackingStore()
             if (!SUCCEEDED(hr))
                 return false;
         }
-
-        COMPtr<ID2D1SolidColorBrush> brush;
-        m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::BlueViolet), &brush);
-
-        m_renderTarget->BeginDraw();
-        m_renderTarget->FillRoundedRectangle(D2D1::RoundedRect(D2D1::RectF(100.0f, 100.0f, 300.0f, 200.0f), 20.0f, 20.0f), brush.get());
-        m_renderTarget->EndDraw();
 #endif
         m_backingStoreSize.cx = width;
         m_backingStoreSize.cy = height;
@@ -896,12 +895,6 @@ bool WebView::ensureBackingStore()
 
         hr = m_backingStoreRenderTarget->QueryInterface(__uuidof(ID2D1GdiInteropRenderTarget), (void**)&m_backingStoreGdiInterop);
         RELEASE_ASSERT(SUCCEEDED(hr));
-
-        COMPtr<ID2D1SolidColorBrush> brush2;
-        m_backingStoreRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::SeaGreen), &brush2);
-        m_backingStoreRenderTarget->BeginDraw();
-        m_renderTarget->FillRoundedRectangle(D2D1::RoundedRect(D2D1::RectF(100.0f, 100.0f, 300.0f, 200.0f), 20.0f, 20.0f), brush2.get());
-        m_renderTarget->EndDraw();
 #endif
         return true;
     }
@@ -1252,7 +1245,8 @@ void WebView::paintWithDirect2D()
     }
 
     RECT clientRect = {};
-    GraphicsContext gc(m_renderTarget.get());
+    PlatformContextDirect2D platformContext(m_renderTarget.get());
+    GraphicsContext gc(&platformContext, GraphicsContext::BitmapRenderingContextType::GPUMemory);
 
     {
         m_renderTarget->SetTags(WEBKIT_DRAWING, __LINE__);
@@ -1886,7 +1880,7 @@ bool WebView::handleMouseEvent(UINT message, WPARAM wParam, LPARAM lParam)
         mouseEvent.setClickCount(globalClickCount);
         handled = m_page->mainFrame().eventHandler().mouseMoved(mouseEvent);
         if (!m_mouseOutTracker) {
-            m_mouseOutTracker = std::make_unique<TRACKMOUSEEVENT>();
+            m_mouseOutTracker = makeUniqueWithoutFastMallocCheck<TRACKMOUSEEVENT>();
             m_mouseOutTracker->cbSize = sizeof(TRACKMOUSEEVENT);
             m_mouseOutTracker->dwFlags = TME_LEAVE;
             m_mouseOutTracker->hwndTrack = m_viewWindow;
@@ -5341,6 +5335,7 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
         if (FAILED(hr))
             return hr;
 
+#if USE(CF)
         RetainPtr<CFURLRef> url = adoptCF(CFURLCreateWithString(kCFAllocatorDefault, toString(str).createCFString().get(), 0));
 
         // Check if the passed in string is a path and convert it to a URL.
@@ -5358,6 +5353,9 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
         }
 
         settings.setUserStyleSheetLocation(url.get());
+#else
+        ASSERT(0);
+#endif
         str.clear();
     } else
         settings.setUserStyleSheetLocation(URL());
@@ -5479,10 +5477,7 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
     hr = prefsPrivate->acceleratedCompositingEnabled(&enabled);
     if (FAILED(hr))
         return hr;
-#if USE(TEXTURE_MAPPER_GL)
-    static bool acceleratedCompositingAvailable = AcceleratedCompositingContext::acceleratedCompositingAvailable();
-    enabled = enabled && acceleratedCompositingAvailable;
-#elif USE(DIRECT2D)
+#if USE(DIRECT2D)
     // Disable accelerated compositing for now.
     enabled = false;
 #endif
@@ -5607,6 +5602,11 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
     if (FAILED(hr))
         return hr;
     settings.setCoreMathMLEnabled(!!enabled);
+
+    hr = prefsPrivate->lazyImageLoadingEnabled(&enabled);
+    if (FAILED(hr))
+        return hr;
+    RuntimeEnabledFeatures::sharedFeatures().setLazyImageLoadingEnabled(!!enabled);
 
     return S_OK;
 }
@@ -6791,7 +6791,7 @@ HRESULT WebView::registerEmbeddedViewMIMEType(_In_ BSTR mimeType)
         return E_POINTER;
 
     if (!m_embeddedViewMIMETypes)
-        m_embeddedViewMIMETypes = std::make_unique<HashSet<String>>();
+        m_embeddedViewMIMETypes = makeUnique<HashSet<String>>();
 
     m_embeddedViewMIMETypes->add(toString(mimeType));
     return S_OK;
@@ -6891,7 +6891,7 @@ void WebView::enterVideoFullscreenForVideoElement(HTMLVideoElement& videoElement
         ASSERT(!m_fullScreenVideoController);
     }
 
-    m_fullScreenVideoController = std::make_unique<FullscreenVideoController>();
+    m_fullScreenVideoController = makeUnique<FullscreenVideoController>();
     m_fullScreenVideoController->setVideoElement(&videoElement);
     m_fullScreenVideoController->enterFullscreen();
 #endif
@@ -6943,7 +6943,7 @@ HRESULT WebView::addUserScriptToGroup(_In_ BSTR groupName, _In_opt_ IWebScriptWo
         return E_POINTER;
 
     WebScriptWorld* world = reinterpret_cast<WebScriptWorld*>(iWorld);
-    auto userScript = std::make_unique<UserScript>(source, toURL(url), toStringVector(whitelist, whitelistCount),
+    auto userScript = makeUnique<UserScript>(source, toURL(url), toStringVector(whitelist, whitelistCount),
         toStringVector(blacklist, blacklistCount), injectionTime == WebInjectAtDocumentStart ? InjectAtDocumentStart : InjectAtDocumentEnd,
         injectedFrames == WebInjectInAllFrames ? InjectInAllFrames : InjectInTopFrameOnly);
     viewGroup->userContentController().addUserScript(world->world(), WTFMove(userScript));
@@ -6970,7 +6970,7 @@ HRESULT WebView::addUserStyleSheetToGroup(_In_ BSTR groupName, _In_opt_ IWebScri
         return E_POINTER;
 
     WebScriptWorld* world = reinterpret_cast<WebScriptWorld*>(iWorld);
-    auto styleSheet = std::make_unique<UserStyleSheet>(source, toURL(url), toStringVector(whitelist, whitelistCount), toStringVector(blacklist, blacklistCount),
+    auto styleSheet = makeUnique<UserStyleSheet>(source, toURL(url), toStringVector(whitelist, whitelistCount), toStringVector(blacklist, blacklistCount),
         injectedFrames == WebInjectInAllFrames ? InjectInAllFrames : InjectInTopFrameOnly, UserStyleUserLevel);
     viewGroup->userContentController().addUserStyleSheet(world->world(), WTFMove(styleSheet), InjectInExistingDocuments);
     return S_OK;
@@ -7234,7 +7234,7 @@ void WebView::setAcceleratedCompositing(bool accelerated)
     }
 #elif USE(TEXTURE_MAPPER_GL)
     if (accelerated && !m_acceleratedCompositingContext)
-        m_acceleratedCompositingContext = std::make_unique<AcceleratedCompositingContext>(*this);
+        m_acceleratedCompositingContext = makeUnique<AcceleratedCompositingContext>(*this);
     m_isAcceleratedCompositing = accelerated;
 #endif
 }
@@ -7877,7 +7877,9 @@ HRESULT WebView::setVisibilityState(WebPageVisibilityState visibilityState)
 
 HRESULT WebView::exitFullscreenIfNeeded()
 {
+#if ENABLE(FULLSCREEN_API)
     if (fullScreenController() && fullScreenController()->isFullScreen())
         fullScreenController()->close();
+#endif
     return S_OK;
 }

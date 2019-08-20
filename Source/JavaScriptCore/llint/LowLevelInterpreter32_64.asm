@@ -875,8 +875,7 @@ equalNullComparisonOp(op_neq_null, OpNeqNull,
 
 llintOpWithReturn(op_is_undefined_or_null, OpIsUndefinedOrNull, macro (size, get, dispatch, return)
     get(m_operand, t0)
-    assertNotConstant(size, t0)
-    loadi TagOffset[cfr, t0, 8], t1
+    loadConstantOrVariableTag(size, t0, t1)
     ori 1, t1
     cieq t1, NullTag, t1
     return(BooleanTag, t1)
@@ -1676,6 +1675,24 @@ equalNullJumpOp(jneq_null, OpJneqNull,
     end,
     macro (value, target) bineq value, NullTag, target end)
 
+macro undefinedOrNullJumpOp(opcodeName, opcodeStruct, fn)
+    llintOpWithJump(op_%opcodeName%, opcodeStruct, macro (size, get, jump, dispatch)
+        get(m_value, t1)
+        loadConstantOrVariableTag(size, t1, t0)
+        ori 1, t0
+        fn(t0, .target)
+        dispatch()
+
+    .target:
+        jump(m_targetLabel)
+    end)
+end
+
+undefinedOrNullJumpOp(jundefined_or_null, OpJundefinedOrNull,
+    macro (value, target) bieq value, NullTag, target end)
+
+undefinedOrNullJumpOp(jnundefined_or_null, OpJnundefinedOrNull,
+    macro (value, target) bineq value, NullTag, target end)
 
 llintOpWithMetadata(op_jneq_ptr, OpJneqPtr, macro (size, get, dispatch, metadata, return)
     get(m_value, t0)

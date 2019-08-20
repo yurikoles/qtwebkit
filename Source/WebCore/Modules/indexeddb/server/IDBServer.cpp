@@ -123,7 +123,7 @@ UniqueIDBDatabase& IDBServer::getOrCreateUniqueIDBDatabase(const IDBDatabaseIden
 
     auto uniqueIDBDatabase = m_uniqueIDBDatabaseMap.add(identifier, nullptr);
     if (uniqueIDBDatabase.isNewEntry)
-        uniqueIDBDatabase.iterator->value = std::make_unique<UniqueIDBDatabase>(*this, identifier);
+        uniqueIDBDatabase.iterator->value = makeUnique<UniqueIDBDatabase>(*this, identifier);
 
     return *uniqueIDBDatabase.iterator->value;
 }
@@ -133,9 +133,9 @@ std::unique_ptr<IDBBackingStore> IDBServer::createBackingStore(const IDBDatabase
     ASSERT(!isMainThread());
 
     if (m_databaseDirectoryPath.isEmpty())
-        return MemoryIDBBackingStore::create(identifier);
+        return MemoryIDBBackingStore::create(m_sessionID, identifier);
 
-    return std::make_unique<SQLiteIDBBackingStore>(identifier, m_databaseDirectoryPath, m_backingStoreTemporaryFileHandler, m_perOriginQuota);
+    return makeUnique<SQLiteIDBBackingStore>(m_sessionID, identifier, m_databaseDirectoryPath, m_backingStoreTemporaryFileHandler);
 }
 
 void IDBServer::openDatabase(const IDBRequestData& requestData)
@@ -691,14 +691,6 @@ void IDBServer::didPerformCloseAndDeleteDatabases(uint64_t callbackID)
     callback();
 }
 
-void IDBServer::setPerOriginQuota(uint64_t quota)
-{
-    m_perOriginQuota = quota;
-
-    for (auto& database : m_uniqueIDBDatabaseMap.values())
-        database->setQuota(quota);
-}
-
 IDBServer::QuotaUser::QuotaUser(IDBServer& server, StorageQuotaManager* manager, ClientOrigin&& origin)
     : m_server(server)
     , m_manager(makeWeakPtr(manager))
@@ -761,7 +753,7 @@ void IDBServer::QuotaUser::initializeSpaceUsed(uint64_t spaceUsed)
 IDBServer::QuotaUser& IDBServer::ensureQuotaUser(const ClientOrigin& origin)
 {
     return *m_quotaUsers.ensure(origin, [this, &origin] {
-        return std::make_unique<QuotaUser>(*this, m_quotaManagerGetter(m_sessionID, origin), ClientOrigin { origin });
+        return makeUnique<QuotaUser>(*this, m_quotaManagerGetter(m_sessionID, origin), ClientOrigin { origin });
     }).iterator->value;
 }
 

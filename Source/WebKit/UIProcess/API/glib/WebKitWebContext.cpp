@@ -198,6 +198,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 #if ENABLE(REMOTE_INSPECTOR)
 class WebKitAutomationClient final : Inspector::RemoteInspector::Client {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     explicit WebKitAutomationClient(WebKitWebContext* context)
         : m_webContext(context)
@@ -367,9 +368,9 @@ ALLOW_DEPRECATED_DECLARATIONS_END
     attachCustomProtocolManagerClientToContext(webContext);
 
     priv->geolocationManager = adoptGRef(webkitGeolocationManagerCreate(priv->processPool->supplement<WebGeolocationManagerProxy>()));
-    priv->notificationProvider = std::make_unique<WebKitNotificationProvider>(priv->processPool->supplement<WebNotificationManagerProxy>(), webContext);
+    priv->notificationProvider = makeUnique<WebKitNotificationProvider>(priv->processPool->supplement<WebNotificationManagerProxy>(), webContext);
 #if PLATFORM(GTK) && ENABLE(REMOTE_INSPECTOR)
-    priv->remoteInspectorProtocolHandler = std::make_unique<RemoteInspectorProtocolHandler>(webContext);
+    priv->remoteInspectorProtocolHandler = makeUnique<RemoteInspectorProtocolHandler>(webContext);
 #endif
 }
 
@@ -678,7 +679,7 @@ void webkit_web_context_set_automation_allowed(WebKitWebContext* context, gboole
             g_warning("Not enabling automation on WebKitWebContext because there's another context with automation enabled, only one is allowed");
             return;
         }
-        context->priv->automationClient = std::make_unique<WebKitAutomationClient>(context);
+        context->priv->automationClient = makeUnique<WebKitAutomationClient>(context);
     } else
         context->priv->automationClient = nullptr;
 #endif
@@ -1760,7 +1761,6 @@ void webkitWebContextCreatePageForWebView(WebKitWebContext* context, WebKitWebVi
     if (!manager)
         manager = context->priv->websiteDataManager.get();
     pageConfiguration->setWebsiteDataStore(&webkitWebsiteDataManagerGetDataStore(manager));
-    pageConfiguration->setSessionID(pageConfiguration->websiteDataStore()->websiteDataStore().sessionID());
     webkitWebViewCreatePage(webView, WTFMove(pageConfiguration));
 
     context->priv->webViews.set(webkit_web_view_get_page_id(webView), webView);

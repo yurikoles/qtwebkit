@@ -283,7 +283,7 @@ String InspectorDOMAgent::toErrorString(Exception&& exception)
 InspectorDOMAgent::InspectorDOMAgent(PageAgentContext& context, InspectorOverlay* overlay)
     : InspectorAgentBase("DOM"_s, context)
     , m_injectedScriptManager(context.injectedScriptManager)
-    , m_frontendDispatcher(std::make_unique<Inspector::DOMFrontendDispatcher>(context.frontendRouter))
+    , m_frontendDispatcher(makeUnique<Inspector::DOMFrontendDispatcher>(context.frontendRouter))
     , m_backendDispatcher(Inspector::DOMBackendDispatcher::create(context.backendDispatcher, this))
     , m_inspectedPage(context.inspectedPage)
     , m_overlay(overlay)
@@ -301,8 +301,8 @@ InspectorDOMAgent::~InspectorDOMAgent()
 
 void InspectorDOMAgent::didCreateFrontendAndBackend(Inspector::FrontendRouter*, Inspector::BackendDispatcher*)
 {
-    m_history = std::make_unique<InspectorHistory>();
-    m_domEditor = std::make_unique<DOMEditor>(*m_history);
+    m_history = makeUnique<InspectorHistory>();
+    m_domEditor = makeUnique<DOMEditor>(*m_history);
 
     m_instrumentingAgents.setInspectorDOMAgent(this);
     m_document = m_inspectedPage.mainFrame().document();
@@ -653,7 +653,7 @@ int InspectorDOMAgent::pushNodePathToFrontend(Node* nodeToPush)
         Node* parent = innerParentNode(node);
         if (!parent) {
             // Node being pushed is detached -> push subtree root.
-            auto newMap = std::make_unique<NodeToIdMap>();
+            auto newMap = makeUnique<NodeToIdMap>();
             danglingMap = newMap.get();
             m_danglingNodeToIdMaps.append(newMap.release());
             auto children = JSON::ArrayOf<Inspector::Protocol::DOM::Node>::create();
@@ -1177,7 +1177,7 @@ std::unique_ptr<HighlightConfig> InspectorDOMAgent::highlightConfigFromInspector
         return nullptr;
     }
 
-    auto highlightConfig = std::make_unique<HighlightConfig>();
+    auto highlightConfig = makeUnique<HighlightConfig>();
     bool showInfo = false; // Default: false (do not show a tooltip).
     highlightInspectorObject->getBoolean("showInfo", showInfo);
     highlightConfig->showInfo = showInfo;
@@ -1196,13 +1196,13 @@ void InspectorDOMAgent::setInspectModeEnabled(ErrorString& errorString, bool ena
 
 void InspectorDOMAgent::highlightRect(ErrorString&, int x, int y, int width, int height, const JSON::Object* color, const JSON::Object* outlineColor, const bool* usePageCoordinates)
 {
-    auto quad = std::make_unique<FloatQuad>(FloatRect(x, y, width, height));
+    auto quad = makeUnique<FloatQuad>(FloatRect(x, y, width, height));
     innerHighlightQuad(WTFMove(quad), color, outlineColor, usePageCoordinates);
 }
 
 void InspectorDOMAgent::highlightQuad(ErrorString& errorString, const JSON::Array& quadArray, const JSON::Object* color, const JSON::Object* outlineColor, const bool* usePageCoordinates)
 {
-    auto quad = std::make_unique<FloatQuad>();
+    auto quad = makeUnique<FloatQuad>();
     if (!parseQuad(quadArray, quad.get())) {
         errorString = "Invalid Quad format"_s;
         return;
@@ -1212,7 +1212,7 @@ void InspectorDOMAgent::highlightQuad(ErrorString& errorString, const JSON::Arra
 
 void InspectorDOMAgent::innerHighlightQuad(std::unique_ptr<FloatQuad> quad, const JSON::Object* color, const JSON::Object* outlineColor, const bool* usePageCoordinates)
 {
-    auto highlightConfig = std::make_unique<HighlightConfig>();
+    auto highlightConfig = makeUnique<HighlightConfig>();
     highlightConfig->content = parseColor(color);
     highlightConfig->contentOutline = parseColor(outlineColor);
     highlightConfig->usePageCoordinates = usePageCoordinates ? *usePageCoordinates : false;
@@ -1224,13 +1224,7 @@ void InspectorDOMAgent::highlightSelector(ErrorString& errorString, const JSON::
     RefPtr<Document> document;
 
     if (frameId) {
-        auto* pageAgent = m_instrumentingAgents.inspectorPageAgent();
-        if (!pageAgent) {
-            errorString = "Missing Page agent"_s;
-            return;
-        }
-
-        Frame* frame = pageAgent->frameForId(*frameId);
+        Frame* frame = m_instrumentingAgents.inspectorPageAgent()->frameForId(*frameId);
         if (!frame) {
             errorString = "No frame for given id found"_s;
             return;
@@ -1317,18 +1311,12 @@ void InspectorDOMAgent::highlightNodeList(ErrorString& errorString, const JSON::
 
 void InspectorDOMAgent::highlightFrame(ErrorString& errorString, const String& frameId, const JSON::Object* color, const JSON::Object* outlineColor)
 {
-    auto* pageAgent = m_instrumentingAgents.inspectorPageAgent();
-    if (!pageAgent) {
-        errorString = "Missing Page agent"_s;
-        return;
-    }
-
-    Frame* frame = pageAgent->assertFrame(errorString, frameId);
+    Frame* frame = m_instrumentingAgents.inspectorPageAgent()->assertFrame(errorString, frameId);
     if (!frame)
         return;
 
     if (frame->ownerElement()) {
-        auto highlightConfig = std::make_unique<HighlightConfig>();
+        auto highlightConfig = makeUnique<HighlightConfig>();
         highlightConfig->showInfo = true; // Always show tooltips for frames.
         highlightConfig->content = parseColor(color);
         highlightConfig->contentOutline = parseColor(outlineColor);
@@ -1410,7 +1398,7 @@ void InspectorDOMAgent::setInspectedNode(ErrorString& errorString, int nodeId)
     m_inspectedNode = node;
 
     if (auto& commandLineAPIHost = static_cast<WebInjectedScriptManager&>(m_injectedScriptManager).commandLineAPIHost())
-        commandLineAPIHost->addInspectedObject(std::make_unique<InspectableNode>(node));
+        commandLineAPIHost->addInspectedObject(makeUnique<InspectableNode>(node));
 
     m_suppressEventListenerChangedEvent = false;
 }
@@ -1563,11 +1551,8 @@ Ref<Inspector::Protocol::DOM::Node> InspectorDOMAgent::buildObjectForNode(Node* 
             value->setChildren(WTFMove(children));
     }
 
-    auto* pageAgent = m_instrumentingAgents.inspectorPageAgent();
-    if (pageAgent) {
-        if (auto* frameView = node->document().view())
-            value->setFrameId(pageAgent->frameId(&frameView->frame()));
-    }
+    if (auto* frameView = node->document().view())
+        value->setFrameId(m_instrumentingAgents.inspectorPageAgent()->frameId(&frameView->frame()));
 
     if (is<Element>(*node)) {
         Element& element = downcast<Element>(*node);
@@ -1603,8 +1588,7 @@ Ref<Inspector::Protocol::DOM::Node> InspectorDOMAgent::buildObjectForNode(Node* 
         }
     } else if (is<Document>(*node)) {
         Document& document = downcast<Document>(*node);
-        if (pageAgent)
-            value->setFrameId(pageAgent->frameId(document.frame()));
+        value->setFrameId(m_instrumentingAgents.inspectorPageAgent()->frameId(document.frame()));
         value->setDocumentURL(documentURLString(&document));
         value->setBaseURL(documentBaseURLString(&document));
         value->setXmlVersion(document.xmlVersion());
@@ -2330,7 +2314,7 @@ void InspectorDOMAgent::didInvalidateStyleAttr(Element& element)
         return;
 
     if (!m_revalidateStyleAttrTask)
-        m_revalidateStyleAttrTask = std::make_unique<RevalidateStyleAttributeTask>(this);
+        m_revalidateStyleAttrTask = makeUnique<RevalidateStyleAttributeTask>(this);
     m_revalidateStyleAttrTask->scheduleFor(&element);
 }
 
@@ -2594,7 +2578,10 @@ void InspectorDOMAgent::pushNodeByPathToFrontend(ErrorString& errorString, const
 
 RefPtr<Inspector::Protocol::Runtime::RemoteObject> InspectorDOMAgent::resolveNode(Node* node, const String& objectGroup)
 {
-    auto* frame = node->document().frame();
+    Document* document = &node->document();
+    if (auto* templateHost = document->templateDocumentHost())
+        document = templateHost;
+    auto* frame =  document->frame();
     if (!frame)
         return nullptr;
 

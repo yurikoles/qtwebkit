@@ -36,6 +36,7 @@
 #include "GPUBufferBinding.h"
 #include "GPUBufferDescriptor.h"
 #include "GPUCommandBuffer.h"
+#include "GPUComputePipelineDescriptor.h"
 #include "GPUPipelineStageDescriptor.h"
 #include "GPURenderPipelineDescriptor.h"
 #include "GPUSampler.h"
@@ -145,7 +146,7 @@ Ref<WebGPUBindGroup> WebGPUDevice::createBindGroup(const WebGPUBindGroupDescript
     if (!gpuDescriptor)
         return WebGPUBindGroup::create(nullptr);
 
-    auto bindGroup = GPUBindGroup::tryCreate(*gpuDescriptor);
+    auto bindGroup = m_device->tryCreateBindGroup(*gpuDescriptor, m_errorScopes);
     return WebGPUBindGroup::create(WTFMove(bindGroup));
 }
 

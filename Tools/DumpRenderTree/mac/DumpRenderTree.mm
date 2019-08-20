@@ -97,6 +97,7 @@
 #import <wtf/ProcessPrivilege.h>
 #import <wtf/RetainPtr.h>
 #import <wtf/Threading.h>
+#import <wtf/UniqueArray.h>
 #import <wtf/text/StringBuilder.h>
 #import <wtf/text/WTFString.h>
 
@@ -877,8 +878,8 @@ static void enableExperimentalFeatures(WebPreferences* preferences)
     [preferences setCSSOMViewScrollingAPIEnabled:YES];
     [preferences setMediaRecorderEnabled:YES];
     [preferences setReferrerPolicyAttributeEnabled:YES];
-    [preferences setReferrerPolicyAttributeEnabled:YES];
     [preferences setLinkPreloadResponsiveImagesEnabled:YES];
+    [preferences setLazyImageLoadingEnabled:YES];
 }
 
 // Called before each test.
@@ -1025,6 +1026,7 @@ static void setWebPreferencesForTestOptions(const TestOptions& options)
     preferences.adClickAttributionEnabled = options.adClickAttributionEnabled;
     preferences.resizeObserverEnabled = options.enableResizeObserver;
     preferences.coreMathMLEnabled = options.enableCoreMathML;
+    preferences.lazyImageLoadingEnabled = options.enableLazyImageLoading;
 }
 
 // Called once on DumpRenderTree startup.
@@ -1534,7 +1536,7 @@ static NSString *dumpFramesAsText(WebFrame *frame)
     // the result without any conversion.
     WKRetainPtr<WKStringRef> stringRef = adoptWK(WKStringCreateWithCFString((__bridge CFStringRef)innerText));
     size_t bufferSize = WKStringGetMaximumUTF8CStringSize(stringRef.get());
-    auto buffer = std::make_unique<char[]>(bufferSize);
+    auto buffer = makeUniqueArray<char>(bufferSize);
     size_t stringLength = WKStringGetUTF8CStringNonStrict(stringRef.get(), buffer.get(), bufferSize);
     [result appendFormat:@"%@\n", String::fromUTF8WithLatin1Fallback(buffer.get(), stringLength - 1).createCFString().get()];
 
@@ -1802,7 +1804,7 @@ void dump()
 
 static bool shouldLogFrameLoadDelegates(const char* pathOrURL)
 {
-    return strstr(pathOrURL, "loading/");
+    return strstr(pathOrURL, "loading/") && !strstr(pathOrURL, "://localhost");
 }
 
 static bool shouldLogHistoryDelegates(const char* pathOrURL)
@@ -2034,7 +2036,6 @@ static void runTest(const string& inputLine)
     gTestRunner->clearAllApplicationCaches();
 
     gTestRunner->clearAllDatabases();
-    gTestRunner->setIDBPerOriginQuota(50 * MB);
 
     if (disallowedURLs)
         CFSetRemoveAllValues(disallowedURLs);

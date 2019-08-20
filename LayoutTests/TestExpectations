@@ -654,6 +654,7 @@ fast/web-share [ Skip ]
 fast/animation/request-animation-frame-in-two-pages.html [ Skip ]
 
 # Only supported on iOS
+imported/w3c/web-platform-tests/dom/events/document-level-touchmove-event-listener-passive-by-default.html [ Skip ]
 imported/w3c/web-platform-tests/pointerevents [ Skip ]
 pointerevents [ Skip ]
 
@@ -3464,3 +3465,6 @@ fast/text/design-system-ui-13.html [ ImageOnlyFailure ]
 fast/text/design-system-ui-14.html [ ImageOnlyFailure ]
 fast/text/design-system-ui-15.html [ ImageOnlyFailure ]
 fast/text/design-system-ui-16.html [ ImageOnlyFailure ]
+
+webkit.org/b/196698 imported/w3c/web-platform-tests/loading/lazyload/image-loading-lazy.tentative.html
+webkit.org/b/196698 imported/w3c/web-platform-tests/loading/lazyload/iframe-loading-lazy.tentative.html

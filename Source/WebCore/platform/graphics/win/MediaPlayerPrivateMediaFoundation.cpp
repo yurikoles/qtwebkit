@@ -87,7 +87,7 @@ MediaPlayerPrivateMediaFoundation::~MediaPlayerPrivateMediaFoundation()
 void MediaPlayerPrivateMediaFoundation::registerMediaEngine(MediaEngineRegistrar registrar)
 {
     if (isAvailable()) {
-        registrar([](MediaPlayer* player) { return std::make_unique<MediaPlayerPrivateMediaFoundation>(player); },
+        registrar([](MediaPlayer* player) { return makeUnique<MediaPlayerPrivateMediaFoundation>(player); },
             getSupportedTypes, supportsType, 0, 0, 0, 0);
     }
 }
@@ -306,7 +306,7 @@ float MediaPlayerPrivateMediaFoundation::maxTimeSeekable() const
 
 std::unique_ptr<PlatformTimeRanges> MediaPlayerPrivateMediaFoundation::buffered() const
 { 
-    auto ranges = std::make_unique<PlatformTimeRanges>();
+    auto ranges = makeUnique<PlatformTimeRanges>();
     if (m_presenter && m_presenter->maxTimeLoaded() > 0)
         ranges->add(MediaTime::zeroTime(), MediaTime::createWithDouble(m_presenter->maxTimeLoaded()));
     return ranges;
@@ -893,7 +893,7 @@ MediaPlayerPrivateMediaFoundation::CustomVideoPresenter::CustomVideoPresenter(Me
     m_sourceRect.bottom = 1;
     m_sourceRect.right = 1;
 
-    m_presenterEngine = std::make_unique<Direct3DPresenter>();
+    m_presenterEngine = makeUnique<Direct3DPresenter>();
     if (!m_presenterEngine)
         return;
 

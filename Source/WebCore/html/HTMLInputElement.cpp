@@ -110,6 +110,7 @@ HTMLInputElement::HTMLInputElement(const QualifiedName& tagName, Document& docum
     , m_isActivatedSubmit(false)
     , m_autocomplete(Uninitialized)
     , m_isAutoFilled(false)
+    , m_isAutoFilledAndViewable(false)
     , m_autoFillButtonType(static_cast<uint8_t>(AutoFillButtonType::None))
     , m_lastAutoFillButtonType(static_cast<uint8_t>(AutoFillButtonType::None))
     , m_isAutoFillAvailable(false)
@@ -147,7 +148,7 @@ Ref<HTMLInputElement> HTMLInputElement::create(const QualifiedName& tagName, Doc
 HTMLImageLoader& HTMLInputElement::ensureImageLoader()
 {
     if (!m_imageLoader)
-        m_imageLoader = std::make_unique<HTMLImageLoader>(*this);
+        m_imageLoader = makeUnique<HTMLImageLoader>(*this);
     return *m_imageLoader;
 }
 
@@ -517,6 +518,7 @@ void HTMLInputElement::resignStrongPasswordAppearance()
     if (!hasAutoFillStrongPasswordButton())
         return;
     setAutoFilled(false);
+    setAutoFilledAndViewable(false);
     setShowAutoFillButton(AutoFillButtonType::None);
     if (auto* page = document().page())
         page->chrome().client().inputElementDidResignStrongPasswordAppearance(*this);
@@ -915,6 +917,7 @@ void HTMLInputElement::reset()
         setValue(String());
 
     setAutoFilled(false);
+    setAutoFilledAndViewable(false);
     setShowAutoFillButton(AutoFillButtonType::None);
     setChecked(hasAttributeWithoutSynchronization(checkedAttr));
     m_dirtyCheckednessFlag = false;
@@ -1343,6 +1346,15 @@ void HTMLInputElement::setAutoFilled(bool autoFilled)
     invalidateStyleForSubtree();
 }
 
+void HTMLInputElement::setAutoFilledAndViewable(bool autoFilledAndViewable)
+{
+    if (autoFilledAndViewable == m_isAutoFilledAndViewable)
+        return;
+
+    m_isAutoFilledAndViewable = autoFilledAndViewable;
+    invalidateStyleForSubtree();
+}
+
 void HTMLInputElement::setShowAutoFillButton(AutoFillButtonType autoFillButtonType)
 {
     if (static_cast<uint8_t>(autoFillButtonType) == m_autoFillButtonType)
@@ -1486,10 +1498,12 @@ void HTMLInputElement::resumeFromDocumentSuspension()
 #if ENABLE(INPUT_TYPE_COLOR)
     // <input type=color> uses prepareForDocumentSuspension to detach the color picker UI,
     // so it should not be reset when being loaded from page cache.
-    if (isColorControl()) 
+    if (isColorControl())
         return;
 #endif // ENABLE(INPUT_TYPE_COLOR)
-    reset();
+    document().postTask([inputElement = makeRef(*this)] (ScriptExecutionContext&) {
+        inputElement->reset();
+    });
 }
 
 #if ENABLE(INPUT_TYPE_COLOR)
@@ -1627,7 +1641,7 @@ RefPtr<HTMLDataListElement> HTMLInputElement::dataList() const
 void HTMLInputElement::resetListAttributeTargetObserver()
 {
     if (isConnected())
-        m_listAttributeTargetObserver = std::make_unique<ListAttributeTargetObserver>(attributeWithoutSynchronization(listAttr), this);
+        m_listAttributeTargetObserver = makeUnique<ListAttributeTargetObserver>(attributeWithoutSynchronization(listAttr), this);
     else
         m_listAttributeTargetObserver = nullptr;
 }

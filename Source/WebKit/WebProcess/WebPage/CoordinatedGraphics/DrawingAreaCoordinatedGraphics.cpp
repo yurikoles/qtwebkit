@@ -41,6 +41,13 @@
 #include <WebCore/PageOverlayController.h>
 #include <WebCore/Settings.h>
 
+#if USE(DIRECT2D)
+#include <WebCore/GraphicsContextImplDirect2D.h>
+#include <WebCore/PlatformContextDirect2D.h>
+#include <d2d1.h>
+#endif
+
+
 #if USE(GLIB_EVENT_LOOP)
 #include <wtf/glib/RunLoopSourcePriority.h>
 #endif
@@ -241,6 +248,7 @@ void DrawingAreaCoordinatedGraphics::mainFrameContentSizeChanged(const IntSize& 
         m_previousLayerTreeHost->contentsSizeChanged(size);
 }
 
+#if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
 void DrawingAreaCoordinatedGraphics::deviceOrPageScaleFactorChanged()
 {
     if (m_layerTreeHost)
@@ -256,6 +264,7 @@ void DrawingAreaCoordinatedGraphics::didChangeViewportAttributes(ViewportAttribu
     else if (m_previousLayerTreeHost)
         m_previousLayerTreeHost->didChangeViewportAttributes(WTFMove(attrs));
 }
+#endif
 
 GraphicsLayerFactory* DrawingAreaCoordinatedGraphics::graphicsLayerFactory()
 {
@@ -541,7 +550,7 @@ void DrawingAreaCoordinatedGraphics::enterAcceleratedCompositingMode(GraphicsLay
             m_layerTreeHost->setLayerFlushSchedulingEnabled(true);
     } else {
 #if USE(COORDINATED_GRAPHICS)
-        m_layerTreeHost = std::make_unique<LayerTreeHost>(m_webPage);
+        m_layerTreeHost = makeUnique<LayerTreeHost>(m_webPage);
 #else
         m_layerTreeHost = nullptr;
         return;
@@ -743,6 +752,10 @@ void DrawingAreaCoordinatedGraphics::display(UpdateInfo& updateInfo)
             m_webPage.drawRect(*graphicsContext, rect);
         updateInfo.updateRects.append(rect);
     }
+
+#if USE(DIRECT2D)
+    bitmap->sync(*graphicsContext);
+#endif
 
     // Layout can trigger more calls to setNeedsDisplay and we don't want to process them
     // until the UI process has painted the update, so we stop the timer here.

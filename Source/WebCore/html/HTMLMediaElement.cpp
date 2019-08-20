@@ -144,7 +144,6 @@
 #if ENABLE(MEDIA_STREAM)
 #include "DOMURL.h"
 #include "MediaStream.h"
-#include "MediaStreamRegistry.h"
 #endif
 
 #if ENABLE(LEGACY_ENCRYPTED_MEDIA)
@@ -482,7 +481,7 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tagName, Document& docum
 
 void HTMLMediaElement::finishInitialization()
 {
-    m_mediaSession = std::make_unique<MediaElementSession>(*this);
+    m_mediaSession = makeUnique<MediaElementSession>(*this);
 
     m_mediaSession->addBehaviorRestriction(MediaElementSession::RequireUserGestureForFullscreen);
     m_mediaSession->addBehaviorRestriction(MediaElementSession::RequirePageConsentToLoadMedia);
@@ -1583,7 +1582,7 @@ void HTMLMediaElement::loadResource(const URL& initialURL, ContentType& contentT
 
     if (m_mediaSource) {
         loadAttempted = true;
-        
+
         ALWAYS_LOG(LOGIDENTIFIER, "loading MSE blob");
         if (!m_mediaSource->attachToElement(*this) || !m_player->load(url, contentType, m_mediaSource.get())) {
             // Forget our reference to the MediaSource, so we leave it alone
@@ -1593,18 +1592,12 @@ void HTMLMediaElement::loadResource(const URL& initialURL, ContentType& contentT
         }
     }
 #endif
-
 #if ENABLE(MEDIA_STREAM)
-    if (!loadAttempted) {
-        if (!m_mediaStreamSrcObject && url.protocolIs(mediaStreamBlobProtocol))
-            m_mediaStreamSrcObject = MediaStreamRegistry::shared().lookUp(url);
-
-        if (m_mediaStreamSrcObject) {
-            loadAttempted = true;
-            ALWAYS_LOG(LOGIDENTIFIER, "loading media stream blob");
-            if (!m_player->load(m_mediaStreamSrcObject->privateStream()))
-                mediaLoadingFailed(MediaPlayer::FormatError);
-        }
+    if (!loadAttempted && m_mediaStreamSrcObject) {
+        loadAttempted = true;
+        ALWAYS_LOG(LOGIDENTIFIER, "loading media stream blob");
+        if (!m_player->load(m_mediaStreamSrcObject->privateStream()))
+            mediaLoadingFailed(MediaPlayer::FormatError);
     }
 #endif
 
@@ -3039,7 +3032,7 @@ void HTMLMediaElement::seekWithTolerance(const MediaTime& inTime, const MediaTim
 
     // 5 - If the seek was in response to a DOM method call or setting of an IDL attribute, then continue
     // the script. The remainder of these steps must be run asynchronously.
-    m_pendingSeek = std::make_unique<PendingSeek>(now, time, negativeTolerance, positiveTolerance);
+    m_pendingSeek = makeUnique<PendingSeek>(now, time, negativeTolerance, positiveTolerance);
     if (fromDOM) {
         INFO_LOG(LOGIDENTIFIER, "enqueuing seek from ", now, " to ", time);
         m_seekTaskQueue.scheduleTask(std::bind(&HTMLMediaElement::seekTask, this));
@@ -6448,13 +6441,12 @@ void HTMLMediaElement::resetMediaEngines()
     MediaPlayer::resetMediaEngines();
 }
 
-void HTMLMediaElement::privateBrowsingStateDidChange()
+void HTMLMediaElement::privateBrowsingStateDidChange(PAL::SessionID sessionID)
 {
     if (!m_player)
         return;
 
-    bool privateMode = document().page() && document().page()->usesEphemeralSession();
-    m_player->setPrivateBrowsingMode(privateMode);
+    m_player->setPrivateBrowsingMode(sessionID.isEphemeral());
 }
 
 MediaControls* HTMLMediaElement::mediaControls() const
@@ -6918,7 +6910,7 @@ HTMLMediaElement::SleepType HTMLMediaElement::shouldDisableSleep() const
     if (PlatformMediaSessionManager::sharedManager().processIsSuspended())
         return SleepType::None;
 
-    bool shouldBeAbleToSleep = !hasVideo() || !hasAudio();
+    bool shouldBeAbleToSleep = mediaType() != PlatformMediaSession::VideoAudio;
 #if ENABLE(MEDIA_STREAM)
     // Remote media stream video tracks may have their corresponding audio tracks being played outside of the media element. Let's ensure to not IDLE the screen in that case.
     // FIXME: We should check that audio is being/to be played. Ideally, we would come up with a media stream agnostic heuristisc.

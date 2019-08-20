@@ -160,9 +160,9 @@ void PageConsoleClient::addMessage(MessageSource source, MessageLevel level, con
     std::unique_ptr<Inspector::ConsoleMessage> message;
 
     if (callStack)
-        message = std::make_unique<Inspector::ConsoleMessage>(source, MessageType::Log, level, messageText, callStack.releaseNonNull(), requestIdentifier);
+        message = makeUnique<Inspector::ConsoleMessage>(source, MessageType::Log, level, messageText, callStack.releaseNonNull(), requestIdentifier);
     else
-        message = std::make_unique<Inspector::ConsoleMessage>(source, MessageType::Log, level, messageText, suggestedURL, suggestedLineNumber, suggestedColumnNumber, state, requestIdentifier);
+        message = makeUnique<Inspector::ConsoleMessage>(source, MessageType::Log, level, messageText, suggestedURL, suggestedLineNumber, suggestedColumnNumber, state, requestIdentifier);
 
     addMessage(WTFMove(message));
 }
@@ -173,7 +173,7 @@ void PageConsoleClient::messageWithTypeAndLevel(MessageType type, MessageLevel l
     String messageText;
     bool gotMessage = arguments->getFirstArgumentAsString(messageText);
 
-    auto message = std::make_unique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, type, level, messageText, arguments.copyRef(), exec);
+    auto message = makeUnique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, type, level, messageText, arguments.copyRef(), exec);
 
     String url = message->url();
     unsigned lineNumber = message->line();
@@ -280,6 +280,26 @@ void PageConsoleClient::recordEnd(JSC::ExecState* state, Ref<ScriptArguments>&& 
     }
 }
 
+static Optional<String> snapshotCanvas(HTMLCanvasElement& canvasElement, CanvasRenderingContext& canvasRenderingContext)
+{
+#if ENABLE(WEBGL)
+    if (is<WebGLRenderingContextBase>(canvasRenderingContext))
+        downcast<WebGLRenderingContextBase>(canvasRenderingContext).setPreventBufferClearForInspector(true);
+#endif
+
+    auto result = canvasElement.toDataURL("image/png"_s);
+
+#if ENABLE(WEBGL)
+    if (is<WebGLRenderingContextBase>(canvasRenderingContext))
+        downcast<WebGLRenderingContextBase>(canvasRenderingContext).setPreventBufferClearForInspector(false);
+#endif
+
+    if (!result.hasException())
+        return result.releaseReturnValue().string;
+
+    return WTF::nullopt;
+}
+
 void PageConsoleClient::screenshot(JSC::ExecState* state, Ref<ScriptArguments>&& arguments)
 {
     String dataURL;
@@ -310,20 +330,32 @@ void PageConsoleClient::screenshot(JSC::ExecState* state, Ref<ScriptArguments>&&
                     else if (is<HTMLPictureElement>(node)) {
                         if (auto* firstImage = childrenOfType<HTMLImageElement>(downcast<HTMLPictureElement>(*node)).first())
                             snapshotImageElement(*firstImage);
-                    } else if (is<HTMLVideoElement>(node)) {
+                    }
+#if ENABLE(VIDEO)
+                    else if (is<HTMLVideoElement>(node)) {
                         auto& videoElement = downcast<HTMLVideoElement>(*node);
                         unsigned videoWidth = videoElement.videoWidth();
                         unsigned videoHeight = videoElement.videoHeight();
                         snapshot = ImageBuffer::create(FloatSize(videoWidth, videoHeight), RenderingMode::Unaccelerated);
                         videoElement.paintCurrentFrameInContext(snapshot->context(), FloatRect(0, 0, videoWidth, videoHeight));
                     }
+#endif
+                    else if (is<HTMLCanvasElement>(node)) {
+                        auto& canvasElement = downcast<HTMLCanvasElement>(*node);
+                        if (auto* canvasRenderingContext = canvasElement.renderingContext()) {
+                            if (auto result = snapshotCanvas(canvasElement, *canvasRenderingContext))
+                                dataURL = result.value();
+                        }
+                    }
                 }
 
-                if (!snapshot)
-                    snapshot = WebCore::snapshotNode(m_page.mainFrame(), *node);
+                if (dataURL.isEmpty()) {
+                    if (!snapshot)
+                        snapshot = WebCore::snapshotNode(m_page.mainFrame(), *node);
 
-                if (snapshot)
-                    dataURL = snapshot->toDataURL("image/png"_s, WTF::nullopt, PreserveResolution::Yes);
+                    if (snapshot)
+                        dataURL = snapshot->toDataURL("image/png"_s, WTF::nullopt, PreserveResolution::Yes);
+                }
             }
         } else if (auto* imageData = JSImageData::toWrapped(state->vm(), possibleTarget)) {
             target = possibleTarget;
@@ -346,24 +378,18 @@ void PageConsoleClient::screenshot(JSC::ExecState* state, Ref<ScriptArguments>&&
             if (is<HTMLCanvasElement>(canvas)) {
                 target = possibleTarget;
                 if (UNLIKELY(InspectorInstrumentation::hasFrontends())) {
-#if ENABLE(WEBGL)
-                    if (is<WebGLRenderingContextBase>(context))
-                        downcast<WebGLRenderingContextBase>(context)->setPreventBufferClearForInspector(true);
-#endif
-
-                    auto result = downcast<HTMLCanvasElement>(canvas).toDataURL("image/png"_s);
-
-#if ENABLE(WEBGL)
-                    if (is<WebGLRenderingContextBase>(context))
-                        downcast<WebGLRenderingContextBase>(context)->setPreventBufferClearForInspector(false);
-#endif
-
-                    if (!result.hasException())
-                        dataURL = result.releaseReturnValue().string;
+                    if (auto result = snapshotCanvas(downcast<HTMLCanvasElement>(canvas), *context))
+                        dataURL = result.value();
                 }
             }
 
             // FIXME: <https://webkit.org/b/180833> Web Inspector: support OffscreenCanvas for Canvas related operations
+        } else {
+            String base64;
+            if (possibleTarget.getString(state, base64) && base64.startsWithIgnoringASCIICase("data:"_s) && base64.length() > 5) {
+                target = possibleTarget;
+                dataURL = base64;
+            }
         }
     }
 
@@ -376,7 +402,7 @@ void PageConsoleClient::screenshot(JSC::ExecState* state, Ref<ScriptArguments>&&
         }
 
         if (dataURL.isEmpty()) {
-            addMessage(std::make_unique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, MessageType::Image, MessageLevel::Error, "Could not capture screenshot"_s, WTFMove(arguments)));
+            addMessage(makeUnique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, MessageType::Image, MessageLevel::Error, "Could not capture screenshot"_s, WTFMove(arguments)));
             return;
         }
     }
@@ -386,7 +412,7 @@ void PageConsoleClient::screenshot(JSC::ExecState* state, Ref<ScriptArguments>&&
     for (size_t i = (!target ? 0 : 1); i < arguments->argumentCount(); ++i)
         adjustedArguments.append({ state->vm(), arguments->argumentAt(i) });
     arguments = ScriptArguments::create(*state, WTFMove(adjustedArguments));
-    addMessage(std::make_unique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, MessageType::Image, MessageLevel::Log, dataURL, WTFMove(arguments)));
+    addMessage(makeUnique<Inspector::ConsoleMessage>(MessageSource::ConsoleAPI, MessageType::Image, MessageLevel::Log, dataURL, WTFMove(arguments)));
 }
 
 } // namespace WebCore

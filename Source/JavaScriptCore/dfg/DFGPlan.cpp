@@ -150,6 +150,7 @@ Plan::Plan(CodeBlock* passedCodeBlock, CodeBlock* profiledDFGCodeBlock,
     , m_stage(Preparing)
 {
     RELEASE_ASSERT(m_codeBlock->alternative()->jitCode());
+    m_inlineCallFrames->disableThreadingChecks();
 }
 
 Plan::~Plan()
@@ -263,6 +264,7 @@ Plan::CompilationPath Plan::compileInThreadImpl()
             if (safepointResult.didGetCancelled())               \
                 return CancelPath;                               \
         }                                                        \
+        dfg.nextPhase();                                         \
         changed |= phase(dfg);                                   \
     } while (false);                                             \
 
@@ -295,7 +297,7 @@ Plan::CompilationPath Plan::compileInThreadImpl()
     if (m_mode == FTLForOSREntryMode) {
         bool result = performOSREntrypointCreation(dfg);
         if (!result) {
-            m_finalizer = std::make_unique<FailedFinalizer>(*this);
+            m_finalizer = makeUnique<FailedFinalizer>(*this);
             return FailPath;
         }
         RUN_PHASE(performCPSRethreading);
@@ -396,7 +398,7 @@ Plan::CompilationPath Plan::compileInThreadImpl()
     case FTLForOSREntryMode: {
 #if ENABLE(FTL_JIT)
         if (FTL::canCompile(dfg) == FTL::CannotCompile) {
-            m_finalizer = std::make_unique<FailedFinalizer>(*this);
+            m_finalizer = makeUnique<FailedFinalizer>(*this);
             return FailPath;
         }
         
@@ -476,10 +478,11 @@ Plan::CompilationPath Plan::compileInThreadImpl()
         RUN_PHASE(performWatchpointCollection);
         
         if (FTL::canCompile(dfg) == FTL::CannotCompile) {
-            m_finalizer = std::make_unique<FailedFinalizer>(*this);
+            m_finalizer = makeUnique<FailedFinalizer>(*this);
             return FailPath;
         }
 
+        dfg.nextPhase();
         dumpAndVerifyGraph(dfg, "Graph just before FTL lowering:", shouldDumpDisassembly(m_mode));
 
         // Flash a safepoint in case the GC wants some action.
@@ -490,9 +493,10 @@ Plan::CompilationPath Plan::compileInThreadImpl()
         if (safepointResult.didGetCancelled())
             return CancelPath;
 
+        dfg.nextPhase();
         FTL::State state(dfg);
         FTL::lowerDFGToB3(state);
-        
+
         if (UNLIKELY(computeCompileTimes()))
             m_timeBeforeFTL = MonotonicTime::now();
         

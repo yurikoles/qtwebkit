@@ -43,12 +43,17 @@ Ref<ScrollingTreeOverflowScrollingNodeIOS> ScrollingTreeOverflowScrollingNodeIOS
 
 ScrollingTreeOverflowScrollingNodeIOS::ScrollingTreeOverflowScrollingNodeIOS(WebCore::ScrollingTree& scrollingTree, WebCore::ScrollingNodeID nodeID)
     : ScrollingTreeOverflowScrollingNode(scrollingTree, nodeID)
-    , m_scrollingNodeDelegate(std::make_unique<ScrollingTreeScrollingNodeDelegateIOS>(*this))
+    , m_scrollingNodeDelegate(makeUnique<ScrollingTreeScrollingNodeDelegateIOS>(*this))
 {
 }
 
 ScrollingTreeOverflowScrollingNodeIOS::~ScrollingTreeOverflowScrollingNodeIOS()
 {
+}
+
+UIScrollView* ScrollingTreeOverflowScrollingNodeIOS::scrollView() const
+{
+    return m_scrollingNodeDelegate->scrollView();
 }
 
 void ScrollingTreeOverflowScrollingNodeIOS::commitStateBeforeChildren(const WebCore::ScrollingStateNode& stateNode)

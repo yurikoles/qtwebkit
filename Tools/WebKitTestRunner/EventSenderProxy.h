@@ -59,6 +59,7 @@ struct WTREventQueueItem;
 #endif
 
 class EventSenderProxy {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     explicit EventSenderProxy(TestController*);
     ~EventSenderProxy();

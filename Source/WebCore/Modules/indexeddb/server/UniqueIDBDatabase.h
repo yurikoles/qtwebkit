@@ -42,11 +42,6 @@
 #include <wtf/HashSet.h>
 #include <wtf/ListHashSet.h>
 
-namespace JSC {
-class ExecState;
-class VM;
-}
-
 namespace WebCore {
 
 class IDBError;
@@ -119,14 +114,9 @@ public:
     void handleDelete(IDBConnectionToClient&, const IDBRequestData&);
     void immediateCloseForUserDelete();
 
-    static JSC::VM& databaseThreadVM();
-    static JSC::ExecState& databaseThreadExecState();
-
     bool hardClosedForUserDelete() const { return m_hardClosedForUserDelete; }
 
     uint64_t spaceUsed() const;
-
-    void setQuota(uint64_t);
 
     void finishActiveTransactions();
 

@@ -2332,6 +2332,12 @@ sub GenerateDictionaryImplementationContent
             my $type = $member->type;
             AddToImplIncludesForIDLType($type);
 
+            my $conditional = $member->extendedAttributes->{Conditional};
+            if ($conditional) {
+                my $conditionalString = $codeGenerator->GenerateConditionalStringFromAttributeValue($conditional);
+                $result .= "#if ${conditionalString}\n";
+            }
+
             # 4.1. Let key be the identifier of member.
             my $key = $member->name;
             my $implementedAsKey = $member->extendedAttributes->{ImplementedAs} || $key;
@@ -2368,6 +2374,8 @@ sub GenerateDictionaryImplementationContent
             } else {
                 $result .= "    }\n";
             }
+
+            $result .= "#endif\n" if $conditional;
         }
     }
 
@@ -2398,6 +2406,12 @@ sub GenerateDictionaryImplementationContent
                 my $key = $member->name;
                 my $implementedAsKey = $member->extendedAttributes->{ImplementedAs} || $key;
                 my $valueExpression = "dictionary.${implementedAsKey}";
+
+                my $conditional = $member->extendedAttributes->{Conditional};
+                if ($conditional) {
+                    my $conditionalString = $codeGenerator->GenerateConditionalStringFromAttributeValue($conditional);
+                    $result .= "#if ${conditionalString}\n";
+                }
 
                 # 1. Let key be the identifier of member.
                 # 2. If the dictionary member named key is present in V, then:
@@ -2430,6 +2444,8 @@ sub GenerateDictionaryImplementationContent
                 if ($needsRuntimeCheck) {
                     $result .= "    }\n";
                 }
+
+                $result .= "#endif\n" if $conditional;
             }
         }
 
@@ -2638,6 +2654,11 @@ sub GenerateHeader
         $structureFlags{"JSC::OverridesGetOwnPropertySlot"} = 1;
         push(@headerContent, "    static bool getOwnPropertySlotByIndex(JSC::JSObject*, JSC::ExecState*, unsigned propertyName, JSC::PropertySlot&);\n");
         $structureFlags{"JSC::InterceptsGetOwnPropertySlotByIndexEvenWhenLengthIsNotZero"} = 1;
+    }
+
+    if ($interface->extendedAttributes->{CheckSecurity}) {
+        push(@headerContent, "    static void doPutPropertySecurityCheck(JSC::JSObject*, JSC::ExecState*, JSC::PropertyName, JSC::PutPropertySlot&);\n");
+        $structureFlags{"JSC::HasPutPropertySecurityCheck"} = 1;
     }
     
     if (InstanceOverridesGetOwnPropertyNames($interface)) {
@@ -4009,7 +4030,7 @@ sub GenerateImplementation
             my $domJITSignatureName = "DOMJITSignatureFor" . $interface->type->name . $codeGenerator->WK_ucfirst($operation->name);
             my $classInfo = "JS" . $interface->type->name . "::info()";
             my $resultType = GetResultTypeFilter($interface, $operation->type);
-            my $domJITSignatureHeader = "static const JSC::DOMJIT::Signature ${domJITSignatureName}((JSC::DOMJIT::FunctionWithoutTypeCheck)${nameOfFunctionWithoutTypeCheck},";
+            my $domJITSignatureHeader = "static const JSC::DOMJIT::Signature ${domJITSignatureName}(${nameOfFunctionWithoutTypeCheck},";
             my $domJITSignatureFooter = "$classInfo, JSC::DOMJIT::Effect::forRead(DOMJIT::AbstractHeapRepository::DOM), ${resultType}";
             foreach my $argument (@{$operation->arguments}) {
                 my $type = $argument->type;
@@ -4674,12 +4695,20 @@ sub GenerateImplementation
                 $rootString  = "    WebGLRenderingContextBase* root = WTF::getPtr(js${interfaceName}->wrapped().context());\n";
                 $rootString .= "    if (UNLIKELY(reason))\n";
                 $rootString .= "        *reason = \"Reachable from ${interfaceName}\";\n";
-            } elsif (GetGenerateIsReachable($interface) eq "ImplFrame") {
-                $rootString  = "    Frame* root = WTF::getPtr(js${interfaceName}->wrapped().frame());\n";
+            } elsif (GetGenerateIsReachable($interface) eq "ReachableFromDOMWindow") {
+                $rootString  = "    auto* root = WTF::getPtr(js${interfaceName}->wrapped().window());\n";
                 $rootString .= "    if (!root)\n";
                 $rootString .= "        return false;\n";
                 $rootString .= "    if (UNLIKELY(reason))\n";
-                $rootString .= "        *reason = \"Reachable from Frame\";\n";
+                $rootString .= "        *reason = \"Reachable from Window\";\n";
+            } elsif (GetGenerateIsReachable($interface) eq "ReachableFromNavigator") {
+                $implIncludes{"Navigator.h"} = 1;
+                $implIncludes{"WorkerNavigator.h"} = 1;
+                $rootString  = "    NavigatorBase* root = WTF::getPtr(js${interfaceName}->wrapped().navigator());\n";
+                $rootString .= "    if (!root)\n";
+                $rootString .= "        return false;\n";
+                $rootString .= "    if (UNLIKELY(reason))\n";
+                $rootString .= "        *reason = \"Reachable from Navigator\";\n";
             } elsif (GetGenerateIsReachable($interface) eq "ImplDocument") {
                 $rootString  = "    Document* root = WTF::getPtr(js${interfaceName}->wrapped().document());\n";
                 $rootString .= "    if (!root)\n";

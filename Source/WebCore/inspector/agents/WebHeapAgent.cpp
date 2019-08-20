@@ -40,7 +40,8 @@ struct GarbageCollectionData {
     Seconds endTime;
 };
 
-class SendGarbageCollectionEventsTask {
+class SendGarbageCollectionEventsTask final {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     SendGarbageCollectionEventsTask(WebHeapAgent&);
     void addGarbageCollection(GarbageCollectionData&&);
@@ -96,7 +97,7 @@ void SendGarbageCollectionEventsTask::timerFired()
 WebHeapAgent::WebHeapAgent(WebAgentContext& context)
     : InspectorHeapAgent(context)
     , m_instrumentingAgents(context.instrumentingAgents)
-    , m_sendGarbageCollectionEventsTask(std::make_unique<SendGarbageCollectionEventsTask>(*this))
+    , m_sendGarbageCollectionEventsTask(makeUnique<SendGarbageCollectionEventsTask>(*this))
 {
 }
 

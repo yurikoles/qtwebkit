@@ -82,6 +82,7 @@
 #include <wtf/RunLoop.h>
 #include <wtf/SetForScope.h>
 #include <wtf/UUID.h>
+#include <wtf/UniqueArray.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/StringConcatenateNumbers.h>
 
@@ -479,7 +480,7 @@ void TestController::initialize(int argc, const char* argv[])
     WKRetainPtr<WKStringRef> pageGroupIdentifier = adoptWK(WKStringCreateWithUTF8CString("WebKitTestRunnerPageGroup"));
     m_pageGroup.adopt(WKPageGroupCreateWithIdentifier(pageGroupIdentifier.get()));
 
-    m_eventSenderProxy = std::make_unique<EventSenderProxy>(this);
+    m_eventSenderProxy = makeUnique<EventSenderProxy>(this);
 }
 
 WKRetainPtr<WKContextConfigurationRef> TestController::generateContextConfiguration(const TestOptions::ContextOptions& options) const
@@ -521,7 +522,7 @@ WKRetainPtr<WKPageConfigurationRef> TestController::generatePageConfiguration(co
         m_context = platformAdjustContext(adoptWK(WKContextCreateWithConfiguration(contextConfiguration.get())).get(), contextConfiguration.get());
         m_contextOptions = options.contextOptions;
 
-        m_geolocationProvider = std::make_unique<GeolocationProviderMock>(m_context.get());
+        m_geolocationProvider = makeUnique<GeolocationProviderMock>(m_context.get());
 
         if (const char* dumpRenderTreeTemp = libraryPathForTesting()) {
             String temporaryFolder = String::fromUTF8(dumpRenderTreeTemp);
@@ -800,7 +801,6 @@ void TestController::resetPreferencesToConsistentValues(const TestOptions& optio
 #if ENABLE(FULLSCREEN_API)
     WKPreferencesSetFullScreenEnabled(preferences, true);
 #endif
-    WKPreferencesSetPageCacheEnabled(preferences, false);
     WKPreferencesSetAsynchronousPluginInitializationEnabled(preferences, false);
     WKPreferencesSetAsynchronousPluginInitializationEnabledForAllPlugins(preferences, false);
     WKPreferencesSetArtificialPluginInitializationDelayEnabled(preferences, false);
@@ -821,6 +821,8 @@ void TestController::resetPreferencesToConsistentValues(const TestOptions& optio
     WKPreferencesSetAllowCrossOriginSubresourcesToAskForCredentials(preferences, options.allowCrossOriginSubresourcesToAskForCredentials);
     WKPreferencesSetColorFilterEnabled(preferences, options.enableColorFilter);
     WKPreferencesSetPunchOutWhiteBackgroundsInDarkMode(preferences, options.punchOutWhiteBackgroundsInDarkMode);
+    WKPreferencesSetPageCacheEnabled(preferences, options.enablePageCache);
+    WKPreferencesSetLazyImageLoadingEnabled(preferences, options.enableLazyImageLoading);
 
     static WKStringRef defaultTextEncoding = WKStringCreateWithUTF8CString("ISO-8859-1");
     WKPreferencesSetDefaultTextEncodingName(preferences, defaultTextEncoding);
@@ -940,8 +942,8 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
     auto websiteDataStore = WKContextGetWebsiteDataStore(TestController::singleton().context());
     WKWebsiteDataStoreClearAllDeviceOrientationPermissions(websiteDataStore);
 
-    ClearIndexedDatabases();
-    setIDBPerOriginQuota(50 * MB);
+    clearIndexedDatabases();
+    clearLocalStorage();
 
     clearServiceWorkerRegistrations();
     clearDOMCaches();
@@ -953,7 +955,7 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
     // FIXME: This function should also ensure that there is only one page open.
 
     // Reset the EventSender for each test.
-    m_eventSenderProxy = std::make_unique<EventSenderProxy>(this);
+    m_eventSenderProxy = makeUnique<EventSenderProxy>(this);
 
     // FIXME: Is this needed? Nothing in TestController changes preferences during tests, and if there is
     // some other code doing this, it should probably be responsible for cleanup too.
@@ -1234,13 +1236,13 @@ static WKURLRef createTestURL(const char* pathOrURL)
     const char* filePrefix = "file://";
     static const size_t prefixLength = strlen(filePrefix);
 
-    std::unique_ptr<char[]> buffer;
+    UniqueArray<char> buffer;
     if (isAbsolutePath) {
-        buffer = std::make_unique<char[]>(prefixLength + length + 1);
+        buffer = makeUniqueArray<char>(prefixLength + length + 1);
         strcpy(buffer.get(), filePrefix);
         strcpy(buffer.get() + prefixLength, pathOrURL);
     } else {
-        buffer = std::make_unique<char[]>(prefixLength + PATH_MAX + length + 2); // 1 for the pathSeparator
+        buffer = makeUniqueArray<char>(prefixLength + PATH_MAX + length + 2); // 1 for the pathSeparator
         strcpy(buffer.get(), filePrefix);
         if (!getcwd(buffer.get() + prefixLength, PATH_MAX))
             return 0;
@@ -1401,6 +1403,10 @@ static void updateTestOptionsFromTestHeader(TestOptions& testOptions, const std:
             testOptions.contentMode = { value.c_str() };
         else if (key == "enableAppNap")
             testOptions.enableAppNap = parseBooleanTestHeaderValue(value);
+        else if (key == "enablePageCache")
+            testOptions.enablePageCache = parseBooleanTestHeaderValue(value);
+        else if (key == "enableLazyImageLoading")
+            testOptions.enableLazyImageLoading = parseBooleanTestHeaderValue(value);
         pairStart = pairEnd + 1;
     }
 }
@@ -1646,7 +1652,7 @@ bool TestController::runTest(const char* inputLine)
     TestOptions options = testOptionsForTest(command);
 
     WKRetainPtr<WKURLRef> wkURL = adoptWK(createTestURL(command.pathOrURL.c_str()));
-    m_currentInvocation = std::make_unique<TestInvocation>(wkURL.get(), options);
+    m_currentInvocation = makeUnique<TestInvocation>(wkURL.get(), options);
 
     if (command.shouldDumpPixels || m_shouldDumpPixelsForAllTests)
         m_currentInvocation->setIsPixelTest(command.expectedPixelHash);
@@ -2958,7 +2964,7 @@ void TestController::platformWillRunTest(const TestInvocation&)
 
 void TestController::platformCreateWebView(WKPageConfigurationRef configuration, const TestOptions& options)
 {
-    m_mainWebView = std::make_unique<PlatformWebView>(configuration, options);
+    m_mainWebView = makeUnique<PlatformWebView>(configuration, options);
 }
 
 PlatformWebView* TestController::platformCreateOtherPage(PlatformWebView* parentView, WKPageConfigurationRef configuration, const TestOptions& options)
@@ -3061,13 +3067,8 @@ void TestController::clearDOMCaches()
     runUntil(context.done, noTimeout);
 }
 
-void TestController::setIDBPerOriginQuota(uint64_t quota)
-{
-    WKContextSetIDBPerOriginQuota(platformContext(), quota);
-}
-
-struct RemoveAllIndexedDatabasesCallbackContext {
-    explicit RemoveAllIndexedDatabasesCallbackContext(TestController& controller)
+struct StorageVoidCallbackContext {
+    explicit StorageVoidCallbackContext(TestController& controller)
         : testController(controller)
     {
     }
@@ -3076,18 +3077,37 @@ struct RemoveAllIndexedDatabasesCallbackContext {
     bool done { false };
 };
 
-static void RemoveAllIndexedDatabasesCallback(void* userData)
+static void StorageVoidCallback(void* userData)
 {
-    auto* context = static_cast<RemoveAllIndexedDatabasesCallbackContext*>(userData);
+    auto* context = static_cast<StorageVoidCallbackContext*>(userData);
     context->done = true;
     context->testController.notifyDone();
 }
 
-void TestController::ClearIndexedDatabases()
+void TestController::clearIndexedDatabases()
 {
     auto websiteDataStore = WKContextGetWebsiteDataStore(platformContext());
-    RemoveAllIndexedDatabasesCallbackContext context(*this);
-    WKWebsiteDataStoreRemoveAllIndexedDatabases(websiteDataStore, &context, RemoveAllIndexedDatabasesCallback);
+    StorageVoidCallbackContext context(*this);
+    WKWebsiteDataStoreRemoveAllIndexedDatabases(websiteDataStore, &context, StorageVoidCallback);
+    runUntil(context.done, noTimeout);
+}
+
+void TestController::clearLocalStorage()
+{
+    auto websiteDataStore = WKContextGetWebsiteDataStore(platformContext());
+    StorageVoidCallbackContext context(*this);
+    WKWebsiteDataStoreRemoveLocalStorage(websiteDataStore, &context, StorageVoidCallback);
+    runUntil(context.done, noTimeout);
+
+    StorageVoidCallbackContext legacyContext(*this);
+    WKContextClearLegacyPrivateBrowsingLocalStorage(platformContext(), &legacyContext, StorageVoidCallback);
+    runUntil(legacyContext.done, noTimeout);
+}
+
+void TestController::syncLocalStorage()
+{
+    StorageVoidCallbackContext context(*this);
+    WKContextSyncLocalStorage(platformContext(), &context, StorageVoidCallback);
     runUntil(context.done, noTimeout);
 }
 
@@ -3512,6 +3532,15 @@ void TestController::setStatisticsCacheMaxAgeCap(double seconds)
     ResourceStatisticsCallbackContext context(*this);
     WKWebsiteDataStoreSetStatisticsCacheMaxAgeCap(dataStore, seconds, &context, resourceStatisticsVoidResultCallback);
     runUntil(context.done, noTimeout);
+}
+
+bool TestController::hasStatisticsIsolatedSession(WKStringRef host)
+{
+    auto* dataStore = WKContextGetWebsiteDataStore(platformContext());
+    ResourceStatisticsCallbackContext context(*this);
+    WKWebsiteDataStoreStatisticsHasIsolatedSession(dataStore, host, &context, resourceStatisticsBooleanResultCallback);
+    runUntil(context.done, noTimeout);
+    return context.result;
 }
 
 void TestController::statisticsResetToConsistentState()

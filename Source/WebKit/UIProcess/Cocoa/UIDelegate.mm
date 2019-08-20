@@ -78,13 +78,13 @@ UIDelegate::~UIDelegate()
 #if ENABLE(CONTEXT_MENUS)
 std::unique_ptr<API::ContextMenuClient> UIDelegate::createContextMenuClient()
 {
-    return std::make_unique<ContextMenuClient>(*this);
+    return makeUnique<ContextMenuClient>(*this);
 }
 #endif
 
 std::unique_ptr<API::UIClient> UIDelegate::createUIClient()
 {
-    return std::make_unique<UIClient>(*this);
+    return makeUnique<UIClient>(*this);
 }
 
 RetainPtr<id <WKUIDelegate> > UIDelegate::delegate()
@@ -1032,7 +1032,7 @@ void UIDelegate::UIClient::checkUserMediaPermissionForOrigin(WebPageProxy& page,
     URL requestFrameURL { URL(), frame.url() };
     URL mainFrameURL { URL(), mainFrame->url() };
 
-    [(id <WKUIDelegatePrivate>)delegate _webView:m_uiDelegate.m_webView checkUserMediaPermissionForURL:requestFrameURL mainFrameURL:mainFrameURL frameIdentifier:frame.frameID() decisionHandler:decisionHandler.get()];
+    [(id <WKUIDelegatePrivate>)delegate _webView:m_uiDelegate.m_webView checkUserMediaPermissionForURL:requestFrameURL mainFrameURL:mainFrameURL frameIdentifier:frame.frameID().toUInt64() decisionHandler:decisionHandler.get()];
 }
 
 void UIDelegate::UIClient::mediaCaptureStateDidChange(WebCore::MediaProducer::MediaStateFlags state)

@@ -147,7 +147,7 @@
 struct MemoryFootprint {
     uint64_t current;
     uint64_t peak;
-    
+
     static MemoryFootprint now()
     {
         return { 0L, 0L };
@@ -2348,7 +2348,7 @@ EncodedJSValue JSC_HOST_CALL functionAsyncTestStart(ExecState* exec)
 
     JSValue numberOfAsyncPasses = exec->argument(0);
     if (!numberOfAsyncPasses.isUInt32())
-        return throwVMError(exec, scope, "Expected first argument to a uint32"_s);
+        return throwVMError(exec, scope, "Expected first argument to be a uint32"_s);
 
     asyncTestExpectedPasses += numberOfAsyncPasses.asUInt32();
     return encodedJSUndefined();
@@ -2971,7 +2971,7 @@ int runJSC(const CommandLine& options, bool isWorker, const Func& func)
         JSLockHolder locker(vm);
 
         if (options.m_profile && !vm.m_perBytecodeProfiler)
-            vm.m_perBytecodeProfiler = std::make_unique<Profiler::Database>(vm);
+            vm.m_perBytecodeProfiler = makeUnique<Profiler::Database>(vm);
 
         globalObject = GlobalObject::create(vm, GlobalObject::createStructure(vm, jsNull()), options.m_arguments);
         globalObject->setRemoteDebuggingEnabled(options.m_enableRemoteDebugging);
@@ -3058,6 +3058,8 @@ int jscmain(int argc, char** argv)
     // Need to override and enable restricted options before we start parsing options below.
     Options::enableRestrictedOptions(true);
 
+    WTF::initializeMainThread();
+
     // Note that the options parsing can affect VM creation, and thus
     // comes first.
     CommandLine options(argc, argv);
@@ -3065,7 +3067,6 @@ int jscmain(int argc, char** argv)
     processConfigFile(Options::configFile(), "jsc");
 
     // Initialize JSC before getting VM.
-    WTF::initializeMainThread();
     JSC::initializeThreading();
     startTimeoutThreadIfNeeded();
 #if ENABLE(WEBASSEMBLY)

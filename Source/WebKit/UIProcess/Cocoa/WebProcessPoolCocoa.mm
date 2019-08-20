@@ -135,7 +135,7 @@ void WebProcessPool::platformInitialize()
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"WebKitSuppressMemoryPressureHandler"])
         installMemoryPressureHandler();
 
-    setLegacyCustomProtocolManagerClient(std::make_unique<LegacyCustomProtocolManagerClient>());
+    setLegacyCustomProtocolManagerClient(makeUnique<LegacyCustomProtocolManagerClient>());
 }
 
 #if PLATFORM(IOS_FAMILY)
@@ -514,7 +514,7 @@ void WebProcessPool::startDisplayLink(IPC::Connection& connection, unsigned obse
             return;
         }
     }
-    auto displayLink = std::make_unique<DisplayLink>(displayID);
+    auto displayLink = makeUnique<DisplayLink>(displayID);
     displayLink->addObserver(connection, observerID);
     m_displayLinks.append(WTFMove(displayLink));
 }
@@ -546,6 +546,17 @@ void WebProcessPool::setStorageAccessAPIEnabled(bool enabled)
 {
     m_storageAccessAPIEnabled = enabled;
     sendToNetworkingProcess(Messages::NetworkProcess::SetStorageAccessAPIEnabled(enabled));
+}
+
+void WebProcessPool::clearPermanentCredentialsForProtectionSpace(WebCore::ProtectionSpace&& protectionSpace)
+{
+    auto sharedStorage = [NSURLCredentialStorage sharedCredentialStorage];
+    auto credentials = [sharedStorage credentialsForProtectionSpace:protectionSpace.nsSpace()];
+    for (NSString* user in credentials) {
+        auto credential = credentials[user];
+        if (credential.persistence == NSURLCredentialPersistencePermanent)
+            [sharedStorage removeCredential:credentials[user] forProtectionSpace:protectionSpace.nsSpace()];
+    }
 }
 
 int networkProcessLatencyQOS()

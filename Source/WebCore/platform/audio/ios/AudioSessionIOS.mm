@@ -59,6 +59,7 @@ static const char* categoryName(AudioSession::CategoryType category)
 #endif
 
 class AudioSessionPrivate {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     AudioSessionPrivate(AudioSession*);
     AudioSession::CategoryType m_categoryOverride;
@@ -71,7 +72,7 @@ AudioSessionPrivate::AudioSessionPrivate(AudioSession*)
 }
 
 AudioSession::AudioSession()
-    : m_private(std::make_unique<AudioSessionPrivate>(this))
+    : m_private(makeUnique<AudioSessionPrivate>(this))
 {
 }
 

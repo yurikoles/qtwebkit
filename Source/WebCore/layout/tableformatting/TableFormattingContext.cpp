@@ -44,6 +44,147 @@ TableFormattingContext::TableFormattingContext(const Box& formattingContextRoot,
 
 void TableFormattingContext::layout() const
 {
+    // https://www.w3.org/TR/css-tables-3/#table-layout-algorithm
+    // To layout a table, user agents must apply the following actions:
+
+    // 1. Ensure each cell slot is occupied by at least one cell.
+    ensureTableGrid();
+    // 2. Compute the minimum width of each column.
+    computePreferredWidthForColumns();
+    // 3. Compute the width of the table.
+    computeTableWidth();
+    // 4. Compute the height of the table.
+    computeTableHeight();
+    // 5. Distribute the height of the table among rows.
+    distributeAvailableHeight();
+}
+
+FormattingContext::IntrinsicWidthConstraints TableFormattingContext::computedIntrinsicWidthConstraints() const
+{
+    return { };
+}
+
+void TableFormattingContext::ensureTableGrid() const
+{
+    auto& tableWrapperBox = downcast<Container>(root());
+    auto& tableGrid = formattingState().tableGrid();
+
+    for (auto* section = tableWrapperBox.firstChild(); section; section = section->nextSibling()) {
+        ASSERT(section->isTableHeader() || section->isTableBody() || section->isTableFooter());
+        for (auto* row = downcast<Container>(*section).firstChild(); row; row = row->nextSibling()) {
+            ASSERT(row->isTableRow());
+            for (auto* cell = downcast<Container>(*row).firstChild(); cell; cell = cell->nextSibling()) {
+                ASSERT(cell->isTableCell());
+                tableGrid.appendCell(*cell);
+            }
+        }
+    }
+}
+
+void TableFormattingContext::computePreferredWidthForColumns() const
+{
+    auto& formattingState = this->formattingState();
+    auto& grid = formattingState.tableGrid();
+
+    // 1. Calculate the minimum content width (MCW) of each cell: the formatted content may span any number of lines but may not overflow the cell box.
+    //    If the specified 'width' (W) of the cell is greater than MCW, W is the minimum cell width. A value of 'auto' means that MCW is the minimum cell width.
+    //    Also, calculate the "maximum" cell width of each cell: formatting the content without breaking lines other than where explicit line breaks occur.
+    for (auto& cell : grid.cells()) {
+        ASSERT(cell->tableCellBox.establishesFormattingContext());
+
+        auto intrinsicWidth = layoutState().createFormattingContext(cell->tableCellBox)->computedIntrinsicWidthConstraints();
+        intrinsicWidth = Geometry::constrainByMinMaxWidth(cell->tableCellBox, intrinsicWidth);
+        formattingState.setIntrinsicWidthConstraints(intrinsicWidth);
+
+        auto columnSpan = cell->size.width();
+        auto slotIntrinsicWidth = FormattingContext::IntrinsicWidthConstraints { intrinsicWidth.minimum / columnSpan, intrinsicWidth.maximum / columnSpan };
+        auto initialPosition = cell->position;
+        for (auto i = 0; i < columnSpan; ++i)
+            grid.slot({ initialPosition.x() + i, initialPosition.y() })->widthConstraints = slotIntrinsicWidth;
+    }
+    // 2. For each column, determine a maximum and minimum column width from the cells that span only that column.
+    //    The minimum is that required by the cell with the largest minimum cell width (or the column 'width', whichever is larger).
+    //    The maximum is that required by the cell with the largest maximum cell width (or the column 'width', whichever is larger).
+    auto& columns = grid.columnsContext().columns();
+    int numberOfRows = grid.rows().size();
+    int numberOfColumns = columns.size();
+    for (int columnIndex = 0; columnIndex < numberOfColumns; ++columnIndex) {
+        auto columnIntrinsicWidths = FormattingContext::IntrinsicWidthConstraints { };
+        for (int rowIndex = 0; rowIndex < numberOfRows; ++rowIndex) {
+            auto* slot = grid.slot({ columnIndex, rowIndex });
+            columnIntrinsicWidths.minimum = std::max(slot->widthConstraints.minimum, columnIntrinsicWidths.minimum);
+            columnIntrinsicWidths.maximum = std::max(slot->widthConstraints.maximum, columnIntrinsicWidths.maximum);
+        }
+        columns[columnIndex].setWidthConstraints(columnIntrinsicWidths);
+    }
+    // FIXME: Take column group elements into account.
+}
+
+void TableFormattingContext::computeTableWidth() const
+{
+    // Column and caption widths influence the final table width as follows:
+    // If the 'table' or 'inline-table' element's 'width' property has a computed value (W) other than 'auto', the used width is the greater of
+    // W, CAPMIN, and the minimum width required by all the columns plus cell spacing or borders (MIN).
+    // If the used width is greater than MIN, the extra width should be distributed over the columns.
+    // If the 'table' or 'inline-table' element has 'width: auto', the used width is the greater of the table's containing block width,
+    // CAPMIN, and MIN. However, if either CAPMIN or the maximum width required by the columns plus cell spacing or borders (MAX) is
+    // less than that of the containing block, use max(MAX, CAPMIN).
+
+    // FIXME: This kind of code usually lives in *FormattingContextGeometry class.
+    auto& tableWrapperBox = root();
+    auto& style = tableWrapperBox.style();
+    auto& containingBlock = *tableWrapperBox.containingBlock();
+    auto& containingBlockDisplayBox = layoutState().displayBoxForLayoutBox(containingBlock);
+    auto containingBlockWidth = containingBlockDisplayBox.contentBoxWidth();
+
+    auto& grid = formattingState().tableGrid();
+    auto& columnsContext = grid.columnsContext();
+    auto tableWidthConstraints = grid.widthConstraints();
+
+    auto width = Geometry::computedValueIfNotAuto(style.width(), containingBlockWidth);
+    LayoutUnit usedWidth;
+    if (width) {
+        if (*width > tableWidthConstraints.minimum) {
+            distributeAvailableWidth(*width - tableWidthConstraints.minimum);
+            usedWidth = *width;
+        } else {
+            usedWidth = tableWidthConstraints.minimum;
+            columnsContext.useAsLogicalWidth(TableGrid::ColumnsContext::WidthConstraintsType::Minimum);
+        }
+    } else {
+        if (tableWidthConstraints.minimum > containingBlockWidth) {
+            usedWidth = tableWidthConstraints.minimum;
+            columnsContext.useAsLogicalWidth(TableGrid::ColumnsContext::WidthConstraintsType::Minimum);
+        } else if (tableWidthConstraints.maximum < containingBlockWidth) {
+            usedWidth = tableWidthConstraints.maximum;
+            columnsContext.useAsLogicalWidth(TableGrid::ColumnsContext::WidthConstraintsType::Maximum);
+        } else {
+            usedWidth = containingBlockWidth;
+            distributeAvailableWidth(*width - tableWidthConstraints.minimum);
+        }
+    }
+
+    auto& tableDisplayBox = layoutState().displayBoxForLayoutBox(tableWrapperBox);
+    tableDisplayBox.setContentBoxWidth(usedWidth);
+}
+
+void TableFormattingContext::distributeAvailableWidth(LayoutUnit extraHorizontalSpace) const
+{
+    // FIXME: Right now just distribute the extra space equaly among the columns.
+    auto& columns = formattingState().tableGrid().columnsContext().columns();
+    ASSERT(!columns.isEmpty());
+
+    auto columnExtraSpace = extraHorizontalSpace / columns.size();
+    for (auto& column : columns)
+        column.setLogicalWidth(column.widthConstraints().minimum + columnExtraSpace);
+}
+
+void TableFormattingContext::computeTableHeight() const
+{
+}
+
+void TableFormattingContext::distributeAvailableHeight() const
+{
 }
 
 }

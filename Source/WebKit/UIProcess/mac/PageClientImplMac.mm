@@ -108,7 +108,7 @@ PageClientImpl::PageClientImpl(NSView* view, WKWebView *webView)
     : PageClientImplCocoa(webView)
     , m_view(view)
 #if USE(DICTATION_ALTERNATIVES)
-    , m_alternativeTextUIController(std::make_unique<AlternativeTextUIController>())
+    , m_alternativeTextUIController(makeUnique<AlternativeTextUIController>())
 #endif
 {
 }
@@ -289,6 +289,7 @@ void PageClientImpl::didCommitLoadForMainFrame(const String& mimeType, bool useC
 {
     m_impl->updateSupportsArbitraryLayoutModes();
     m_impl->dismissContentRelativeChildWindowsWithAnimation(true);
+    m_impl->clearPromisedDragImage();
 }
 
 void PageClientImpl::didFinishLoadingDataForCustomContentProvider(const String& suggestedFilename, const IPC::DataReference& dataReference)

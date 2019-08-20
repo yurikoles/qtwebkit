@@ -310,7 +310,6 @@ public:
     void setAllowsAnySSLCertificateForWebSocket(bool);
 
     void clearCachedCredentials();
-    void clearPermanentCredentialsForProtectionSpace(WebCore::ProtectionSpace&&, CompletionHandler<void()>&&);
     void terminateNetworkProcess();
     void sendNetworkProcessWillSuspendImminentlyForTesting();
     void sendNetworkProcessDidResume();
@@ -318,8 +317,8 @@ public:
     void disableServiceWorkerProcessTerminationDelay();
 
     void syncNetworkProcessCookies();
-
-    void setIDBPerOriginQuota(uint64_t);
+    void syncLocalStorage(CompletionHandler<void()>&& callback);
+    void clearLegacyPrivateBrowsingLocalStorage(CompletionHandler<void()>&& callback);
 
     void setShouldMakeNextWebProcessLaunchFailForTesting(bool value) { m_shouldMakeNextWebProcessLaunchFailForTesting = value; }
     bool shouldMakeNextWebProcessLaunchFailForTesting() const { return m_shouldMakeNextWebProcessLaunchFailForTesting; }
@@ -468,6 +467,8 @@ public:
     void setCookieStoragePartitioningEnabled(bool);
     bool storageAccessAPIEnabled() const { return m_storageAccessAPIEnabled; }
     void setStorageAccessAPIEnabled(bool);
+
+    void clearPermanentCredentialsForProtectionSpace(WebCore::ProtectionSpace&&);
 #endif
 
 #if ENABLE(SERVICE_WORKER)

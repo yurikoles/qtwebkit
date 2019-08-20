@@ -300,6 +300,7 @@ void WebPageProxy::dynamicViewportSizeUpdate(const FloatSize& viewLayoutSize, co
 
     hideValidationMessage();
 
+    m_viewportConfigurationViewLayoutSize = viewLayoutSize;
     m_process->send(Messages::WebPage::DynamicViewportSizeUpdate(viewLayoutSize,
         maximumUnobscuredSize, targetExposedContentRect, targetUnobscuredRect,
         targetUnobscuredRectInScrollViewCoordinates, unobscuredSafeAreaInsets,
@@ -905,12 +906,13 @@ void WebPageProxy::setIsShowingInputViewForFocusedElement(bool showingInputView)
 
 void WebPageProxy::elementDidFocus(const FocusedElementInformation& information, bool userIsInteracting, bool blurPreviousNode, OptionSet<WebCore::ActivityState::Flag> activityStateChanges, const UserData& userData)
 {
+    m_pendingInputModeChange = WTF::nullopt;
     m_waitingForPostLayoutEditorStateUpdateAfterFocusingElement = true;
 
     API::Object* userDataObject = process().transformHandlesToObjects(userData.object()).get();
     if (m_editorState.isMissingPostLayoutData) {
         // FIXME: We should try to eliminate m_deferredElementDidFocusArguments altogether, in favor of only deferring actions that are dependent on post-layout editor state information.
-        m_deferredElementDidFocusArguments = std::make_unique<ElementDidFocusArguments>(ElementDidFocusArguments { information, userIsInteracting, blurPreviousNode, activityStateChanges, userDataObject });
+        m_deferredElementDidFocusArguments = makeUnique<ElementDidFocusArguments>(ElementDidFocusArguments { information, userIsInteracting, blurPreviousNode, activityStateChanges, userDataObject });
         return;
     }
 
@@ -919,6 +921,7 @@ void WebPageProxy::elementDidFocus(const FocusedElementInformation& information,
 
 void WebPageProxy::elementDidBlur()
 {
+    m_pendingInputModeChange = WTF::nullopt;
     m_waitingForPostLayoutEditorStateUpdateAfterFocusingElement = false;
     m_deferredElementDidFocusArguments = nullptr;
     pageClient().elementDidBlur();
@@ -926,7 +929,23 @@ void WebPageProxy::elementDidBlur()
 
 void WebPageProxy::focusedElementDidChangeInputMode(WebCore::InputMode mode)
 {
+#if ENABLE(TOUCH_EVENTS)
+    if (m_touchAndPointerEventTracking.isTrackingAnything()) {
+        m_pendingInputModeChange = mode;
+        return;
+    }
+#endif
+
     pageClient().focusedElementDidChangeInputMode(mode);
+}
+
+void WebPageProxy::didReleaseAllTouchPoints()
+{
+    if (!m_pendingInputModeChange)
+        return;
+
+    pageClient().focusedElementDidChangeInputMode(*m_pendingInputModeChange);
+    m_pendingInputModeChange = WTF::nullopt;
 }
 
 void WebPageProxy::autofillLoginCredentials(const String& username, const String& password)
@@ -1047,7 +1066,7 @@ void WebPageProxy::handleSmartMagnificationInformationForPotentialTap(uint64_t r
     pageClient().handleSmartMagnificationInformationForPotentialTap(requestID, renderRect, fitEntireRect, viewportMinimumScale, viewportMaximumScale);
 }
 
-uint32_t WebPageProxy::computePagesForPrintingAndDrawToPDF(uint64_t frameID, const PrintInfo& printInfo, DrawToPDFCallback::CallbackFunction&& callback)
+uint32_t WebPageProxy::computePagesForPrintingAndDrawToPDF(FrameIdentifier frameID, const PrintInfo& printInfo, DrawToPDFCallback::CallbackFunction&& callback)
 {
     if (!hasRunningProcess()) {
         callback(IPC::DataReference(), CallbackBase::Error::OwnerWasInvalidated);
@@ -1239,7 +1258,7 @@ void WebPageProxy::didRequestPasswordForQuickLookDocumentInMainFrameShared(Ref<W
 
 std::unique_ptr<PaymentAuthorizationPresenter> WebPageProxy::paymentCoordinatorAuthorizationPresenter(WebPaymentCoordinatorProxy& paymentCoordinatorProxy, PKPaymentRequest *paymentRequest)
 {
-    return std::make_unique<PaymentAuthorizationViewController>(paymentCoordinatorProxy, paymentRequest);
+    return makeUnique<PaymentAuthorizationViewController>(paymentCoordinatorProxy, paymentRequest);
 }
 
 UIViewController *WebPageProxy::paymentCoordinatorPresentingViewController(const WebPaymentCoordinatorProxy&)
@@ -1402,14 +1421,16 @@ WebContentMode WebPageProxy::effectiveContentModeAfterAdjustingPolicies(API::Web
 
     m_allowsFastClicksEverywhere = false;
 
-    if (!useDesktopBrowsingMode)
+    if (!useDesktopBrowsingMode) {
+        policies.setAllowContentChangeObserverQuirk(true);
         return WebContentMode::Mobile;
+    }
 
     if (policies.customUserAgent().isEmpty() && customUserAgent().isEmpty()) {
         auto applicationName = policies.applicationNameForDesktopUserAgent();
         if (applicationName.isEmpty())
             applicationName = applicationNameForDesktopUserAgent();
-        policies.setCustomUserAgent(standardUserAgentWithApplicationName(applicationName, UserAgentType::Desktop));
+        policies.setCustomUserAgent(standardUserAgentWithApplicationName(applicationName, emptyString(), UserAgentType::Desktop));
     }
 
     if (policies.customNavigatorPlatform().isEmpty()) {

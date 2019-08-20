@@ -106,7 +106,7 @@ void JIT::emitEnterOptimizationCheck()
 
     callOperation(operationOptimize, m_bytecodeOffset);
     skipOptimize.append(branchTestPtr(Zero, returnValueGPR));
-    jump(returnValueGPR, GPRInfo::callFrameRegister);
+    farJump(returnValueGPR, GPRInfo::callFrameRegister);
     skipOptimize.link(this);
 }
 #endif
@@ -364,6 +364,8 @@ void JIT::privateCompileMainPass()
         DEFINE_OP(op_jfalse)
         DEFINE_OP(op_jmp)
         DEFINE_OP(op_jneq_null)
+        DEFINE_OP(op_jundefined_or_null)
+        DEFINE_OP(op_jnundefined_or_null)
         DEFINE_OP(op_jneq_ptr)
         DEFINE_OP(op_jless)
         DEFINE_OP(op_jlesseq)
@@ -652,7 +654,7 @@ void JIT::compileWithoutLinking(JITCompilationEffort effort)
     }
 
     if (UNLIKELY(Options::dumpDisassembly() || (m_vm->m_perBytecodeProfiler && Options::disassembleBaselineForProfiler())))
-        m_disassembler = std::make_unique<JITDisassembler>(m_codeBlock);
+        m_disassembler = makeUnique<JITDisassembler>(m_codeBlock);
     if (UNLIKELY(m_vm->m_perBytecodeProfiler)) {
         m_compilation = adoptRef(
             new Profiler::Compilation(
@@ -899,7 +901,7 @@ CompilationResult JIT::link()
     }
 
     if (m_pcToCodeOriginMapBuilder.didBuildMapping())
-        m_codeBlock->setPCToCodeOriginMap(std::make_unique<PCToCodeOriginMap>(WTFMove(m_pcToCodeOriginMapBuilder), patchBuffer));
+        m_codeBlock->setPCToCodeOriginMap(makeUnique<PCToCodeOriginMap>(WTFMove(m_pcToCodeOriginMapBuilder), patchBuffer));
     
     CodeRef<JSEntryPtrTag> result = FINALIZE_CODE(
         patchBuffer, JSEntryPtrTag,

@@ -83,7 +83,7 @@ TestInvocation::TestInvocation(WKURLRef url, const TestOptions& options)
     m_urlString = String(urlVector.data(), stringLength);
 
     // FIXME: Avoid mutating the setting via a test directory like this.
-    m_dumpFrameLoadCallbacks = urlContains("loading/");
+    m_dumpFrameLoadCallbacks = urlContains("loading/") && !urlContains("://localhost");
 }
 
 TestInvocation::~TestInvocation()
@@ -1462,6 +1462,15 @@ WKRetainPtr<WKTypeRef> TestInvocation::didReceiveSynchronousMessageFromInjectedB
         return nullptr;
     }
 
+    if (WKStringIsEqualToUTF8CString(messageName, "HasStatisticsIsolatedSession")) {
+        ASSERT(WKGetTypeID(messageBody) == WKStringGetTypeID());
+        
+        WKStringRef hostName = static_cast<WKStringRef>(messageBody);
+        bool hasIsolatedSession = TestController::singleton().hasStatisticsIsolatedSession(hostName);
+        auto result = adoptWK(WKBooleanCreate(hasIsolatedSession));
+        return result;
+    }
+    
     if (WKStringIsEqualToUTF8CString(messageName, "RemoveAllSessionCredentials")) {
         TestController::singleton().removeAllSessionCredentials();
         return nullptr;
@@ -1502,13 +1511,6 @@ WKRetainPtr<WKTypeRef> TestInvocation::didReceiveSynchronousMessageFromInjectedB
         ASSERT(WKGetTypeID(messageBody) == WKBooleanGetTypeID());
         auto canIncrease = WKBooleanGetValue(static_cast<WKBooleanRef>(messageBody));
         TestController::singleton().setAllowStorageQuotaIncrease(canIncrease);
-        return nullptr;
-    }
-
-    if (WKStringIsEqualToUTF8CString(messageName, "SetIDBPerOriginQuota")) {
-        ASSERT(WKGetTypeID(messageBody) == WKUInt64GetTypeID());
-        WKUInt64Ref quota = static_cast<WKUInt64Ref>(messageBody);
-        TestController::singleton().setIDBPerOriginQuota(WKUInt64GetValue(quota));
         return nullptr;
     }
 
@@ -1657,6 +1659,11 @@ WKRetainPtr<WKTypeRef> TestInvocation::didReceiveSynchronousMessageFromInjectedB
         return nullptr;
     }
 
+    if (WKStringIsEqualToUTF8CString(messageName, "SyncLocalStorage")) {
+        TestController::singleton().syncLocalStorage();
+        return nullptr;
+    }
+
     ASSERT_NOT_REACHED();
     return nullptr;
 }
@@ -1676,7 +1683,7 @@ void TestInvocation::runUISideScript(WKStringRef script, unsigned scriptCallback
     m_pendingUIScriptInvocationData = nullptr;
 
     if (!m_UIScriptContext)
-        m_UIScriptContext = std::make_unique<UIScriptContext>(*this);
+        m_UIScriptContext = makeUnique<UIScriptContext>(*this);
     
     m_UIScriptContext->runUIScript(toWTFString(script), scriptCallbackID);
 }

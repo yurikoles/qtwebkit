@@ -88,12 +88,15 @@ class InspectorTimelineAgent final
     WTF_MAKE_NONCOPYABLE(InspectorTimelineAgent);
     WTF_MAKE_FAST_ALLOCATED;
 public:
-    InspectorTimelineAgent(WebAgentContext&);
+    InspectorTimelineAgent(PageAgentContext&);
     virtual ~InspectorTimelineAgent();
 
     void didCreateFrontendAndBackend(Inspector::FrontendRouter*, Inspector::BackendDispatcher*) final;
     void willDestroyFrontendAndBackend(Inspector::DisconnectReason) final;
 
+    // TimelineBackendDispatcherHandler
+    void enable(ErrorString&) final;
+    void disable(ErrorString&) final;
     void start(ErrorString&, const int* maxCallStackDepth = nullptr) final;
     void stop(ErrorString&) final;
     void setAutoCaptureEnabled(ErrorString&, bool) final;
@@ -141,12 +144,13 @@ public:
     void mainFrameNavigated();
 
 private:
-    // ScriptDebugListener
+    // JSC::ScriptDebugListener
     void didParseSource(JSC::SourceID, const Script&) final { }
     void failedToParseSource(const String&, const String&, int, int, const String&) final { }
+    void willRunMicrotask() final { }
+    void didRunMicrotask() final { }
     void didPause(JSC::ExecState&, JSC::JSValue, JSC::JSValue) final { }
     void didContinue() final { }
-
     void breakpointActionLog(JSC::ExecState&, const String&) final { }
     void breakpointActionSound(int) final { }
     void breakpointActionProbe(JSC::ExecState&, const Inspector::ScriptBreakpointAction&, unsigned batchId, unsigned sampleId, JSC::JSValue result) final;
@@ -206,6 +210,7 @@ private:
 
     std::unique_ptr<Inspector::TimelineFrontendDispatcher> m_frontendDispatcher;
     RefPtr<Inspector::TimelineBackendDispatcher> m_backendDispatcher;
+    Page& m_inspectedPage;
 
     Vector<TimelineRecordEntry> m_recordStack;
     Vector<TimelineRecordEntry> m_pendingConsoleProfileRecords;
@@ -213,8 +218,8 @@ private:
     int m_id { 1 };
     int m_maxCallStackDepth { 5 };
 
-    bool m_enabled { false };
-    bool m_enabledFromFrontend { false };
+    bool m_tracking { false };
+    bool m_trackingFromFrontend { false };
     bool m_programmaticCaptureRestoreBreakpointActiveValue { false };
 
     bool m_autoCaptureEnabled { false };

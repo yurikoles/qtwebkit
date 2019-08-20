@@ -294,7 +294,7 @@ static void applyWorkaroundToAllowWritingAttributedStringsToItemProviders()
     static std::unique_ptr<ClassMethodSwizzler> swizzler;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        swizzler = std::make_unique<ClassMethodSwizzler>(NSAttributedString.class, @selector(writableTypeIdentifiersForItemProvider), reinterpret_cast<IMP>(writableTypeIdentifiersForItemProviderWithoutPublicRTFD));
+        swizzler = makeUnique<ClassMethodSwizzler>(NSAttributedString.class, @selector(writableTypeIdentifiersForItemProvider), reinterpret_cast<IMP>(writableTypeIdentifiersForItemProviderWithoutPublicRTFD));
     });
 }
 
@@ -347,7 +347,7 @@ static UICalloutBar *suppressUICalloutBar()
 
 #if PLATFORM(IOS_FAMILY)
     // FIXME: Remove this workaround once <https://webkit.org/b/175204> is fixed.
-    _sharedCalloutBarSwizzler = std::make_unique<ClassMethodSwizzler>([UICalloutBar class], @selector(sharedCalloutBar), reinterpret_cast<IMP>(suppressUICalloutBar));
+    _sharedCalloutBarSwizzler = makeUnique<ClassMethodSwizzler>([UICalloutBar class], @selector(sharedCalloutBar), reinterpret_cast<IMP>(suppressUICalloutBar));
     _inputSessionChangeCount = 0;
     applyWorkaroundToAllowWritingAttributedStringsToItemProviders();
 #endif
@@ -412,7 +412,8 @@ static UICalloutBar *suppressUICalloutBar()
     TestWebKitAPI::Util::run(&isDoneWaiting);
 }
 
-- (void)performAfterLoading:(dispatch_block_t)actions {
+- (void)performAfterLoading:(dispatch_block_t)actions
+{
     TestMessageHandler *handler = [[TestMessageHandler alloc] init];
     [handler addMessage:@"loaded" withHandler:actions];
 
@@ -639,4 +640,39 @@ static WKContentView *recursiveFindWKContentView(UIView *view)
 }
 
 @end
-#endif
+#endif // PLATFORM(MAC)
+
+#if PLATFORM(IOS_FAMILY)
+@implementation UIView (WKTestingUIViewUtilities)
+
+- (UIView *)wkFirstSubviewWithClass:(Class)targetClass
+{
+    for (UIView *view in self.subviews) {
+        if ([view isKindOfClass:targetClass])
+            return view;
+    
+        UIView *foundSubview = [view wkFirstSubviewWithClass:targetClass];
+        if (foundSubview)
+            return foundSubview;
+    }
+    
+    return nil;
+}
+
+- (UIView *)wkFirstSubviewWithBoundsSize:(CGSize)size
+{
+    for (UIView *view in self.subviews) {
+        if (CGSizeEqualToSize([view bounds].size, size))
+            return view;
+    
+        UIView *foundSubview = [view wkFirstSubviewWithBoundsSize:size];
+        if (foundSubview)
+            return foundSubview;
+    }
+    
+    return nil;
+}
+
+@end
+
+#endif // PLATFORM(IOS_FAMILY)

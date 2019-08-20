@@ -1,3 +1,309 @@
+2019-08-19  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Proxy constructor should throw if handler is revoked Proxy
+        https://bugs.webkit.org/show_bug.cgi?id=198755
+
+        Reviewed by Saam Barati.
+
+        * stress/proxy-revoke.js: Adjust error message.
+        * test262/expectations.yaml: Mark 2 test cases as passing.
+
+2019-08-19  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] OSR entry to Wasm OMG
+        https://bugs.webkit.org/show_bug.cgi?id=200362
+
+        Reviewed by Michael Saboff.
+
+        * wasm/stress/osr-entry-basic.js: Added.
+        (instance.exports.loop):
+        * wasm/stress/osr-entry-many-locals-f32.js: Added.
+        * wasm/stress/osr-entry-many-locals-f64.js: Added.
+        * wasm/stress/osr-entry-many-locals-i32.js: Added.
+        * wasm/stress/osr-entry-many-locals-i64.js: Added.
+        * wasm/stress/osr-entry-many-stacks-f32.js: Added.
+        * wasm/stress/osr-entry-many-stacks-f64.js: Added.
+        * wasm/stress/osr-entry-many-stacks-i32.js: Added.
+        * wasm/stress/osr-entry-many-stacks-i64.js: Added.
+
+2019-08-19  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Date.prototype.toJSON throws if toISOString returns an object
+        https://bugs.webkit.org/show_bug.cgi?id=198495
+
+        Reviewed by Ross Kirsling.
+
+        * test262/expectations.yaml: Mark 6 test cases as passing.
+
+2019-08-19  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] DFG DataView get/set optimization should take care of the case little-endian flag is JSEmpty
+        https://bugs.webkit.org/show_bug.cgi?id=200899
+        <rdar://problem/54073341>
+
+        Reviewed by Mark Lam.
+
+        * stress/data-view-get-dfg-should-handle-empty-constant.js: Added.
+        (i.new.Promise):
+        * stress/data-view-set-dfg-should-handle-empty-constant.js: Added.
+        (i.new.Promise):
+
+2019-08-19  Michael Saboff  <msaboff@apple.com>
+
+        Webkit jsc Crash in RegExp::matchInline (this=<optimized out>
+        https://bugs.webkit.org/show_bug.cgi?id=197090
+
+        Reviewed by Yusuke Suzuki.
+
+        New test.
+
+        * stress/regexp-nonconsuming-counted-parens.js: Added.
+
+2019-08-18  Ross Kirsling  <ross.kirsling@sony.com>
+
+        [JSC] Correct a->an in error messages and API docblocks
+        https://bugs.webkit.org/show_bug.cgi?id=200833
+
+        Reviewed by Don Olmstead.
+
+        * ChakraCore/test/UnitTestFramework/UnitTestFramework.js:
+        (assert.assert.return.throws):
+        * stress/promise-finally-should-accept-non-promise-objects.js:
+        * wasm/js-api/table.js:
+        (assert.throws):
+
+2019-08-17  Ross Kirsling  <ross.kirsling@sony.com>
+
+        [ESNext] Implement optional chaining
+        https://bugs.webkit.org/show_bug.cgi?id=200199
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/nullish-coalescing.js:
+        * stress/optional-chaining.js: Added.
+        * stress/tail-call-recognize.js:
+
+2019-08-17  Ross Kirsling  <ross.kirsling@sony.com>
+
+        [ESNext] Support hashbang.
+        https://bugs.webkit.org/show_bug.cgi?id=200865
+
+        Reviewed by Mark Lam.
+
+        * stress/hashbang.js: Added.
+        * test262/expectations.yaml: Mark 6 cases as passing.
+
+2019-08-17  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] DFG ToNumber should support Boolean in fixup
+        https://bugs.webkit.org/show_bug.cgi?id=200864
+
+        Reviewed by Mark Lam.
+
+        * microbenchmarks/to-number-boolean.js: Added.
+        (test):
+        * stress/to-number-boolean-int32.js: Added.
+        (shouldBe):
+        (test):
+        (check):
+        * stress/to-number-boolean.js: Added.
+        (shouldBe):
+        (test):
+        (check):
+        * stress/to-number-int32.js: Added.
+        (shouldBe):
+        (test):
+        (check):
+
+2019-08-16  Mark Lam  <mark.lam@apple.com>
+
+        More missing exception checks in string comparison operators.
+        https://bugs.webkit.org/show_bug.cgi?id=200844
+        <rdar://problem/54378684>
+
+        Reviewed by Saam Barati.
+
+        * stress/missing-exception-check-in-string-greater-than-compare.js: Added.
+        * stress/missing-exception-check-in-string-greater-than-or-equal-compare.js: Added.
+        * stress/missing-exception-check-in-string-less-than-compare.js: Added.
+        * stress/missing-exception-check-in-string-less-than-or-equal-compare.js: Added.
+
+2019-08-16  Mark Lam  <mark.lam@apple.com>
+
+        CodeBlock destructor should clear all of its watchpoints.
+        https://bugs.webkit.org/show_bug.cgi?id=200792
+        <rdar://problem/53947800>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/codeblock-should-clear-watchpoints-on-destruction.js: Added.
+
+2019-08-16  Justin Michaud  <justin_michaud@apple.com>
+
+        Fix InBounds speculation of typed array PutByVal and add extra step to integer range optimization to search for equality relationships on the RHS value
+        https://bugs.webkit.org/show_bug.cgi?id=200782
+
+        Reviewed by Saam Barati.
+
+        * microbenchmarks/int8-out-of-bounds.js: Added.
+        (foo):
+        * microbenchmarks/memcpy-typed-loop.js: Added.
+        (doTest):
+        (let.arr1.new.Int32Array.1000.let.arr2.new.Int32Array.1000):
+        (arr2):
+        * stress/int8-repeat-in-then-out-of-bounds.js: Added.
+        (foo):
+
+2019-08-16  Mark Lam  <mark.lam@apple.com>
+
+        [Re-land] ProxyObject should not be allow to access its target's private properties.
+        https://bugs.webkit.org/show_bug.cgi?id=200739
+        <rdar://problem/53972768>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/proxy-should-not-be-allowed-to-access-private-properties-of-target.js: Copied from JSTests/stress/proxy-should-not-be-allowed-to-access-private-properties-of-target.js.
+        * stress/proxy-with-private-symbols.js:
+
+2019-08-16  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Promise.prototype.finally should accept non-promise objects
+        https://bugs.webkit.org/show_bug.cgi?id=200829
+
+        Reviewed by Mark Lam.
+
+        * stress/promise-finally-should-accept-non-promise-objects.js: Added.
+        (shouldBe):
+        (Thenable):
+        (Thenable.prototype.then):
+
+2019-08-16  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Promise constructor should check argument before [[Construct]]
+        https://bugs.webkit.org/show_bug.cgi?id=198976
+
+        Reviewed by Ross Kirsling.
+
+        * stress/create-subclass-structure-may-throw-exception-when-getting-prototype.js: Fix test.
+        * stress/create-subclass-structure-might-throw.js: Fix test.
+        * test262/expectations.yaml: Mark 2 test cases as passing.
+
+2019-08-16  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed, rolling out r248709.
+
+        Caused test/built-ins/Promise/prototype/finally/this-value-
+        non-promise.js to fail on test262 bot
+
+        Reverted changeset:
+
+        "ProxyObject should not be allow to access its target's
+        private properties."
+        https://bugs.webkit.org/show_bug.cgi?id=200739
+        https://trac.webkit.org/changeset/248709
+
+2019-08-15  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        DateConversion::formatDateTime incorrectly formats negative years
+        https://bugs.webkit.org/show_bug.cgi?id=199964
+
+        Reviewed by Ross Kirsling.
+
+        * test262/expectations.yaml: Mark 6 test cases as passing.
+
+2019-08-15  Mark Lam  <mark.lam@apple.com>
+
+        More missing exception checks in String.prototype.
+        https://bugs.webkit.org/show_bug.cgi?id=200762
+        <rdar://problem/54333896>
+
+        Reviewed by Michael Saboff.
+
+        * stress/missing-exception-check-in-string-lastIndexOf.js: Added.
+        * stress/missing-exception-check-in-string-toLower.js: Added.
+        * stress/missing-exception-check-in-string-toUpper.js: Added.
+
+2019-08-14  Mark Lam  <mark.lam@apple.com>
+
+        ProxyObject should not be allow to access its target's private properties.
+        https://bugs.webkit.org/show_bug.cgi?id=200739
+        <rdar://problem/53972768>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/proxy-should-not-be-allowed-to-access-private-properties-of-target.js: Added.
+        * stress/proxy-with-private-symbols.js: Rebased.
+
+2019-08-14  Mark Lam  <mark.lam@apple.com>
+
+        Missing exception check in string compare.
+        https://bugs.webkit.org/show_bug.cgi?id=200743
+        <rdar://problem/53975356>
+
+        Reviewed by Michael Saboff.
+
+        * stress/missing-exception-check-in-string-compare.js: Added.
+
+2019-08-08  Ross Kirsling  <ross.kirsling@sony.com>
+
+        [JSC] Add "jump if (not) undefined or null" bytecode ops
+        https://bugs.webkit.org/show_bug.cgi?id=200480
+
+        Reviewed by Saam Barati.
+
+        * stress/destructuring-assignment-require-object-coercible.js:
+        * stress/nullish-coalescing.js:
+
+2019-08-05  Michael Saboff  <msaboff@apple.com>
+
+        JSC: assertion failure in SpeculativeJIT::compileGetByValOnIntTypedArray
+        https://bugs.webkit.org/show_bug.cgi?id=199997
+
+        Reviewed by Saam Barati.
+
+        New test.
+
+        * stress/typedarray-no-alreadyChecked-assert.js: Added.
+        (checkIntArray):
+        (checkFloatArray):
+
+2019-08-02  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Support WebAssembly in SamplingProfiler
+        https://bugs.webkit.org/show_bug.cgi?id=200329
+
+        Reviewed by Saam Barati.
+
+        * stress/sampling-profiler-wasm-name-section.js: Added.
+        (const.compile):
+        (platformSupportsSamplingProfiler.vm.isWasmSupported.wasmEntry):
+        (platformSupportsSamplingProfiler.vm.isWasmSupported):
+        * stress/sampling-profiler-wasm.js: Added.
+        (platformSupportsSamplingProfiler.vm.isWasmSupported.wasmEntry):
+        (platformSupportsSamplingProfiler.vm.isWasmSupported):
+        * stress/sampling-profiler/loop.wasm: Added.
+        * stress/sampling-profiler/loop.wast: Added.
+        * stress/sampling-profiler/nameSection.wasm: Added.
+
+2019-08-02  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] LazyJSValue should be robust for empty JSValue
+        https://bugs.webkit.org/show_bug.cgi?id=200388
+
+        Reviewed by Saam Barati.
+
+        * stress/switch-constant-child-becomes-empty.js: Added.
+        (foo):
+
+2019-08-01  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        GetterSetter type confusion during DFG compilation
+        https://bugs.webkit.org/show_bug.cgi?id=199903
+
+        Reviewed by Mark Lam.
+
+        * stress/cse-propagated-constant-may-not-follow-structure-restrictions.js: Added.
+
 2019-08-01  Ross Kirsling  <ross.kirsling@sony.com>
 
         Update Test262 (2019.08.01)

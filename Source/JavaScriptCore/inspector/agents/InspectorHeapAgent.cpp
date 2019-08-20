@@ -31,6 +31,7 @@
 #include "InjectedScript.h"
 #include "InjectedScriptManager.h"
 #include "InspectorEnvironment.h"
+#include "JSBigInt.h"
 #include "JSCInlines.h"
 #include "VM.h"
 #include <wtf/Stopwatch.h>
@@ -42,7 +43,7 @@ namespace Inspector {
 InspectorHeapAgent::InspectorHeapAgent(AgentContext& context)
     : InspectorAgentBase("Heap"_s)
     , m_injectedScriptManager(context.injectedScriptManager)
-    , m_frontendDispatcher(std::make_unique<HeapFrontendDispatcher>(context.frontendRouter))
+    , m_frontendDispatcher(makeUnique<HeapFrontendDispatcher>(context.frontendRouter))
     , m_backendDispatcher(HeapBackendDispatcher::create(context.backendDispatcher, this))
     , m_environment(context.environment)
 {
@@ -54,29 +55,31 @@ void InspectorHeapAgent::didCreateFrontendAndBackend(FrontendRouter*, BackendDis
 
 void InspectorHeapAgent::willDestroyFrontendAndBackend(DisconnectReason)
 {
-    // Stop tracking without taking a snapshot.
-    m_tracking = false;
-
     ErrorString ignored;
     disable(ignored);
 }
 
-void InspectorHeapAgent::enable(ErrorString&)
+void InspectorHeapAgent::enable(ErrorString& errorString)
 {
-    if (m_enabled)
+    if (m_enabled) {
+        errorString = "HeapAgent already enabled"_s;
         return;
+    }
 
     m_enabled = true;
 
     m_environment.vm().heap.addObserver(this);
 }
 
-void InspectorHeapAgent::disable(ErrorString&)
+void InspectorHeapAgent::disable(ErrorString& errorString)
 {
-    if (!m_enabled)
+    if (!m_enabled) {
+        errorString = "HeapAgent already disabled"_s;
         return;
+    }
 
     m_enabled = false;
+    m_tracking = false;
 
     m_environment.vm().heap.removeObserver(this);
 
@@ -178,6 +181,12 @@ void InspectorHeapAgent::getPreview(ErrorString& errorString, int heapObjectId, 
     JSCell* cell = optionalNode->cell;
     if (cell->isString()) {
         resultString = asString(cell)->tryGetValue();
+        return;
+    }
+
+    // BigInt preview.
+    if (cell->isBigInt()) {
+        resultString = JSBigInt::tryGetString(vm, asBigInt(cell), 10);
         return;
     }
 

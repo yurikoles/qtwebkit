@@ -38,6 +38,7 @@
 namespace WebKit {
 
 class _WKRemoteWebInspectorProxyClient final : public RemoteWebInspectorProxyClient {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     _WKRemoteWebInspectorProxyClient(_WKRemoteWebInspectorViewController *controller)
         : m_controller(controller)
@@ -75,7 +76,7 @@ private:
         return nil;
 
     m_remoteInspectorProxy = WebKit::RemoteWebInspectorProxy::create();
-    m_remoteInspectorClient = std::make_unique<WebKit::_WKRemoteWebInspectorProxyClient>(self);
+    m_remoteInspectorClient = makeUnique<WebKit::_WKRemoteWebInspectorProxyClient>(self);
     m_remoteInspectorProxy->setClient(m_remoteInspectorClient.get());
 
     return self;

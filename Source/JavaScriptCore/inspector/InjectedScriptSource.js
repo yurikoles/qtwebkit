@@ -45,6 +45,9 @@ function toStringDescription(obj)
     if (obj === 0 && 1 / obj < 0)
         return "-0";
 
+    if (isBigInt(obj))
+        return toString(obj) + "n";
+
     return toString(obj);
 }
 
@@ -55,9 +58,14 @@ function isUInt32(obj)
     return "" + (obj >>> 0) === obj;
 }
 
-function isSymbol(obj)
+function isSymbol(value)
 {
-    return typeof obj === "symbol";
+    return typeof value === "symbol";
+}
+
+function isBigInt(value)
+{
+    return typeof value === "bigint";
 }
 
 function isEmptyObject(object)
@@ -290,7 +298,7 @@ let InjectedScript = class InjectedScript
             let callArgument = InjectedScriptHost.evaluate("(" + callArgumentJSON + ")");
             let value = this._resolveCallArgument(callArgument);
             this._saveResult(value);
-        } catch (e) {}
+        } catch { }
 
         return this._savedResultIndex;
     }
@@ -484,7 +492,7 @@ let InjectedScript = class InjectedScript
         if (isPrimitiveValue(object))
             result.value = object;
         else
-            result.description = toString(object);
+            result.description = toStringDescription(object);
         return result;
     }
 
@@ -514,7 +522,7 @@ let InjectedScript = class InjectedScript
         let remoteObject = RemoteObject.create(value, objectGroup);
         try {
             remoteObject.description = toStringDescription(value);
-        } catch (e) {}
+        } catch { }
         return {
             wasThrown: true,
             result: remoteObject
@@ -744,7 +752,7 @@ let InjectedScript = class InjectedScript
         let isArrayLike = false;
         try {
             isArrayLike = RemoteObject.subtype(object) === "array" && isFinite(object.length) && object.length > 0;
-        } catch(e) {}
+        } catch { }
 
         for (let o = object; isDefined(o); o = Object.getPrototypeOf(o)) {
             let isOwnProperty = o === object;
@@ -765,7 +773,7 @@ let InjectedScript = class InjectedScript
         try {
             if (object.__proto__)
                 descriptors.push({name: "__proto__", value: object.__proto__, writable: true, configurable: true, enumerable: false, isOwn: true});
-        } catch (e) {}
+        } catch { }
 
         return descriptors;
     }
@@ -866,7 +874,7 @@ let InjectedScript = class InjectedScript
     {
         return this._savedResults[index];
     }
-}
+};
 
 InjectedScript.CollectionMode = {
     OwnProperties: 1 << 0,          // own properties.
@@ -887,9 +895,10 @@ let RemoteObject = class RemoteObject
         if (this.type === "undefined" && InjectedScriptHost.isHTMLAllCollection(object))
             this.type = "object";
 
-        if (isPrimitiveValue(object) || object === null || forceValueType) {
+        if (isPrimitiveValue(object) || isBigInt(object) || object === null || forceValueType) {
             // We don't send undefined values over JSON.
-            if (this.type !== "undefined")
+            // BigInt values are not JSON serializable.
+            if (this.type !== "undefined" && this.type !== "bigint")
                 this.value = object;
 
             // Null object is object with 'null' subtype.
@@ -897,8 +906,9 @@ let RemoteObject = class RemoteObject
                 this.subtype = "null";
 
             // Provide user-friendly number values.
-            if (this.type === "number")
+            if (this.type === "number" || this.type === "bigint")
                 this.description = toStringDescription(object);
+
             return;
         }
 
@@ -966,7 +976,7 @@ let RemoteObject = class RemoteObject
         if (value === null)
             return "null";
 
-        if (isPrimitiveValue(value) || isSymbol(value))
+        if (isPrimitiveValue(value) || isBigInt(value) || isSymbol(value))
             return null;
 
         if (InjectedScriptHost.isHTMLAllCollection(value))
@@ -980,7 +990,7 @@ let RemoteObject = class RemoteObject
         try {
             if (typeof value.splice === "function" && isFinite(value.length))
                 return "array";
-        } catch (e) {}
+        } catch { }
 
         return null;
     }
@@ -988,6 +998,9 @@ let RemoteObject = class RemoteObject
     static describe(value)
     {
         if (isPrimitiveValue(value))
+            return null;
+
+        if (isBigInt(value))
             return null;
 
         if (isSymbol(value))
@@ -1134,7 +1147,7 @@ let RemoteObject = class RemoteObject
             this._appendPropertyPreviews(object, preview, descriptors, false, propertiesThreshold, firstLevelKeys, secondLevelKeys);
             if (propertiesThreshold.indexes < 0 || propertiesThreshold.properties < 0)
                 return preview;
-        } catch (e) {
+        } catch {
             preview.lossless = false;
         }
 
@@ -1208,7 +1221,7 @@ let RemoteObject = class RemoteObject
 
             // Primitive.
             const maxLength = 100;
-            if (isPrimitiveValue(value)) {
+            if (isPrimitiveValue(value) || isBigInt(value)) {
                 if (type === "string" && value.length > maxLength) {
                     value = this._abbreviateString(value, maxLength, true);
                     preview.lossless = false;
@@ -1326,7 +1339,7 @@ let RemoteObject = class RemoteObject
             return false;
 
         // Primitive.
-        if (isPrimitiveValue(object) || isSymbol(object))
+        if (isPrimitiveValue(object) || isBigInt(object) || isSymbol(object))
             return true;
 
         // Null.
@@ -1386,7 +1399,7 @@ let RemoteObject = class RemoteObject
 
         return string.substr(0, maxLength) + "\u2026";
     }
-}
+};
 
 // -------
 
@@ -1398,7 +1411,7 @@ InjectedScript.CallFrameProxy = function(ordinal, callFrame)
     this.scopeChain = this._wrapScopeChain(callFrame);
     this.this = RemoteObject.create(callFrame.thisObject, "backtrace");
     this.isTailDeleted = callFrame.isTailDeleted;
-}
+};
 
 InjectedScript.CallFrameProxy.prototype = {
     _wrapScopeChain(callFrame)
@@ -1411,7 +1424,7 @@ InjectedScript.CallFrameProxy.prototype = {
             scopeChainProxy[i] = InjectedScript.CallFrameProxy._createScopeJson(scopeChain[i], scopeDescriptions[i], "backtrace");
         return scopeChainProxy;
     }
-}
+};
 
 InjectedScript.CallFrameProxy._scopeTypeNames = {
     0: "global", // GLOBAL_SCOPE
@@ -1453,17 +1466,31 @@ function bind(func, thisObject, ...outerArgs)
 
 function BasicCommandLineAPI(callFrame)
 {
-    this.$_ = injectedScript._lastResult;
-    this.$exception = injectedScript._exceptionValue;
+    let savedResultAlias = InjectedScriptHost.savedResultAlias;
+
+    let defineGetter = (key, value) => {
+        if (typeof value !== "function") {
+            let originalValue = value;
+            value = function() { return originalValue; };
+        }
+
+        this.__defineGetter__("$" + key, value);
+        if (savedResultAlias)
+            this.__defineGetter__(savedResultAlias + key, value);
+    };
+
+    if ("_lastResult" in injectedScript)
+        defineGetter("_", injectedScript._lastResult);
+
+    if ("_exceptionValue" in injectedScript)
+        defineGetter("exception", injectedScript._exceptionValue);
 
     if ("_eventValue" in injectedScript)
-        this.$event = injectedScript._eventValue;
-    else if ("$event" in this)
-        delete this.$event;
+        defineGetter("event", injectedScript._eventValue);
 
     // $1-$99
     for (let i = 1; i <= injectedScript._savedResults.length; ++i)
-        this.__defineGetter__("$" + i, bind(injectedScript._savedResult, injectedScript, i));
+        defineGetter(i, bind(injectedScript._savedResult, injectedScript, i));
 
     // Command Line API methods.
     for (let i = 0; i < BasicCommandLineAPI.methods.length; ++i) {
@@ -1487,8 +1514,12 @@ BasicCommandLineAPI.methods = [
         return result;
     },
 
+    function queryInstances() {
+        return InjectedScriptHost.queryInstances(...arguments);
+    },
+
     function queryObjects() {
-        return InjectedScriptHost.queryObjects(...arguments);
+        return InjectedScriptHost.queryInstances(...arguments);
     },
 ];
 

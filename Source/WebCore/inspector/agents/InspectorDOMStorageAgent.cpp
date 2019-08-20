@@ -56,7 +56,7 @@ using namespace Inspector;
 
 InspectorDOMStorageAgent::InspectorDOMStorageAgent(PageAgentContext& context)
     : InspectorAgentBase("DOMStorage"_s, context)
-    , m_frontendDispatcher(std::make_unique<Inspector::DOMStorageFrontendDispatcher>(context.frontendRouter))
+    , m_frontendDispatcher(makeUnique<Inspector::DOMStorageFrontendDispatcher>(context.frontendRouter))
     , m_backendDispatcher(Inspector::DOMStorageBackendDispatcher::create(context.backendDispatcher, this))
     , m_inspectedPage(context.inspectedPage)
 {
@@ -72,13 +72,23 @@ void InspectorDOMStorageAgent::willDestroyFrontendAndBackend(Inspector::Disconne
     disable(unused);
 }
 
-void InspectorDOMStorageAgent::enable(ErrorString&)
+void InspectorDOMStorageAgent::enable(ErrorString& errorString)
 {
+    if (m_instrumentingAgents.inspectorDOMStorageAgent() == this) {
+        errorString = "DOMStorageAgent already enabled"_s;
+        return;
+    }
+
     m_instrumentingAgents.setInspectorDOMStorageAgent(this);
 }
 
-void InspectorDOMStorageAgent::disable(ErrorString&)
+void InspectorDOMStorageAgent::disable(ErrorString& errorString)
 {
+    if (m_instrumentingAgents.inspectorDOMStorageAgent() != this) {
+        errorString = "DOMStorageAgent already disabled"_s;
+        return;
+    }
+
     m_instrumentingAgents.setInspectorDOMStorageAgent(nullptr);
 }
 

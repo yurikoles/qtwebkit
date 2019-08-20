@@ -412,7 +412,7 @@ void ImageDecoderAVFObjC::readTrackMetadata()
         || !m_imageRotationSession->transform()
         || m_imageRotationSession->transform().value() != finalTransform
         || m_imageRotationSession->size() != size)
-        m_imageRotationSession = std::make_unique<ImageRotationSessionVT>(WTFMove(finalTransform), size, kCVPixelFormatType_32BGRA, ImageRotationSessionVT::IsCGImageCompatible::Yes);
+        m_imageRotationSession = makeUnique<ImageRotationSessionVT>(WTFMove(finalTransform), size, kCVPixelFormatType_32BGRA, ImageRotationSessionVT::IsCGImageCompatible::Yes);
 
     m_size = expandedIntSize(m_imageRotationSession->rotatedSize());
 }
@@ -531,7 +531,7 @@ bool ImageDecoderAVFObjC::frameIsCompleteAtIndex(size_t index) const
 
 ImageOrientation ImageDecoderAVFObjC::frameOrientationAtIndex(size_t) const
 {
-    return ImageOrientation();
+    return ImageOrientation::None;
 }
 
 Seconds ImageDecoderAVFObjC::frameDurationAtIndex(size_t index) const

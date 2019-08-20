@@ -58,7 +58,7 @@ AbstractInterpreter<AbstractStateType>::AbstractInterpreter(Graph& graph, Abstra
     , m_state(state)
 {
     if (m_graph.m_form == SSA)
-        m_phiChildren = std::make_unique<PhiChildren>(m_graph);
+        m_phiChildren = makeUnique<PhiChildren>(m_graph);
 }
 
 template<typename AbstractStateType>
@@ -2806,10 +2806,9 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
         break;
         
     case GetGetter: {
-        JSValue base = forNode(node->child1()).m_value;
-        if (base) {
-            GetterSetter* getterSetter = jsCast<GetterSetter*>(base);
-            if (!getterSetter->isGetterNull()) {
+        if (JSValue base = forNode(node->child1()).m_value) {
+            GetterSetter* getterSetter = jsDynamicCast<GetterSetter*>(m_vm, base);
+            if (getterSetter && !getterSetter->isGetterNull()) {
                 setConstant(node, *m_graph.freeze(getterSetter->getterConcurrently()));
                 break;
             }
@@ -2820,10 +2819,9 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
     }
         
     case GetSetter: {
-        JSValue base = forNode(node->child1()).m_value;
-        if (base) {
-            GetterSetter* getterSetter = jsCast<GetterSetter*>(base);
-            if (!getterSetter->isSetterNull()) {
+        if (JSValue base = forNode(node->child1()).m_value) {
+            GetterSetter* getterSetter = jsDynamicCast<GetterSetter*>(m_vm, base);
+            if (getterSetter && !getterSetter->isSetterNull()) {
                 setConstant(node, *m_graph.freeze(getterSetter->setterConcurrently()));
                 break;
             }
@@ -2844,10 +2842,13 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
         break;
 
     case SkipScope: {
-        JSValue child = forNode(node->child1()).value();
-        if (child) {
-            setConstant(node, *m_graph.freeze(JSValue(jsCast<JSScope*>(child.asCell())->next())));
-            break;
+        if (JSValue child = forNode(node->child1()).value()) {
+            if (JSScope* scope = jsDynamicCast<JSScope*>(m_vm, child)) {
+                if (JSScope* nextScope = scope->next()) {
+                    setConstant(node, *m_graph.freeze(JSValue(nextScope)));
+                    break;
+                }
+            }
         }
         setTypeForNode(node, SpecObjectOther);
         break;

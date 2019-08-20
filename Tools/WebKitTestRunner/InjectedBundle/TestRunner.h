@@ -159,6 +159,7 @@ public:
     void clearAllDatabases();
     void setDatabaseQuota(uint64_t);
     JSRetainPtr<JSStringRef> pathToLocalResource(JSStringRef);
+    void syncLocalStorage();
 
     // Application Cache
     void clearAllApplicationCaches();
@@ -174,9 +175,6 @@ public:
     bool hasDOMCache(JSStringRef origin);
     uint64_t domCacheSize(JSStringRef origin);
     void setAllowStorageQuotaIncrease(bool);
-
-    // IndexedDB
-    void setIDBPerOriginQuota(uint64_t);
 
     // Failed load condition testing
     void forceImmediateCompletion();
@@ -434,6 +432,7 @@ public:
     void statisticsCallClearThroughWebsiteDataRemovalCallback();
     bool isStatisticsHasLocalStorage(JSStringRef hostName);
     void setStatisticsCacheMaxAgeCap(double seconds);
+    bool hasStatisticsIsolatedSession(JSStringRef hostName);
     void statisticsResetToConsistentState(JSValueRef completionHandler);
     void statisticsCallDidResetToConsistentStateCallback();
 

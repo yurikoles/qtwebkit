@@ -172,6 +172,7 @@ using LayerHostingContextID = uint32_t;
 #endif
 
 class PageClient : public CanMakeWeakPtr<PageClient> {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     virtual ~PageClient() { }
 

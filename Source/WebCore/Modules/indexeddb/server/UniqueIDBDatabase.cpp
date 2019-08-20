@@ -44,9 +44,8 @@
 #include "StorageQuotaManager.h"
 #include "UniqueIDBDatabaseConnection.h"
 #include <JavaScriptCore/AuxiliaryBarrierInlines.h>
-#include <JavaScriptCore/HeapInlines.h>
+#include <JavaScriptCore/JSCInlines.h>
 #include <JavaScriptCore/StrongInlines.h>
-#include <JavaScriptCore/StructureInlines.h>
 #include <wtf/MainThread.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/Scope.h>
@@ -434,7 +433,7 @@ void UniqueIDBDatabase::didDeleteBackingStore(uint64_t deletedVersion)
     // we won't have a m_mostRecentDeletedDatabaseInfo. In that case, we'll manufacture one using the
     // passed in deletedVersion argument.
     if (!m_mostRecentDeletedDatabaseInfo)
-        m_mostRecentDeletedDatabaseInfo = std::make_unique<IDBDatabaseInfo>(m_identifier.databaseName(), deletedVersion);
+        m_mostRecentDeletedDatabaseInfo = makeUnique<IDBDatabaseInfo>(m_identifier.databaseName(), deletedVersion);
 
     if (m_currentOpenDBRequest) {
         m_currentOpenDBRequest->notifyDidDeleteDatabase(*m_mostRecentDeletedDatabaseInfo);
@@ -785,7 +784,7 @@ void UniqueIDBDatabase::didOpenBackingStore(const IDBDatabaseInfo& info, const I
     ASSERT(isMainThread());
     LOG(IndexedDB, "(main) UniqueIDBDatabase::didOpenBackingStore");
     
-    m_databaseInfo = std::make_unique<IDBDatabaseInfo>(info);
+    m_databaseInfo = makeUnique<IDBDatabaseInfo>(info);
     m_backingStoreOpenError = error;
 
     ASSERT(m_isOpeningBackingStore);
@@ -1195,23 +1194,6 @@ void UniqueIDBDatabase::putOrAddAfterQuotaCheck(uint64_t taskSize, const IDBRequ
     if (!callbackID)
         return;
     postDatabaseTask(createCrossThreadTask(*this, &UniqueIDBDatabase::performPutOrAdd, callbackID, requestData.transactionIdentifier(), requestData.objectStoreIdentifier(), keyData, value, overwriteMode));
-}
-
-VM& UniqueIDBDatabase::databaseThreadVM()
-{
-    ASSERT(!isMainThread());
-    static VM* vm = &VM::create().leakRef();
-    return *vm;
-}
-
-ExecState& UniqueIDBDatabase::databaseThreadExecState()
-{
-    ASSERT(!isMainThread());
-
-    static NeverDestroyed<Strong<JSGlobalObject>> globalObject(databaseThreadVM(), JSGlobalObject::create(databaseThreadVM(), JSGlobalObject::createStructure(databaseThreadVM(), jsNull())));
-
-    RELEASE_ASSERT(globalObject.get()->globalExec());
-    return *globalObject.get()->globalExec();
 }
 
 void UniqueIDBDatabase::performPutOrAdd(uint64_t callbackIdentifier, const IDBResourceIdentifier& transactionIdentifier, uint64_t objectStoreIdentifier, const IDBKeyData& keyData, const IDBValue& originalRecordValue, IndexedDB::ObjectStoreOverwriteMode overwriteMode)
@@ -1749,7 +1731,7 @@ void UniqueIDBDatabase::didPerformAbortTransaction(uint64_t callbackIdentifier, 
         ASSERT(m_versionChangeTransaction == transaction);
         ASSERT(!m_versionChangeDatabaseConnection || &m_versionChangeTransaction->databaseConnection() == m_versionChangeDatabaseConnection);
         ASSERT(m_versionChangeTransaction->originalDatabaseInfo());
-        m_databaseInfo = std::make_unique<IDBDatabaseInfo>(*m_versionChangeTransaction->originalDatabaseInfo());
+        m_databaseInfo = makeUnique<IDBDatabaseInfo>(*m_versionChangeTransaction->originalDatabaseInfo());
     }
 
     IDBError result = transaction->state() == UniqueIDBDatabaseTransaction::State::Aborted ? transaction->result() : error;
@@ -2314,12 +2296,6 @@ void UniqueIDBDatabase::forgetErrorCallback(uint64_t callbackIdentifier)
     ASSERT(m_callbackQueue.last() == callbackIdentifier);
     m_callbackQueue.removeLast();
     m_errorCallbacks.remove(callbackIdentifier);
-}
-
-void UniqueIDBDatabase::setQuota(uint64_t quota)
-{
-    if (m_backingStore)
-        m_backingStore->setQuota(quota);
 }
 
 void UniqueIDBDatabase::abortTransactionOnMainThread(UniqueIDBDatabaseTransaction& transaction)

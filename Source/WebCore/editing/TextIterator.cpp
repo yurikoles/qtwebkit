@@ -335,7 +335,7 @@ void TextIteratorCopyableText::appendToStringBuilder(StringBuilder& builder) con
     if (m_singleCharacter)
         builder.append(m_singleCharacter);
     else
-        builder.append(m_string, m_offset, m_length);
+        builder.appendSubstring(m_string, m_offset, m_length);
 }
 
 // --------
@@ -650,7 +650,7 @@ bool TextIterator::handleTextNode()
         unsigned endPosition = (m_node == m_endContainer) ? static_cast<unsigned>(m_endOffset) : rendererText.length();
         if (!m_flowRunResolverCache || &m_flowRunResolverCache->flow() != &blockFlow) {
             m_accumulatedSimpleTextLengthInFlow = m_flowRunResolverCache ? 0 : textNodeOffsetInFlow(textNode);
-            m_flowRunResolverCache = std::make_unique<SimpleLineLayout::RunResolver>(blockFlow, *layout);
+            m_flowRunResolverCache = makeUnique<SimpleLineLayout::RunResolver>(blockFlow, *layout);
         }
         // Skip to m_offset position.
         auto range = m_flowRunResolverCache->rangeForRenderer(renderer);
@@ -2044,7 +2044,7 @@ static void normalizeCharacters(const UChar* characters, unsigned length, Vector
 
 static bool isNonLatin1Separator(UChar32 character)
 {
-    ASSERT_ARG(character, character >= 256);
+    ASSERT_ARG(character, !isLatin1(character));
 
     return U_GET_GC_MASK(character) & (U_GC_S_MASK | U_GC_P_MASK | U_GC_Z_MASK | U_GC_CF_MASK);
 }
@@ -2070,7 +2070,7 @@ static inline bool isSeparator(UChar32 character)
         0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    if (character < 256)
+    if (isLatin1(character))
         return latin1SeparatorTable[character];
 
     return isNonLatin1Separator(character);

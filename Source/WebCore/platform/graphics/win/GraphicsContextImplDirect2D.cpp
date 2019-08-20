@@ -46,7 +46,7 @@ GraphicsContext::GraphicsContextImplFactory GraphicsContextImplDirect2D::createF
     return GraphicsContext::GraphicsContextImplFactory(
         [&platformContext](GraphicsContext& context)
         {
-            return std::make_unique<GraphicsContextImplDirect2D>(context, platformContext);
+            return makeUnique<GraphicsContextImplDirect2D>(context, platformContext);
         });
 }
 
@@ -55,14 +55,14 @@ GraphicsContext::GraphicsContextImplFactory GraphicsContextImplDirect2D::createF
     return GraphicsContext::GraphicsContextImplFactory(
         [renderTarget](GraphicsContext& context)
         {
-            return std::make_unique<GraphicsContextImplDirect2D>(context, renderTarget);
+            return makeUnique<GraphicsContextImplDirect2D>(context, renderTarget);
         });
 }
 
 GraphicsContextImplDirect2D::GraphicsContextImplDirect2D(GraphicsContext& context, PlatformContextDirect2D& platformContext)
     : GraphicsContextImpl(context, FloatRect { }, AffineTransform { })
     , m_platformContext(platformContext)
-    , m_private(std::make_unique<GraphicsContextPlatformPrivate>(m_platformContext, GraphicsContext::BitmapRenderingContextType::GPUMemory))
+    , m_private(makeUnique<GraphicsContextPlatformPrivate>(m_platformContext, GraphicsContext::BitmapRenderingContextType::GPUMemory))
 {
     m_platformContext.setGraphicsContextPrivate(m_private.get());
     m_private->syncContext(m_platformContext);
@@ -70,9 +70,9 @@ GraphicsContextImplDirect2D::GraphicsContextImplDirect2D(GraphicsContext& contex
 
 GraphicsContextImplDirect2D::GraphicsContextImplDirect2D(GraphicsContext& context, ID2D1RenderTarget* renderTarget)
     : GraphicsContextImpl(context, FloatRect { }, AffineTransform { })
-    , m_ownedPlatformContext(std::make_unique<PlatformContextDirect2D>(renderTarget))
+    , m_ownedPlatformContext(makeUnique<PlatformContextDirect2D>(renderTarget))
     , m_platformContext(*m_ownedPlatformContext)
-    , m_private(std::make_unique<GraphicsContextPlatformPrivate>(m_platformContext, GraphicsContext::BitmapRenderingContextType::GPUMemory))
+    , m_private(makeUnique<GraphicsContextPlatformPrivate>(m_platformContext, GraphicsContext::BitmapRenderingContextType::GPUMemory))
 {
     m_platformContext.setGraphicsContextPrivate(m_private.get());
     m_private->syncContext(m_platformContext);
@@ -155,13 +155,11 @@ void GraphicsContextImplDirect2D::fillRect(const FloatRect& rect, const Color& c
 
 void GraphicsContextImplDirect2D::fillRect(const FloatRect& rect, Gradient& gradient)
 {
-    auto platformGradient = adoptCOM(gradient.createPlatformGradientIfNecessary(m_platformContext.renderTarget()));
+    COMPtr<ID2D1Brush> platformGradient = gradient.createPlatformGradientIfNecessary(m_platformContext.renderTarget());
     if (!platformGradient)
         return;
 
-    Direct2D::save(m_platformContext);
     Direct2D::fillRectWithGradient(m_platformContext, rect, platformGradient.get());
-    Direct2D::restore(m_platformContext);
 }
 
 void GraphicsContextImplDirect2D::fillRect(const FloatRect& rect, const Color& color, CompositeOperator compositeOperator, BlendMode blendMode)
@@ -190,9 +188,14 @@ void GraphicsContextImplDirect2D::fillRoundedRect(const FloatRoundedRect& rect, 
     Direct2D::State::setCompositeOperation(m_platformContext, previousOperator, BlendMode::Normal);
 }
 
-void GraphicsContextImplDirect2D::fillRectWithRoundedHole(const FloatRect& rect, const FloatRoundedRect& roundedHoleRect, const Color&)
+void GraphicsContextImplDirect2D::fillRectWithRoundedHole(const FloatRect& rect, const FloatRoundedRect& roundedHoleRect, const Color& color)
 {
-    Direct2D::fillRectWithRoundedHole(m_platformContext, rect, roundedHoleRect, { }, Direct2D::ShadowState(graphicsContext().state()));
+    auto& state = graphicsContext().state();
+
+    Direct2D::FillSource fillSource(state, m_platformContext);
+    fillSource.brush = m_platformContext.brushWithColor(color);
+
+    Direct2D::fillRectWithRoundedHole(m_platformContext, rect, roundedHoleRect, fillSource, Direct2D::ShadowState(graphicsContext().state()));
 }
 
 void GraphicsContextImplDirect2D::fillPath(const Path& path)
@@ -238,7 +241,31 @@ void GraphicsContextImplDirect2D::drawGlyphs(const Font& font, const GlyphBuffer
     if (!font.platformData().size())
         return;
 
-    notImplemented();
+    auto xOffset = point.x();
+    Vector<unsigned short> glyphs(numGlyphs);
+    Vector<float> horizontalAdvances(numGlyphs);
+    Vector<DWRITE_GLYPH_OFFSET> glyphOffsets(numGlyphs);
+
+    for (unsigned i = 0; i < numGlyphs; ++i) {
+        if (i + from >= glyphBuffer.advancesCount())
+            break;
+
+        auto advance = glyphBuffer.advances(i + from);
+        if (!advance)
+            continue;
+
+        glyphs[i] = glyphBuffer.glyphAt(i + from);
+        horizontalAdvances[i] = advance->width();
+        glyphOffsets[i].advanceOffset = advance->width();
+        glyphOffsets[i].ascenderOffset = advance->height();
+    }
+
+    double syntheticBoldOffset = font.syntheticBoldOffset();
+
+    auto& state = graphicsContext().state();
+    Direct2D::drawGlyphs(m_platformContext, Direct2D::FillSource(state, m_platformContext), Direct2D::StrokeSource(state, m_platformContext),
+        Direct2D::ShadowState(state), point, font, syntheticBoldOffset, glyphs, horizontalAdvances, glyphOffsets, xOffset,
+        state.textDrawingMode, state.strokeThickness, state.shadowOffset, state.shadowColor);
 }
 
 ImageDrawResult GraphicsContextImplDirect2D::drawImage(Image& image, const FloatRect& destination, const FloatRect& source, const ImagePaintingOptions& imagePaintingOptions)

@@ -53,6 +53,7 @@
 #include <wtf/HashMap.h>
 #include <wtf/Optional.h>
 #include <wtf/StdLibExtras.h>
+#include <wtf/UniqueArray.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/StringBuilder.h>
 #include <wtf/text/StringConcatenateNumbers.h>
@@ -342,6 +343,13 @@ void TestRunner::setDatabaseQuota(uint64_t quota)
     return WKBundleSetDatabaseQuota(InjectedBundle::singleton().bundle(), quota);
 }
 
+void TestRunner::syncLocalStorage()
+{
+    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("SyncLocalStorage"));
+    WKRetainPtr<WKBooleanRef> messageBody = adoptWK(WKBooleanCreate(true));
+    WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
+}
+
 void TestRunner::clearAllApplicationCaches()
 {
     WKBundlePageClearApplicationCache(InjectedBundle::singleton().page()->page());
@@ -365,13 +373,6 @@ long long TestRunner::applicationCacheDiskUsageForOrigin(JSStringRef origin)
 void TestRunner::disallowIncreaseForApplicationCacheQuota()
 {
     m_disallowIncreaseForApplicationCacheQuota = true;
-}
-
-void TestRunner::setIDBPerOriginQuota(uint64_t quota)
-{
-    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("SetIDBPerOriginQuota"));
-    WKRetainPtr<WKUInt64Ref> messageBody = adoptWK(WKUInt64Create(quota));
-    WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
 }
 
 static inline JSValueRef stringArrayToJS(JSContextRef context, WKArrayRef strings)
@@ -2073,6 +2074,16 @@ void TestRunner::setStatisticsCacheMaxAgeCap(double seconds)
     WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
 }
 
+bool TestRunner::hasStatisticsIsolatedSession(JSStringRef hostName)
+{
+    auto messageName = adoptWK(WKStringCreateWithUTF8CString("HasStatisticsIsolatedSession"));
+    auto messageBody = adoptWK(WKStringCreateWithJSString(hostName));
+    WKTypeRef returnData = nullptr;
+    WKBundlePagePostSynchronousMessageForTesting(InjectedBundle::singleton().page()->page(), messageName.get(), messageBody.get(), &returnData);
+    ASSERT(WKGetTypeID(returnData) == WKBooleanGetTypeID());
+    return WKBooleanGetValue(adoptWK(static_cast<WKBooleanRef>(returnData)).get());
+}
+
 void TestRunner::statisticsCallClearThroughWebsiteDataRemovalCallback()
 {
     callTestRunnerCallback(StatisticsDidClearThroughWebsiteDataRemovalCallbackID);
@@ -2381,7 +2392,7 @@ void TestRunner::setOpenPanelFiles(JSValueRef filesValue)
 
         auto file = adopt(JSValueToStringCopy(context, fileValue, nullptr));
         size_t fileBufferSize = JSStringGetMaximumUTF8CStringSize(file.get()) + 1;
-        auto fileBuffer = std::make_unique<char[]>(fileBufferSize);
+        auto fileBuffer = makeUniqueArray<char>(fileBufferSize);
         JSStringGetUTF8CString(file.get(), fileBuffer.get(), fileBufferSize);
 
         WKArrayAppendItem(fileURLs.get(), adoptWK(WKURLCreateWithBaseURL(m_testURL.get(), fileBuffer.get())).get());

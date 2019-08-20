@@ -710,8 +710,9 @@ static void validate(WKWebViewConfiguration *configuration)
 
     _page = [_contentView page];
     [self _dispatchSetDeviceOrientation:deviceOrientation()];
-    if (!self.opaque)
-        _page->setBackgroundColor(WebCore::Color(WebCore::Color::transparent));
+
+    if (!self.opaque || !pageConfiguration->drawsBackground())
+        [self _setOpaqueInternal:NO];
 
     [_contentView layer].anchorPoint = CGPointZero;
     [_contentView setFrame:bounds];
@@ -756,7 +757,7 @@ static void validate(WKWebViewConfiguration *configuration)
 #endif
 
 #if PLATFORM(MAC)
-    _impl = std::make_unique<WebKit::WebViewImpl>(self, self, processPool, pageConfiguration.copyRef());
+    _impl = makeUnique<WebKit::WebViewImpl>(self, self, processPool, pageConfiguration.copyRef());
     _page = &_impl->page();
 
     _impl->setAutomaticallyAdjustsContentInsets(true);
@@ -768,14 +769,14 @@ static void validate(WKWebViewConfiguration *configuration)
 
     _page->setApplicationNameForDesktopUserAgent(configuration._applicationNameForDesktopUserAgent);
 
-    _navigationState = std::make_unique<WebKit::NavigationState>(self);
+    _navigationState = makeUnique<WebKit::NavigationState>(self);
     _page->setNavigationClient(_navigationState->createNavigationClient());
 
-    _uiDelegate = std::make_unique<WebKit::UIDelegate>(self);
-    _page->setFindClient(std::make_unique<WebKit::FindClient>(self));
-    _page->setDiagnosticLoggingClient(std::make_unique<WebKit::DiagnosticLoggingClient>(self));
+    _uiDelegate = makeUnique<WebKit::UIDelegate>(self);
+    _page->setFindClient(makeUnique<WebKit::FindClient>(self));
+    _page->setDiagnosticLoggingClient(makeUnique<WebKit::DiagnosticLoggingClient>(self));
 
-    _iconLoadingDelegate = std::make_unique<WebKit::IconLoadingDelegate>(self);
+    _iconLoadingDelegate = makeUnique<WebKit::IconLoadingDelegate>(self);
 
     _usePlatformFindUI = YES;
 
@@ -1630,6 +1631,7 @@ static CGSize roundScrollViewContentSize(const WebKit::WebPageProxy& page, CGSiz
 
         _scrollViewBackgroundColor = WebCore::Color();
         [_scrollView setContentOffset:[self _initialContentOffsetForScrollView]];
+        [_scrollView _setScrollEnabledInternal:YES];
 
         [self _setAvoidsUnsafeArea:NO];
     } else if (_customContentView) {
@@ -2575,15 +2577,11 @@ static WebCore::FloatPoint constrainContentOffset(WebCore::FloatPoint contentOff
     _page->webViewDidMoveToWindow();
 }
 
-- (void)setOpaque:(BOOL)opaque
+- (void)_setOpaqueInternal:(BOOL)opaque
 {
-    BOOL oldOpaque = self.opaque;
-
     [super setOpaque:opaque];
-    [_contentView setOpaque:opaque];
 
-    if (oldOpaque == opaque)
-        return;
+    [_contentView setOpaque:opaque];
 
     if (!_page)
         return;
@@ -2592,7 +2590,16 @@ static WebCore::FloatPoint constrainContentOffset(WebCore::FloatPoint contentOff
     if (!opaque)
         backgroundColor = WebCore::Color(WebCore::Color::transparent);
     _page->setBackgroundColor(backgroundColor);
+
     [self _updateScrollViewBackground];
+}
+
+- (void)setOpaque:(BOOL)opaque
+{
+    if (opaque == self.opaque)
+        return;
+
+    [self _setOpaqueInternal:opaque];
 }
 
 - (void)setBackgroundColor:(UIColor *)backgroundColor
@@ -3423,7 +3430,7 @@ static void hardwareKeyboardAvailabilityChangedCallback(CFNotificationCenterRef,
     _allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures;
 
     if (allowsBackForwardNavigationGestures && !_gestureController) {
-        _gestureController = std::make_unique<WebKit::ViewGestureController>(*_page);
+        _gestureController = makeUnique<WebKit::ViewGestureController>(*_page);
         _gestureController->installSwipeHandler(self, [self scrollView]);
         if (WKWebView *alternateWebView = [_configuration _alternateWebViewForNavigationGestures])
             _gestureController->setAlternateBackForwardListSourcePage(alternateWebView->_page.get());
@@ -5676,7 +5683,7 @@ static inline WebKit::FindOptions toFindOptions(_WKFindOptions wkFindOptions)
     };
 
     if (inputDelegate)
-        _page->setFormClient(std::make_unique<FormClient>(self));
+        _page->setFormClient(makeUnique<FormClient>(self));
     else
         _page->setFormClient(nullptr);
 }
@@ -6567,14 +6574,14 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 
 - (CGFloat)_minimumLayoutWidth
 {
-    return _page->viewLayoutSize().width();
+    return _page->minimumSizeForAutoLayout().width();
 }
 
 - (void)_setMinimumLayoutWidth:(CGFloat)width
 {
     BOOL expandsToFit = width > 0;
 
-    _page->setViewLayoutSize(WebCore::IntSize(width, 0));
+    _page->setMinimumSizeForAutoLayout(WebCore::IntSize(width, 0));
     _page->setMainFrameIsScrollable(!expandsToFit);
 
     _impl->setClipsToVisibleRect(expandsToFit);
@@ -6619,7 +6626,7 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 
 - (NSPrintOperation *)_printOperationWithPrintInfo:(NSPrintInfo *)printInfo forFrame:(_WKFrameHandle *)frameHandle
 {
-    if (auto* webFrameProxy = _page->process().webFrame(frameHandle._frameID))
+    if (auto* webFrameProxy = _page->process().webFrame(WebCore::frameIdentifierFromID(frameHandle._frameID)))
         return _impl->printOperationWithPrintInfo(printInfo, *webFrameProxy);
     return nil;
 }
@@ -7112,7 +7119,7 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 
 - (BOOL)_canChangeFrameLayout:(_WKFrameHandle *)frameHandle
 {
-    if (auto* webFrameProxy = _page->process().webFrame(frameHandle._frameID))
+    if (auto* webFrameProxy = _page->process().webFrame(WebCore::frameIdentifierFromID(frameHandle._frameID)))
         return _impl->canChangeFrameLayout(*webFrameProxy);
     return false;
 }

@@ -56,7 +56,7 @@ std::unique_ptr<FontCustomPlatformData> createFontCustomPlatformData(SharedBuffe
     RetainPtr<CFDataRef> bufferData = buffer.createCFData();
 
     RetainPtr<CTFontDescriptorRef> fontDescriptor;
-#if (PLATFORM(MAC) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101300) || (PLATFORM(IOS_FAMILY) && __IPHONE_OS_VERSION_MIN_REQUIRED >= 110000)
+#if PLATFORM(MAC) || (PLATFORM(IOS_FAMILY) && __IPHONE_OS_VERSION_MIN_REQUIRED >= 110000)
     auto array = adoptCF(CTFontManagerCreateFontDescriptorsFromData(bufferData.get()));
     if (!array)
         return nullptr;
@@ -84,7 +84,7 @@ std::unique_ptr<FontCustomPlatformData> createFontCustomPlatformData(SharedBuffe
         return nullptr;
 #endif
 
-    return std::make_unique<FontCustomPlatformData>(fontDescriptor.get());
+    return makeUnique<FontCustomPlatformData>(fontDescriptor.get());
 }
 
 bool FontCustomPlatformData::supportsFormat(const String& format)

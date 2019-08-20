@@ -65,4 +65,33 @@ function isDarkMode () {
     const match = window.matchMedia('(prefers-color-scheme: dark)');
     return match.matches;
 }
-export {timeDifference, isDarkMode, Cookie};
+
+// Uses intersection observer: <https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API>
+function createInsertionObservers(element, callback=()=>{}, startThreshold=0.0, endTreshold=1.0, step=0.1, option={}) {
+    const useOption = {};
+    useOption.root = option.root instanceof HTMLElement ? option.root : null;
+    useOption.rootMargin = option.rootMargin ? option.rootMargin : "0%";
+    const thresholdArray = [];
+    for (let i = startThreshold; i <= endTreshold; i+= step) {
+        thresholdArray.push(i);
+    }
+    thresholdArray.forEach(threshold => {
+        useOption.threshold = threshold;
+        const observer = new IntersectionObserver(callback, useOption);
+        observer.observe(element);
+    });
+}
+
+function disableBackGesture() {
+    window.addEventListener('mousewheel', e => {
+        const target = e.target;
+        for (let parent = target.parentElement; parent; parent = parent.parentElement ) {
+            if (parent.scrollLeft !== 0 && e.deltaX < 0)
+                return;
+        }
+        if (e.deltaX < 0)
+            e.preventDefault();
+    });
+}
+
+export {timeDifference, isDarkMode, Cookie, createInsertionObservers, disableBackGesture};
