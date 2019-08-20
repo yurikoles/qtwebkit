@@ -86,7 +86,7 @@ void FormDataIODevice::prepareFormElements()
     if (!m_formData)
         return;
 
-    m_formData = m_formData->resolveBlobReferences(blobRegistry());
+    m_formData = m_formData->resolveBlobReferences(blobRegistry().blobRegistryImpl());
 
     // Take a deep copy of the FormDataElements
     m_formElements = m_formData->elements();

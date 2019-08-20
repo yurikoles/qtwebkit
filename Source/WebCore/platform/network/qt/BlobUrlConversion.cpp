@@ -29,14 +29,13 @@
 
 namespace WebCore {
 
-static bool appendBlobResolved(Vector<char>& out, const URL& url, QString* contentType = 0)
+static bool appendBlobResolved(Vector<char>& out, const URL& url, const BlobRegistryImpl& blobRegistry, QString& contentType)
 {
-    RefPtr<BlobData> blobData = static_cast<BlobRegistryImpl&>(blobRegistry()).getBlobDataFromURL(url);
+    RefPtr<BlobData> blobData = blobRegistry.getBlobDataFromURL(url);
     if (!blobData)
         return false;
 
-    if (contentType)
-        *contentType = blobData->contentType();
+    contentType = blobData->contentType();
 
     BlobDataItemList::const_iterator it = blobData->items().begin();
     const BlobDataItemList::const_iterator itend = blobData->items().end();
@@ -54,15 +53,15 @@ static bool appendBlobResolved(Vector<char>& out, const URL& url, QString* conte
     return true;
 }
 
-static QUrl resolveBlobUrl(const URL& url)
+static QUrl resolveBlobUrl(const URL& url, const BlobRegistryImpl& blobRegistry)
 {
-    RefPtr<BlobData> blobData = static_cast<BlobRegistryImpl&>(blobRegistry()).getBlobDataFromURL(url);
+    RefPtr<BlobData> blobData = blobRegistry.getBlobDataFromURL(url);
     if (!blobData)
         return QUrl();
 
     Vector<char> data;
     QString contentType;
-    if (!appendBlobResolved(data, url, &contentType)) {
+    if (!appendBlobResolved(data, url, blobRegistry, contentType)) {
         qWarning("Failed to convert blob data to base64: cannot allocate memory for continuous blob data");
         return QUrl();
     }
@@ -85,10 +84,10 @@ static QUrl resolveBlobUrl(const URL& url)
     return QUrl(dataUri);
 }
 
-QUrl convertBlobToDataUrl(const QUrl& url)
+QUrl convertBlobToDataUrl(const QUrl& url, const BlobRegistryImpl& blobRegistry)
 {
     QT_TRY {
-        return resolveBlobUrl(url);
+        return resolveBlobUrl(url, blobRegistry);
     } QT_CATCH(const std::bad_alloc &) {
         qWarning("Failed to convert blob data to base64: not enough memory");
     }

@@ -24,6 +24,8 @@ QT_END_NAMESPACE
 
 namespace WebCore {
 
-QUrl convertBlobToDataUrl(const QUrl&);
+class BlobRegistryImpl;
+
+QUrl convertBlobToDataUrl(const QUrl&, const BlobRegistryImpl& blobRegistry);
 
 }

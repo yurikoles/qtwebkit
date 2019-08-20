@@ -20,6 +20,7 @@
 #include "config.h"
 #include "ResourceRequest.h"
 
+#include "BlobRegistry.h"
 #include "BlobUrlConversion.h"
 #include "NetworkStorageSession.h"
 #include "NetworkingContext.h"
@@ -59,8 +60,10 @@ unsigned initializeMaximumHTTPConnectionCountPerHost()
 
 static QUrl toQUrl(const URL& url)
 {
-    if (url.protocolIsBlob())
-        return convertBlobToDataUrl(url);
+    const auto* blobRegistryImpl = blobRegistry().blobRegistryImpl();
+    // QTFIXME: In WK2 blobRegistryImpl is nullptr and blobs must be resolved in NetworkSession
+    if (url.protocolIsBlob() && blobRegistryImpl)
+        return convertBlobToDataUrl(url, *blobRegistryImpl);
     return url;
 }
 
