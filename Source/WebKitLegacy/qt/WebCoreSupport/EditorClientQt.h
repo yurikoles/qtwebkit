@@ -41,6 +41,7 @@ class QWebPageAdapter;
 namespace WebCore {
 
 class EditorClientQt : public EditorClient {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
     EditorClientQt(QWebPageAdapter*);
     
