@@ -42,6 +42,9 @@ InspectorClientWebPage::InspectorClientWebPage()
     view->setPage(this);
     setParent(view);
     settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
+#if !ENABLE(DEVELOPER_MODE)
+    settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
+#endif
     connect(mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), SLOT(javaScriptWindowObjectCleared()));
 }
 
