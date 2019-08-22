@@ -38,6 +38,10 @@
 #include <CoreGraphics/CGGeometry.h>
 #endif
 
+#if PLATFORM(QT)
+#include <QPointF>
+#endif
+
 namespace WebCore {
 
 class Font;

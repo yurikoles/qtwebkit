@@ -189,6 +189,7 @@ void FontCascade::drawComplexText(GraphicsContext& ctx, const TextRun& run, cons
         drawQtGlyphRun(ctx, glyphRun, adjustedPoint, line.ascent());
 }
 
+#if 0
 float FontCascade::floatWidthForComplexText(const TextRun& run, HashSet<const Font*>*, GlyphOverflow*) const
 {
     if (!primaryFont().platformData().size())
@@ -240,6 +241,7 @@ void FontCascade::adjustSelectionRectForComplexText(const TextRun& run, LayoutRe
     selectionRect.move(x1, 0);
     selectionRect.setWidth(x2 - x1);
 }
+#endif
 
 void FontCascade::initFormatForTextLayout(QTextLayout* layout, const TextRun& run) const
 {
@@ -273,13 +275,6 @@ void FontCascade::initFormatForTextLayout(QTextLayout* layout, const TextRun& ru
 bool FontCascade::canReturnFallbackFontsForComplexText()
 {
     return false;
-}
-
-float FontCascade::getGlyphsAndAdvancesForComplexText(const TextRun&, unsigned, unsigned, GlyphBuffer&, ForTextEmphasisOrNot) const
-{
-    // FIXME
-    notImplemented();
-    return 0.f;
 }
 
 void FontCascade::drawGlyphs(GraphicsContext& context, const Font& font, const GlyphBuffer& glyphBuffer, unsigned from, unsigned numGlyphs, const FloatPoint& point, FontSmoothingMode)

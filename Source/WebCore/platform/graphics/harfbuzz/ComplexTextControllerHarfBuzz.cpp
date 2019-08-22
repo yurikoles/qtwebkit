@@ -26,16 +26,36 @@
 #include "config.h"
 #include "ComplexTextController.h"
 
+#if USE(CAIRO)
 #include "CairoUtilities.h"
+#endif
+
 #include "FontCascade.h"
 #include "HbUniquePtr.h"
 #include "SurrogatePairAwareTextIterator.h"
+#include <harfbuzz/hb.h>
+
+#if PLATFORM(QT)
+#include <QtGui/private/qharfbuzzng_p.h>
+#include <QtGui/private/qrawfont_p.h>
+#include <wtf/NakedPtr.h>
+#endif
+
+#if USE(FREETYPE)
 #include <hb-ft.h>
+#endif
+
 #include <hb-icu.h>
 #include <hb-ot.h>
 
 #if ENABLE(VARIATION_FONTS)
 #include FT_MULTIPLE_MASTERS_H
+#endif
+
+#if PLATFORM(QT)
+#ifndef HB_VERSION_ATLEAST
+#define HB_VERSION_ATLEAST(...) 0
+#endif
 #endif
 
 namespace WebCore {
@@ -50,6 +70,7 @@ static inline hb_position_t floatToHarfBuzzPosition(float value)
     return static_cast<hb_position_t>(value * (1 << 16));
 }
 
+#if USE(CAIRO)
 static inline hb_position_t doubleToHarfBuzzPosition(double value)
 {
     return static_cast<hb_position_t>(value * (1 << 16));
@@ -128,6 +149,7 @@ static hb_font_funcs_t* harfBuzzFontFunctions()
     }
     return fontFunctions;
 }
+#endif
 
 ComplexTextController::ComplexTextRun::ComplexTextRun(hb_buffer_t* buffer, const Font& font, const UChar* characters, unsigned stringLocation, unsigned stringLength, unsigned indexBegin, unsigned indexEnd)
     : m_initialAdvance(0, 0)
@@ -309,6 +331,7 @@ void ComplexTextController::collectComplexTextRunsForCharacters(const UChar* cha
         return;
 
     const auto& fontPlatformData = font->platformData();
+#if USE(CAIRO)
     auto* scaledFont = fontPlatformData.scaledFont();
     CairoFtFaceLocker cairoFtFaceLocker(scaledFont);
     FT_Face ftFace = cairoFtFaceLocker.ftFace();
@@ -342,13 +365,33 @@ void ComplexTextController::collectComplexTextRunsForCharacters(const UChar* cha
 #endif
 
     hb_font_make_immutable(harfBuzzFont.get());
+#elif PLATFORM(QT)
+    const QRawFont& rawFont = fontPlatformData.rawFont();
+    QFontEngine* fe = QRawFontPrivate::get(rawFont)->fontEngine;
+    qDebug() << Q_FUNC_INFO << __LINE__ << fe << fe->type();
+    hb_font_t* fnt = hb_qt_font_get_for_engine(fe);
+    qDebug() << Q_FUNC_INFO << __LINE__ << "hb_qt_font_get_for_engine" << fnt;
+    qDebug() << Q_FUNC_INFO << __LINE__ << hb_font_get_face(fnt);
+
+//    qDebug() << Q_FUNC_INFO << __LINE__ << fe->harfbuzzFace();
+    qDebug() << Q_FUNC_INFO << __LINE__ << "hb_qt_face_get_for_engine" << hb_qt_face_get_for_engine(fe);
+//    qDebug() << Q_FUNC_INFO << __LINE__ << hb_qt_font_get_for_engine(fe);
+//    qDebug() << Q_FUNC_INFO << __LINE__ << hb_font_get_face(hb_qt_font_get_for_engine(fe));
+    NakedPtr<hb_face_t> face(hb_qt_face_get_for_engine(fe));
+    NakedPtr<hb_font_t> harfBuzzFont(hb_qt_font_get_for_engine(fe));
+//    qDebug() << Q_FUNC_INFO << __LINE__ << face.get();
+//    qDebug() << Q_FUNC_INFO << __LINE__ << harfBuzzFont.get();
+//    qDebug() << Q_FUNC_INFO << __LINE__ << hb_font_get_face(harfBuzzFont.get());
+#endif
 
     auto features = fontFeatures(m_font, fontPlatformData.orientation());
     HbUniquePtr<hb_buffer_t> buffer(hb_buffer_create());
     if (fontPlatformData.orientation() == FontOrientation::Vertical)
         hb_buffer_set_script(buffer.get(), findScriptForVerticalGlyphSubstitution(face.get()));
 
+    qDebug() << Q_FUNC_INFO << __LINE__;
     for (unsigned i = 0; i < runCount; ++i) {
+        qDebug() << Q_FUNC_INFO << __LINE__;
         auto& run = runList[m_run.rtl() ? runCount - i - 1 : i];
 
         if (fontPlatformData.orientation() != FontOrientation::Vertical)
@@ -361,7 +404,11 @@ void ComplexTextController::collectComplexTextRunsForCharacters(const UChar* cha
         }
         hb_buffer_add_utf16(buffer.get(), reinterpret_cast<const uint16_t*>(characters), length, run.startIndex, run.endIndex - run.startIndex);
 
+        qDebug() << Q_FUNC_INFO << __LINE__;
+        qDebug() << Q_FUNC_INFO << __LINE__ << harfBuzzFont.get();
+        qDebug() << Q_FUNC_INFO << __LINE__ << hb_font_get_face(harfBuzzFont.get());
         hb_shape(harfBuzzFont.get(), buffer.get(), features.isEmpty() ? nullptr : features.data(), features.size());
+        qDebug() << Q_FUNC_INFO << __LINE__;
         m_complexTextRuns.append(ComplexTextRun::create(buffer.get(), *font, characters, stringLocation, length, run.startIndex, run.endIndex));
         hb_buffer_reset(buffer.get());
     }
