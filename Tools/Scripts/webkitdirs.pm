@@ -2419,6 +2419,13 @@ sub buildCMakeProjectOrExit($$$@)
     return 0;
 }
 
+sub installCMakeProjectOrExit
+{
+    my $returnCode = exitStatus(system(qw(cmake -P cmake_install.cmake)));
+    exit($returnCode) if $returnCode;
+    return 0;
+}
+
 sub cmakeArgsFromFeatures(\@;$)
 {
     my ($featuresArrayRef, $enableExperimentalFeatures) = @_;

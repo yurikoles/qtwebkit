@@ -293,10 +293,6 @@ if (isInspectorFrontend()) {
 }
 
 if (isCMakeBuild() && (!isAnyWindows() || isQt())) {
-    if ($shouldInstall) {
-        $makeArgs .= ($makeArgs ? " " : "") . "install";
-    }
-
     if (!canUseNinja() || defined($ENV{NUMBER_OF_PROCESSORS})) {
         # If the user environment is not setting a specific number of process,
         # then don't pass the number of jobs to Ninja. Because Ninja will
@@ -313,6 +309,10 @@ if (isCMakeBuild() && (!isAnyWindows() || isQt())) {
     removeCMakeCache(@featureArgs);
 
     buildCMakeProjectOrExit($clean, $prefixPath, $makeArgs, @featureArgs, @cmakeArgs);
+
+    if ($shouldInstall) {
+        installCMakeProjectOrExit();
+    }
 }
 
 my $baseProductDir = baseProductDir();
