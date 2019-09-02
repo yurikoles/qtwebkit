@@ -105,6 +105,8 @@ list(APPEND WebCore_SOURCES
 #    platform/graphics/PlatformDisplay.cpp
     platform/graphics/WOFFFileFormat.cpp
 
+    platform/graphics/cairo/FontCairoHarfbuzzNG.cpp
+
     platform/graphics/harfbuzz/ComplexTextControllerHarfBuzz.cpp
 
 #    platform/graphics/texmap/BitmapTextureImageBuffer.cpp

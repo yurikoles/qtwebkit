@@ -42,6 +42,7 @@
 #include <qalgorithms.h>
 
 #include <limits.h>
+#include <QDebug>
 
 namespace WebCore {
 
@@ -272,13 +273,14 @@ void FontCascade::initFormatForTextLayout(QTextLayout* layout, const TextRun& ru
     }
 }
 
-bool FontCascade::canReturnFallbackFontsForComplexText()
-{
-    return false;
-}
+//bool FontCascade::canReturnFallbackFontsForComplexText()
+//{
+//    return false;
+//}
 
 void FontCascade::drawGlyphs(GraphicsContext& context, const Font& font, const GlyphBuffer& glyphBuffer, unsigned from, unsigned numGlyphs, const FloatPoint& point, FontSmoothingMode)
 {
+    qDebug() << Q_FUNC_INFO << __LINE__;
     if (!font.platformData().size())
         return;
 
@@ -319,10 +321,10 @@ void FontCascade::drawGlyphs(GraphicsContext& context, const Font& font, const G
 }
 
 
-bool FontCascade::canExpandAroundIdeographsInComplexText()
-{
-    return false;
-}
+//bool FontCascade::canExpandAroundIdeographsInComplexText()
+//{
+//    return false;
+//}
 
 QFont FontCascade::syntheticFont() const
 {
