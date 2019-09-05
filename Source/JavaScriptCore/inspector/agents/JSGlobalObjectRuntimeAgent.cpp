@@ -42,6 +42,8 @@ JSGlobalObjectRuntimeAgent::JSGlobalObjectRuntimeAgent(JSAgentContext& context)
 {
 }
 
+JSGlobalObjectRuntimeAgent::~JSGlobalObjectRuntimeAgent() = default;
+
 InjectedScript JSGlobalObjectRuntimeAgent::injectedScriptForEval(ErrorString& errorString, const int* executionContextId)
 {
     ASSERT_UNUSED(executionContextId, !executionContextId);
@@ -49,7 +51,7 @@ InjectedScript JSGlobalObjectRuntimeAgent::injectedScriptForEval(ErrorString& er
     JSC::ExecState* scriptState = m_globalObject.globalExec();
     InjectedScript injectedScript = injectedScriptManager().injectedScriptFor(scriptState);
     if (injectedScript.hasNoValue())
-        errorString = "Internal error: main world execution context not found."_s;
+        errorString = "Missing execution context for given executionContextId."_s;
 
     return injectedScript;
 }

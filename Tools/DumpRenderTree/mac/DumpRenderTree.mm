@@ -1014,6 +1014,7 @@ static void setWebPreferencesForTestOptions(const TestOptions& options)
     preferences.attachmentElementEnabled = options.enableAttachmentElement;
     preferences.acceleratedDrawingEnabled = options.useAcceleratedDrawing;
     preferences.menuItemElementEnabled = options.enableMenuItemElement;
+    preferences.keygenElementEnabled = options.enableKeygenElement;
     preferences.modernMediaControlsEnabled = options.enableModernMediaControls;
     preferences.isSecureContextAttributeEnabled = options.enableIsSecureContextAttribute;
     preferences.inspectorAdditionsEnabled = options.enableInspectorAdditions;
@@ -1724,6 +1725,9 @@ void dump()
 #if PLATFORM(IOS_FAMILY)
     WebThreadLock();
 #endif
+
+    if (done)
+        return;
 
     updateDisplay();
 

@@ -37,10 +37,9 @@
 #include "ResponsivenessTimer.h"
 #include "VisibleWebPageCounter.h"
 #include "WebConnectionToWebProcess.h"
+#include "WebPageProxyIdentifier.h"
 #include "WebProcessProxyMessages.h"
 #include <WebCore/FrameIdentifier.h>
-#include <WebCore/MessagePortChannelProvider.h>
-#include <WebCore/MessagePortIdentifier.h>
 #include <WebCore/PageIdentifier.h>
 #include <WebCore/ProcessIdentifier.h>
 #include <WebCore/RegistrableDomain.h>
@@ -99,7 +98,7 @@ enum class AllowProcessCaching { No, Yes };
 class WebProcessProxy : public AuxiliaryProcessProxy, public ResponsivenessTimer::Client, public ThreadSafeRefCounted<WebProcessProxy>, public CanMakeWeakPtr<WebProcessProxy>, private ProcessThrottlerClient {
 public:
     typedef HashMap<WebCore::FrameIdentifier, RefPtr<WebFrameProxy>> WebFrameProxyMap;
-    typedef HashMap<WebCore::PageIdentifier, WebPageProxy*> WebPageProxyMap;
+    typedef HashMap<WebPageProxyIdentifier, WebPageProxy*> WebPageProxyMap;
     typedef HashMap<uint64_t, RefPtr<API::UserInitiatedAction>> UserInitiatedActionMap;
 
     enum class IsPrewarmed {
@@ -131,7 +130,7 @@ public:
     void setWebsiteDataStore(WebsiteDataStore&);
 
     static WebProcessProxy* processForIdentifier(WebCore::ProcessIdentifier);
-    static WebPageProxy* webPage(WebCore::PageIdentifier);
+    static WebPageProxy* webPage(WebPageProxyIdentifier);
     Ref<WebPageProxy> createWebPage(PageClient&, Ref<API::PageConfiguration>&&);
 
     enum class BeginsUsingDataStore : bool { No, Yes };
@@ -154,8 +153,8 @@ public:
 
     void didCreateWebPageInProcess(WebCore::PageIdentifier);
 
-    void addVisitedLinkStoreUser(VisitedLinkStore&, WebCore::PageIdentifier);
-    void removeVisitedLinkStoreUser(VisitedLinkStore&, WebCore::PageIdentifier);
+    void addVisitedLinkStoreUser(VisitedLinkStore&, WebPageProxyIdentifier);
+    void removeVisitedLinkStoreUser(VisitedLinkStore&, WebPageProxyIdentifier);
 
     void addWebUserContentControllerProxy(WebUserContentControllerProxy&, WebPageCreationParameters&);
     void didDestroyWebUserContentControllerProxy(WebUserContentControllerProxy&);
@@ -239,8 +238,6 @@ public:
     void didExceedActiveMemoryLimit();
     void didExceedInactiveMemoryLimit();
 
-    void checkProcessLocalPortForActivity(const WebCore::MessagePortIdentifier&, CompletionHandler<void(WebCore::MessagePortChannelProvider::HasActivity)>&&);
-
     void didCommitProvisionalLoad() { m_hasCommittedAnyProvisionalLoads = true; }
     bool hasCommittedAnyProvisionalLoads() const { return m_hasCommittedAnyProvisionalLoads; }
 
@@ -313,7 +310,6 @@ public:
     void deref() final { ThreadSafeRefCounted::deref(); }
 
 protected:
-    static WebCore::PageIdentifier generatePageID();
     WebProcessProxy(WebProcessPool&, WebsiteDataStore*, IsPrewarmed);
 
     // AuxiliaryProcessProxy
@@ -342,17 +338,7 @@ private:
     bool canBeAddedToWebProcessCache() const;
     void shouldTerminate(CompletionHandler<void(bool)>&&);
 
-    void createNewMessagePortChannel(const WebCore::MessagePortIdentifier& port1, const WebCore::MessagePortIdentifier& port2);
-    void entangleLocalPortInThisProcessToRemote(const WebCore::MessagePortIdentifier& local, const WebCore::MessagePortIdentifier& remote);
-    void messagePortDisentangled(const WebCore::MessagePortIdentifier&);
-    void messagePortClosed(const WebCore::MessagePortIdentifier&);
-    void takeAllMessagesForPort(const WebCore::MessagePortIdentifier&, uint64_t messagesCallbackIdentifier);
-    void postMessageToRemote(WebCore::MessageWithMessagePorts&&, const WebCore::MessagePortIdentifier&);
-    void checkRemotePortForActivity(const WebCore::MessagePortIdentifier, uint64_t callbackIdentifier);
-    void didDeliverMessagePortMessages(uint64_t messageBatchIdentifier);
-    void didCheckProcessLocalPortForActivity(uint64_t callbackIdentifier, bool isLocallyReachable);
-
-    bool hasProvisionalPageWithID(WebCore::PageIdentifier) const;
+    bool hasProvisionalPageWithID(WebPageProxyIdentifier) const;
     bool isAllowedToUpdateBackForwardItem(WebBackForwardListItem&) const;
 
     // Plugins
@@ -447,7 +433,7 @@ private:
     HashSet<ProvisionalPageProxy*> m_provisionalPages;
     UserInitiatedActionMap m_userInitiatedActionMap;
 
-    HashMap<VisitedLinkStore*, HashSet<WebCore::PageIdentifier>> m_visitedLinkStoresWithUsers;
+    HashMap<VisitedLinkStore*, HashSet<WebPageProxyIdentifier>> m_visitedLinkStoresWithUsers;
     HashSet<WebUserContentControllerProxy*> m_webUserContentControllerProxies;
 
     int m_numberOfTimesSuddenTerminationWasDisabled;
@@ -477,10 +463,6 @@ private:
 #if PLATFORM(COCOA) && ENABLE(MEDIA_STREAM)
     std::unique_ptr<UserMediaCaptureManagerProxy> m_userMediaCaptureManagerProxy;
 #endif
-
-    HashSet<WebCore::MessagePortIdentifier> m_processEntangledPorts;
-    HashMap<uint64_t, Function<void()>> m_messageBatchDeliveryCompletionHandlers;
-    HashMap<uint64_t, CompletionHandler<void(WebCore::MessagePortChannelProvider::HasActivity)>> m_localPortActivityCompletionHandlers;
 
     unsigned m_suspendedPageCount { 0 };
     bool m_hasCommittedAnyProvisionalLoads { false };

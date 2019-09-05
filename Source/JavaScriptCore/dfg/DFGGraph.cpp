@@ -354,6 +354,10 @@ void Graph::dump(PrintStream& out, const char* prefixStr, Node* node, DumpContex
         out.print(", offset = ", data->offset, ", mandatoryMinimum = ", data->mandatoryMinimum);
         out.print(", limit = ", data->limit);
     }
+    if (node->hasIsInternalPromise())
+        out.print(comma, "isInternalPromise = ", node->isInternalPromise());
+    if (node->hasInternalFieldIndex())
+        out.print(comma, "internalFieldIndex = ", node->internalFieldIndex());
     if (node->hasCallDOMGetterData()) {
         CallDOMGetterData* data = node->callDOMGetterData();
         out.print(comma, "id", data->identifierNumber, "{", identifiers()[data->identifierNumber], "}");
@@ -1725,7 +1729,7 @@ bool Graph::canOptimizeStringObjectAccess(const CodeOrigin& codeOrigin)
     Structure* stringObjectStructure = globalObjectFor(codeOrigin)->stringObjectStructure();
     registerStructure(stringObjectStructure);
     ASSERT(stringObjectStructure->storedPrototype().isObject());
-    ASSERT(stringObjectStructure->storedPrototype().asCell()->classInfo(*stringObjectStructure->storedPrototype().asCell()->vm()) == StringPrototype::info());
+    ASSERT(stringObjectStructure->storedPrototype().asCell()->classInfo(stringObjectStructure->storedPrototype().asCell()->vm()) == StringPrototype::info());
 
     if (!watchConditions(generateConditionsForPropertyMissConcurrently(m_vm, globalObject, stringObjectStructure, m_vm.propertyNames->toPrimitiveSymbol.impl())))
         return false;

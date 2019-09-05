@@ -583,6 +583,7 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     heap/HandleSet.h
     heap/HandleTypes.h
     heap/Heap.h
+    heap/HeapAnalyzer.h
     heap/HeapCell.h
     heap/HeapCellInlines.h
     heap/HeapCellType.h
@@ -778,6 +779,7 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     runtime/ConstantMode.h
     runtime/ConstructAbility.h
     runtime/ConstructData.h
+    runtime/ConstructorKind.h
     runtime/ControlFlowProfiler.h
     runtime/CustomGetterSetter.h
     runtime/DOMAnnotation.h

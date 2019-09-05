@@ -37,6 +37,7 @@
 #include "TextCheckerState.h"
 #include "ViewUpdateDispatcher.h"
 #include "WebInspectorInterruptDispatcher.h"
+#include "WebPageProxyIdentifier.h"
 #include "WebProcessCreationParameters.h"
 #include "WebSQLiteDatabaseTracker.h"
 #include "WebSocketChannelManager.h"
@@ -286,6 +287,8 @@ public:
 
     bool areAllPagesThrottleable() const;
 
+    void messagesAvailableForPort(const WebCore::MessagePortIdentifier&);
+
 private:
     WebProcess();
     ~WebProcess();
@@ -355,11 +358,6 @@ private:
     void mainThreadPing();
     void backgroundResponsivenessPing();
 
-    void didTakeAllMessagesForPort(Vector<WebCore::MessageWithMessagePorts>&& messages, uint64_t messageCallbackIdentifier, uint64_t messageBatchIdentifier);
-    void checkProcessLocalPortForActivity(const WebCore::MessagePortIdentifier&, uint64_t callbackIdentifier);
-    void didCheckRemotePortForActivity(uint64_t callbackIdentifier, bool hasActivity);
-    void messagesAvailableForPort(const WebCore::MessagePortIdentifier&);
-
 #if ENABLE(GAMEPAD)
     void setInitialGamepads(const Vector<GamepadData>&);
     void gamepadConnected(const GamepadData&);
@@ -367,7 +365,7 @@ private:
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    void establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebCore::PageIdentifier, const WebPreferencesStore&, PAL::SessionID);
+    void establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebPageProxyIdentifier, WebCore::PageIdentifier, const WebPreferencesStore&, PAL::SessionID);
     void registerServiceWorkerClients();
 #endif
 

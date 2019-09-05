@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,7 +68,7 @@ FunctionRareData::FunctionRareData(VM& vm)
     // We initialize blind so that changes to the prototype after function creation but before
     // the first allocation don't disable optimizations. This isn't super important, since the
     // function is unlikely to allocate a rare data until the first allocation anyway.
-    , m_objectAllocationProfileWatchpoint(ClearWatchpoint)
+    , m_allocationProfileWatchpointSet(ClearWatchpoint)
 {
 }
 
@@ -78,9 +78,7 @@ FunctionRareData::~FunctionRareData()
 
 void FunctionRareData::initializeObjectAllocationProfile(VM& vm, JSGlobalObject* globalObject, JSObject* prototype, size_t inlineCapacity, JSFunction* constructor)
 {
-    if (m_objectAllocationProfileWatchpoint.isStillValid())
-        m_objectAllocationProfileWatchpoint.startWatching();
-    
+    initializeAllocationProfileWatchpointSet();
     m_objectAllocationProfile.initializeProfile(vm, globalObject, this, prototype, inlineCapacity, constructor, this);
 }
 
@@ -88,7 +86,7 @@ void FunctionRareData::clear(const char* reason)
 {
     m_objectAllocationProfile.clear();
     m_internalFunctionAllocationProfile.clear();
-    m_objectAllocationProfileWatchpoint.fireAll(*vm(), reason);
+    m_allocationProfileWatchpointSet.fireAll(vm(), reason);
 }
 
 void FunctionRareData::AllocationProfileClearingWatchpoint::fireInternal(VM&, const FireDetail&)

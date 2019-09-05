@@ -5228,6 +5228,11 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
         return hr;
     RuntimeEnabledFeatures::sharedFeatures().setMenuItemElementEnabled(!!enabled);
 
+    hr = prefsPrivate->keygenElementEnabled(&enabled);
+    if (FAILED(hr))
+        return hr;
+    RuntimeEnabledFeatures::sharedFeatures().setKeygenElementEnabled(!!enabled);
+
     hr = prefsPrivate->modernMediaControlsEnabled(&enabled);
     if (FAILED(hr))
         return hr;
@@ -7365,7 +7370,7 @@ void WebView::notifyFlushRequired(const GraphicsLayer*)
     flushPendingGraphicsLayerChangesSoon();
 }
 
-void WebView::paintContents(const GraphicsLayer*, GraphicsContext& context, OptionSet<GraphicsLayerPaintingPhase>, const FloatRect& inClipPixels, GraphicsLayerPaintBehavior)
+void WebView::paintContents(const GraphicsLayer*, GraphicsContext& context, const FloatRect& inClipPixels, GraphicsLayerPaintBehavior)
 {
     Frame* frame = core(m_mainFrame);
     if (!frame)

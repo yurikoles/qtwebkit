@@ -35,6 +35,7 @@
 #include "InspectorInstrumentation.h"
 #include "Microtasks.h"
 #include "Performance.h"
+#include "RuntimeEnabledFeatures.h"
 #include "ScheduledAction.h"
 #include "ScriptSourceCode.h"
 #include "SecurityOrigin.h"
@@ -46,6 +47,7 @@
 #include "WorkerLocation.h"
 #include "WorkerNavigator.h"
 #include "WorkerReportingProxy.h"
+#include "WorkerSWClientConnection.h"
 #include "WorkerScriptLoader.h"
 #include "WorkerThread.h"
 #include <JavaScriptCore/ScriptArguments.h>
@@ -139,6 +141,9 @@ void WorkerGlobalScope::removeAllEventListeners()
 
 bool WorkerGlobalScope::isSecureContext() const
 {
+    if (!RuntimeEnabledFeatures::sharedFeatures().secureContextChecksEnabled())
+        return true;
+
     return securityOrigin() && securityOrigin()->isPotentiallyTrustworthy();
 }
 
@@ -458,6 +463,22 @@ WorkerCacheStorageConnection& WorkerGlobalScope::cacheStorageConnection()
         m_cacheStorageConnection = WorkerCacheStorageConnection::create(*this);
     return *m_cacheStorageConnection;
 }
+
+MessagePortChannelProvider& WorkerGlobalScope::messagePortChannelProvider()
+{
+    if (!m_messagePortChannelProvider)
+        m_messagePortChannelProvider = makeUnique<WorkerMessagePortChannelProvider>(*this);
+    return *m_messagePortChannelProvider;
+}
+
+#if ENABLE(SERVICE_WORKER)
+WorkerSWClientConnection& WorkerGlobalScope::swClientConnection()
+{
+    if (!m_swClientConnection)
+        m_swClientConnection = WorkerSWClientConnection::create(*this);
+    return *m_swClientConnection;
+}
+#endif
 
 void WorkerGlobalScope::createImageBitmap(ImageBitmap::Source&& source, ImageBitmapOptions&& options, ImageBitmap::Promise&& promise)
 {

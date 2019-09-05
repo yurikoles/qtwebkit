@@ -45,6 +45,8 @@ InspectorAgent::InspectorAgent(AgentContext& context)
 {
 }
 
+InspectorAgent::~InspectorAgent() = default;
+
 void InspectorAgent::didCreateFrontendAndBackend(FrontendRouter*, BackendDispatcher*)
 {
 }
@@ -53,8 +55,8 @@ void InspectorAgent::willDestroyFrontendAndBackend(DisconnectReason)
 {
     m_pendingEvaluateTestCommands.clear();
 
-    ErrorString unused;
-    disable(unused);
+    ErrorString ignored;
+    disable(ignored);
 }
 
 void InspectorAgent::enable(ErrorString&)

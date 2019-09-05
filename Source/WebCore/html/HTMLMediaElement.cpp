@@ -803,6 +803,11 @@ bool HTMLMediaElement::isMouseFocusable() const
     return false;
 }
 
+bool HTMLMediaElement::isInteractiveContent() const
+{
+    return controls();
+}
+
 void HTMLMediaElement::parseAttribute(const QualifiedName& name, const AtomString& value)
 {
     if (name == srcAttr) {
@@ -4381,7 +4386,7 @@ static JSC::JSValue controllerJSValue(JSC::ExecState& exec, JSDOMGlobalObject& g
     if (!mediaJSWrapperObject)
         return JSC::jsNull();
 
-    JSC::Identifier controlsHost = JSC::Identifier::fromString(&vm, "controlsHost");
+    JSC::Identifier controlsHost = JSC::Identifier::fromString(vm, "controlsHost");
     JSC::JSValue controlsHostJSWrapper = mediaJSWrapperObject->get(&exec, controlsHost);
     RETURN_IF_EXCEPTION(scope, JSC::jsNull());
 
@@ -4389,7 +4394,7 @@ static JSC::JSValue controllerJSValue(JSC::ExecState& exec, JSDOMGlobalObject& g
     if (!controlsHostJSWrapperObject)
         return JSC::jsNull();
 
-    JSC::Identifier controllerID = JSC::Identifier::fromString(&vm, "controller");
+    JSC::Identifier controllerID = JSC::Identifier::fromString(vm, "controller");
     JSC::JSValue controllerJSWrapper = controlsHostJSWrapperObject->get(&exec, controllerID);
     RETURN_IF_EXCEPTION(scope, JSC::jsNull());
 
@@ -4452,7 +4457,7 @@ void HTMLMediaElement::updateCaptionContainer()
         //     None
         // Return value:
         //     None
-        auto methodValue = controllerObject->get(&exec, JSC::Identifier::fromString(&exec, "updateCaptionContainer"));
+        auto methodValue = controllerObject->get(&exec, JSC::Identifier::fromString(vm, "updateCaptionContainer"));
         auto* methodObject = JSC::jsDynamicCast<JSC::JSObject*>(vm, methodValue);
         if (!methodObject)
             return false;
@@ -6126,7 +6131,6 @@ void HTMLMediaElement::exitFullscreen()
         else
             document().page()->chrome().client().exitVideoFullscreenForVideoElement(downcast<HTMLVideoElement>(*this));
         scheduleEvent(eventNames().webkitendfullscreenEvent);
-        scheduleEvent(eventNames().webkitpresentationmodechangedEvent);
     }
 }
 
@@ -7276,7 +7280,7 @@ bool HTMLMediaElement::ensureMediaControlsInjectedScript()
         auto& vm = globalObject.vm();
         auto scope = DECLARE_CATCH_SCOPE(vm);
 
-        auto functionValue = globalObject.get(&exec, JSC::Identifier::fromString(&exec, "createControls"));
+        auto functionValue = globalObject.get(&exec, JSC::Identifier::fromString(vm, "createControls"));
         if (functionValue.isFunction(vm))
             return true;
 
@@ -7328,7 +7332,7 @@ void HTMLMediaElement::setControllerJSProperty(const char* propertyName, JSC::JS
         if (!controllerObject)
             return false;
 
-        controllerObject->methodTable(vm)->put(controllerObject, &exec, JSC::Identifier::fromString(&exec, propertyName), propertyValue, propertySlot);
+        controllerObject->methodTable(vm)->put(controllerObject, &exec, JSC::Identifier::fromString(vm, propertyName), propertyValue, propertySlot);
 
         return true;
     });
@@ -7354,7 +7358,7 @@ void HTMLMediaElement::didAddUserAgentShadowRoot(ShadowRoot& root)
         // Return value:
         //     A reference to the created media controller instance.
 
-        auto functionValue = globalObject.get(&exec, JSC::Identifier::fromString(&exec, "createControls"));
+        auto functionValue = globalObject.get(&exec, JSC::Identifier::fromString(vm, "createControls"));
         if (functionValue.isUndefinedOrNull())
             return false;
 
@@ -7386,21 +7390,21 @@ void HTMLMediaElement::didAddUserAgentShadowRoot(ShadowRoot& root)
         // Connect the Media, MediaControllerHost, and Controller so the GC knows about their relationship
         auto* mediaJSWrapperObject = mediaJSWrapper.toObject(&exec);
         scope.assertNoException();
-        auto controlsHost = JSC::Identifier::fromString(&exec.vm(), "controlsHost");
+        auto controlsHost = JSC::Identifier::fromString(vm, "controlsHost");
 
         ASSERT(!mediaJSWrapperObject->hasProperty(&exec, controlsHost));
 
-        mediaJSWrapperObject->putDirect(exec.vm(), controlsHost, mediaControlsHostJSWrapper, JSC::PropertyAttribute::DontDelete | JSC::PropertyAttribute::DontEnum | JSC::PropertyAttribute::ReadOnly);
+        mediaJSWrapperObject->putDirect(vm, controlsHost, mediaControlsHostJSWrapper, JSC::PropertyAttribute::DontDelete | JSC::PropertyAttribute::DontEnum | JSC::PropertyAttribute::ReadOnly);
 
         auto* mediaControlsHostJSWrapperObject = JSC::jsDynamicCast<JSC::JSObject*>(vm, mediaControlsHostJSWrapper);
         if (!mediaControlsHostJSWrapperObject)
             return false;
 
-        auto controller = JSC::Identifier::fromString(&exec.vm(), "controller");
+        auto controller = JSC::Identifier::fromString(vm, "controller");
 
         ASSERT(!controllerObject->hasProperty(&exec, controller));
 
-        mediaControlsHostJSWrapperObject->putDirect(exec.vm(), controller, controllerValue, JSC::PropertyAttribute::DontDelete | JSC::PropertyAttribute::DontEnum | JSC::PropertyAttribute::ReadOnly);
+        mediaControlsHostJSWrapperObject->putDirect(vm, controller, controllerValue, JSC::PropertyAttribute::DontDelete | JSC::PropertyAttribute::DontEnum | JSC::PropertyAttribute::ReadOnly);
 
         updatePageScaleFactorJSProperty();
         updateUsesLTRUserInterfaceLayoutDirectionJSProperty();
@@ -7440,6 +7444,9 @@ void HTMLMediaElement::updateMediaControlsAfterPresentationModeChange()
     if (!m_mediaControlsHost || document().activeDOMObjectsAreSuspended() || document().activeDOMObjectsAreStopped())
         return;
 
+    if (RuntimeEnabledFeatures::sharedFeatures().modernMediaControlsEnabled())
+        return;
+
     setupAndCallJS([this](JSDOMGlobalObject& globalObject, JSC::ExecState& exec, ScriptController&, DOMWrapperWorld&) {
         auto& vm = globalObject.vm();
         auto scope = DECLARE_THROW_SCOPE(vm);
@@ -7449,7 +7456,7 @@ void HTMLMediaElement::updateMediaControlsAfterPresentationModeChange()
 
         RETURN_IF_EXCEPTION(scope, false);
 
-        auto functionValue = controllerObject->get(&exec, JSC::Identifier::fromString(&exec, "handlePresentationModeChange"));
+        auto functionValue = controllerObject->get(&exec, JSC::Identifier::fromString(vm, "handlePresentationModeChange"));
         if (UNLIKELY(scope.exception()) || functionValue.isUndefinedOrNull())
             return false;
 
@@ -7492,7 +7499,7 @@ String HTMLMediaElement::getCurrentMediaControlsStatus()
 
         RETURN_IF_EXCEPTION(scope, false);
 
-        auto functionValue = controllerObject->get(&exec, JSC::Identifier::fromString(&exec, "getCurrentControlsStatus"));
+        auto functionValue = controllerObject->get(&exec, JSC::Identifier::fromString(vm, "getCurrentControlsStatus"));
         if (UNLIKELY(scope.exception()) || functionValue.isUndefinedOrNull())
             return false;
 

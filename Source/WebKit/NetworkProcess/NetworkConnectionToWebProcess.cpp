@@ -31,6 +31,7 @@
 #include "DataReference.h"
 #include "NetworkCache.h"
 #include "NetworkMDNSRegisterMessages.h"
+#include "NetworkMessagePortChannelProvider.h"
 #include "NetworkProcess.h"
 #include "NetworkProcessConnectionMessages.h"
 #include "NetworkProcessMessages.h"
@@ -53,6 +54,7 @@
 #include "WebErrors.h"
 #include "WebIDBConnectionToClient.h"
 #include "WebIDBConnectionToClientMessages.h"
+#include "WebProcessMessages.h"
 #include "WebProcessPoolMessages.h"
 #include "WebResourceLoadStatisticsStore.h"
 #include "WebSWServerConnection.h"
@@ -62,6 +64,7 @@
 #include "WebsiteDataStoreParameters.h"
 #include <WebCore/DocumentStorageAccess.h>
 #include <WebCore/NetworkStorageSession.h>
+#include <WebCore/ResourceLoadObserver.h>
 #include <WebCore/ResourceLoadStatistics.h>
 #include <WebCore/ResourceRequest.h>
 #include <WebCore/SameSiteInfo.h>
@@ -74,17 +77,18 @@
 namespace WebKit {
 using namespace WebCore;
 
-Ref<NetworkConnectionToWebProcess> NetworkConnectionToWebProcess::create(NetworkProcess& networkProcess, IPC::Connection::Identifier connectionIdentifier)
+Ref<NetworkConnectionToWebProcess> NetworkConnectionToWebProcess::create(NetworkProcess& networkProcess, WebCore::ProcessIdentifier webProcessIdentifier, IPC::Connection::Identifier connectionIdentifier)
 {
-    return adoptRef(*new NetworkConnectionToWebProcess(networkProcess, connectionIdentifier));
+    return adoptRef(*new NetworkConnectionToWebProcess(networkProcess, webProcessIdentifier, connectionIdentifier));
 }
 
-NetworkConnectionToWebProcess::NetworkConnectionToWebProcess(NetworkProcess& networkProcess, IPC::Connection::Identifier connectionIdentifier)
+NetworkConnectionToWebProcess::NetworkConnectionToWebProcess(NetworkProcess& networkProcess, WebCore::ProcessIdentifier webProcessIdentifier, IPC::Connection::Identifier connectionIdentifier)
     : m_connection(IPC::Connection::createServerConnection(connectionIdentifier, *this))
     , m_networkProcess(networkProcess)
 #if ENABLE(WEB_RTC)
     , m_mdnsRegister(*this)
 #endif
+    , m_webProcessIdentifier(webProcessIdentifier)
 {
     RELEASE_ASSERT(RunLoop::isMain());
 
@@ -100,6 +104,10 @@ NetworkConnectionToWebProcess::~NetworkConnectionToWebProcess()
     RELEASE_ASSERT(RunLoop::isMain());
 
     m_connection->invalidate();
+
+    for (auto& port : m_processEntangledPorts)
+        networkProcess().messagePortChannelRegistry().didCloseMessagePort(port);
+
 #if USE(LIBWEBRTC)
     if (m_rtcProvider)
         m_rtcProvider->close();
@@ -414,10 +422,10 @@ void NetworkConnectionToWebProcess::performSynchronousLoad(NetworkResourceLoadPa
     loader->start();
 }
 
-void NetworkConnectionToWebProcess::testProcessIncomingSyncMessagesWhenWaitingForSyncReply(WebCore::PageIdentifier webPageID, Messages::NetworkConnectionToWebProcess::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply::DelayedReply&& reply)
+void NetworkConnectionToWebProcess::testProcessIncomingSyncMessagesWhenWaitingForSyncReply(WebPageProxyIdentifier pageID, Messages::NetworkConnectionToWebProcess::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply::DelayedReply&& reply)
 {
     bool handled = false;
-    if (!m_networkProcess->parentProcessConnection()->sendSync(Messages::NetworkProcessProxy::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply(webPageID), Messages::NetworkProcessProxy::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply::Reply(handled), 0))
+    if (!m_networkProcess->parentProcessConnection()->sendSync(Messages::NetworkProcessProxy::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply(pageID), Messages::NetworkProcessProxy::TestProcessIncomingSyncMessagesWhenWaitingForSyncReply::Reply(handled), 0))
         return reply(false);
     reply(handled);
 }
@@ -688,38 +696,14 @@ void NetworkConnectionToWebProcess::logUserInteraction(PAL::SessionID sessionID,
     }
 }
 
-void NetworkConnectionToWebProcess::logWebSocketLoading(PAL::SessionID sessionID, const RegistrableDomain& targetDomain, const RegistrableDomain& topFrameDomain, WallTime lastSeen)
+void NetworkConnectionToWebProcess::resourceLoadStatisticsUpdated(ResourceLoadObserver::PerSessionResourceLoadData&& statistics)
 {
-    if (auto* networkSession = networkProcess().networkSession(sessionID)) {
-        if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics())
-            resourceLoadStatistics->logWebSocketLoading(targetDomain, topFrameDomain, lastSeen, [] { });
+    for (auto& iter : statistics) {
+        if (auto* networkSession = networkProcess().networkSession(iter.first)) {
+            if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics())
+                resourceLoadStatistics->resourceLoadStatisticsUpdated(WTFMove(iter.second));
+        }
     }
-}
-
-void NetworkConnectionToWebProcess::logSubresourceLoading(PAL::SessionID sessionID, const RegistrableDomain& targetDomain, const RegistrableDomain& topFrameDomain, WallTime lastSeen)
-{
-    if (auto* networkSession = networkProcess().networkSession(sessionID)) {
-        if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics())
-            resourceLoadStatistics->logSubresourceLoading(targetDomain, topFrameDomain, lastSeen, [] { });
-    }
-}
-
-void NetworkConnectionToWebProcess::logSubresourceRedirect(PAL::SessionID sessionID, const RegistrableDomain& sourceDomain, const RegistrableDomain& targetDomain)
-{
-    if (auto* networkSession = networkProcess().networkSession(sessionID)) {
-        if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics())
-            resourceLoadStatistics->logSubresourceRedirect(sourceDomain, targetDomain, [] { });
-    }
-}
-
-void NetworkConnectionToWebProcess::resourceLoadStatisticsUpdated(Vector<WebCore::ResourceLoadStatistics>&& statistics)
-{
-    auto* networkSession = networkProcess().networkSessionByConnection(connection());
-    if (!networkSession)
-        return;
-
-    if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics())
-        resourceLoadStatistics->resourceLoadStatisticsUpdated(WTFMove(statistics));
 }
 
 void NetworkConnectionToWebProcess::hasStorageAccess(PAL::SessionID sessionID, const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, FrameIdentifier frameID, PageIdentifier pageID, CompletionHandler<void(bool)>&& completionHandler)
@@ -734,11 +718,11 @@ void NetworkConnectionToWebProcess::hasStorageAccess(PAL::SessionID sessionID, c
     completionHandler(true);
 }
 
-void NetworkConnectionToWebProcess::requestStorageAccess(PAL::SessionID sessionID, const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, FrameIdentifier frameID, PageIdentifier pageID, CompletionHandler<void(WebCore::StorageAccessWasGranted wasGranted, WebCore::StorageAccessPromptWasShown promptWasShown)>&& completionHandler)
+void NetworkConnectionToWebProcess::requestStorageAccess(PAL::SessionID sessionID, const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, FrameIdentifier frameID, PageIdentifier webPageID, WebPageProxyIdentifier webPageProxyID, CompletionHandler<void(WebCore::StorageAccessWasGranted wasGranted, WebCore::StorageAccessPromptWasShown promptWasShown)>&& completionHandler)
 {
     if (auto* networkSession = networkProcess().networkSession(sessionID)) {
         if (auto* resourceLoadStatistics = networkSession->resourceLoadStatistics()) {
-            resourceLoadStatistics->requestStorageAccess(subFrameDomain, topFrameDomain, frameID, pageID, WTFMove(completionHandler));
+            resourceLoadStatistics->requestStorageAccess(subFrameDomain, topFrameDomain, frameID, webPageID, webPageProxyID, WTFMove(completionHandler));
             return;
         }
     }
@@ -908,5 +892,83 @@ void NetworkConnectionToWebProcess::establishSWServerConnection(PAL::SessionID s
     completionHandler(WTFMove(serverConnectionIdentifier));
 }
 #endif
+
+void NetworkConnectionToWebProcess::createNewMessagePortChannel(const MessagePortIdentifier& port1, const MessagePortIdentifier& port2)
+{
+    m_processEntangledPorts.add(port1);
+    m_processEntangledPorts.add(port2);
+    networkProcess().messagePortChannelRegistry().didCreateMessagePortChannel(port1, port2);
+}
+
+void NetworkConnectionToWebProcess::entangleLocalPortInThisProcessToRemote(const MessagePortIdentifier& local, const MessagePortIdentifier& remote)
+{
+    m_processEntangledPorts.add(local);
+    networkProcess().messagePortChannelRegistry().didEntangleLocalToRemote(local, remote, m_webProcessIdentifier);
+
+    auto* channel = networkProcess().messagePortChannelRegistry().existingChannelContainingPort(local);
+    if (channel && channel->hasAnyMessagesPendingOrInFlight())
+        connection().send(Messages::NetworkProcessConnection::MessagesAvailableForPort(local), 0);
+}
+
+void NetworkConnectionToWebProcess::messagePortDisentangled(const MessagePortIdentifier& port)
+{
+    auto result = m_processEntangledPorts.remove(port);
+    ASSERT_UNUSED(result, result);
+
+    networkProcess().messagePortChannelRegistry().didDisentangleMessagePort(port);
+}
+
+void NetworkConnectionToWebProcess::messagePortClosed(const MessagePortIdentifier& port)
+{
+    networkProcess().messagePortChannelRegistry().didCloseMessagePort(port);
+}
+
+uint64_t NetworkConnectionToWebProcess::nextMessageBatchIdentifier(Function<void()>&& deliveryCallback)
+{
+    static uint64_t currentMessageBatchIdentifier;
+    ASSERT(!m_messageBatchDeliveryCompletionHandlers.contains(currentMessageBatchIdentifier + 1));
+    m_messageBatchDeliveryCompletionHandlers.add(++currentMessageBatchIdentifier, WTFMove(deliveryCallback));
+    return currentMessageBatchIdentifier;
+}
+
+void NetworkConnectionToWebProcess::takeAllMessagesForPort(const MessagePortIdentifier& port, CompletionHandler<void(Vector<MessageWithMessagePorts>&&, uint64_t)>&& callback)
+{
+    networkProcess().messagePortChannelRegistry().takeAllMessagesForPort(port, [this, protectedThis = makeRef(*this), callback = WTFMove(callback)](auto&& messages, Function<void()>&& deliveryCallback) mutable {
+        callback(WTFMove(messages), nextMessageBatchIdentifier(WTFMove(deliveryCallback)));
+    });
+}
+
+void NetworkConnectionToWebProcess::didDeliverMessagePortMessages(uint64_t messageBatchIdentifier)
+{
+    auto callback = m_messageBatchDeliveryCompletionHandlers.take(messageBatchIdentifier);
+    ASSERT(callback);
+    callback();
+}
+
+void NetworkConnectionToWebProcess::postMessageToRemote(MessageWithMessagePorts&& message, const MessagePortIdentifier& port)
+{
+    if (networkProcess().messagePortChannelRegistry().didPostMessageToRemote(WTFMove(message), port)) {
+        // Look up the process for that port
+        auto* channel = networkProcess().messagePortChannelRegistry().existingChannelContainingPort(port);
+        ASSERT(channel);
+        auto processIdentifier = channel->processForPort(port);
+        if (processIdentifier) {
+            if (auto* connectionToWebProcess = networkProcess().webProcessConnection(*processIdentifier))
+                connectionToWebProcess->connection().send(Messages::NetworkProcessConnection::MessagesAvailableForPort(port), 0);
+        }
+    }
+}
+
+void NetworkConnectionToWebProcess::checkRemotePortForActivity(const WebCore::MessagePortIdentifier port, CompletionHandler<void(bool)>&& callback)
+{
+    networkProcess().messagePortChannelRegistry().checkRemotePortForActivity(port, [callback = WTFMove(callback)](auto hasActivity) mutable {
+        callback(hasActivity == MessagePortChannelProvider::HasActivity::Yes);
+    });
+}
+
+void NetworkConnectionToWebProcess::checkProcessLocalPortForActivity(const MessagePortIdentifier& port, CompletionHandler<void(MessagePortChannelProvider::HasActivity)>&& callback)
+{
+    connection().sendWithAsyncReply(Messages::NetworkProcessConnection::CheckProcessLocalPortForActivity { port }, WTFMove(callback), 0);
+}
 
 } // namespace WebKit

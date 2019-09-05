@@ -689,8 +689,6 @@ static void storeAccessibilityRemoteConnectionInformation(id element, pid_t pid,
 
 #pragma mark Printing
 
-#if !PLATFORM(MACCATALYST)
-
 @interface WKContentView (_WKWebViewPrintFormatter) <_WKWebViewPrintProvider>
 @end
 
@@ -745,7 +743,7 @@ static void storeAccessibilityRemoteConnectionInformation(id element, pid_t pid,
 - (CGPDFDocumentRef)_wk_printedDocument
 {
     if (_isPrintingToPDF) {
-        if (!_page->process().connection()->waitForAndDispatchImmediately<Messages::WebPageProxy::DrawToPDFCallback>(_page->pageID(), Seconds::infinity())) {
+        if (!_page->process().connection()->waitForAndDispatchImmediately<Messages::WebPageProxy::DrawToPDFCallback>(_page->webPageID(), Seconds::infinity())) {
             ASSERT_NOT_REACHED();
             return nullptr;
         }
@@ -756,7 +754,5 @@ static void storeAccessibilityRemoteConnectionInformation(id element, pid_t pid,
 }
 
 @end
-
-#endif // !PLATFORM(MACCATALYST)
 
 #endif // PLATFORM(IOS_FAMILY)

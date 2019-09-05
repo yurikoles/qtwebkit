@@ -45,6 +45,8 @@ InspectorMemoryAgent::InspectorMemoryAgent(PageAgentContext& context)
 {
 }
 
+InspectorMemoryAgent::~InspectorMemoryAgent() = default;
+
 void InspectorMemoryAgent::didCreateFrontendAndBackend(FrontendRouter*, BackendDispatcher*)
 {
 }
@@ -58,7 +60,7 @@ void InspectorMemoryAgent::willDestroyFrontendAndBackend(DisconnectReason)
 void InspectorMemoryAgent::enable(ErrorString& errorString)
 {
     if (m_instrumentingAgents.inspectorMemoryAgent() == this) {
-        errorString = "MemoryAgent already enabled"_s;
+        errorString = "Memory domain already enabled"_s;
         return;
     }
 
@@ -68,7 +70,7 @@ void InspectorMemoryAgent::enable(ErrorString& errorString)
 void InspectorMemoryAgent::disable(ErrorString& errorString)
 {
     if (m_instrumentingAgents.inspectorMemoryAgent() != this) {
-        errorString = "MemoryAgent already disabled"_s;
+        errorString = "Memory domain already disabled"_s;
         return;
     }
 

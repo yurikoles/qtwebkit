@@ -257,9 +257,7 @@ public:
         ASSERT(m_frame.page());
         m_inProgress = false;
         m_frame.page()->progress().progressCompleted(m_frame);
-
-        if (auto pageID = m_frame.loader().client().pageID())
-            platformStrategies()->loaderStrategy()->pageLoadCompleted(pageID.value());
+        platformStrategies()->loaderStrategy()->pageLoadCompleted(*m_frame.page());
     }
 
 private:
@@ -2309,7 +2307,7 @@ void FrameLoader::open(CachedFrameBase& cachedFrame)
     m_needsClear = true;
     m_isComplete = false;
     m_didCallImplicitClose = false;
-    m_outgoingReferrer = url.string();
+    setOutgoingReferrer(url);
 
     FrameView* view = cachedFrame.view();
     

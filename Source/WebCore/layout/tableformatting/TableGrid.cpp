@@ -63,6 +63,20 @@ LayoutUnit TableGrid::Column::logicalWidth() const
     return m_computedLogicalWidth;
 }
 
+void TableGrid::Column::setLogicalLeft(LayoutUnit computedLogicalLeft)
+{
+#ifndef NDEBUG
+    m_hasComputedLeft = true;
+#endif
+    m_computedLogicalLeft = computedLogicalLeft;
+}
+
+LayoutUnit TableGrid::Column::logicalLeft() const
+{
+    ASSERT(m_hasComputedLeft);
+    return m_computedLogicalLeft;
+}
+
 void TableGrid::ColumnsContext::addColumn()
 {
     m_columns.append({ });
@@ -72,6 +86,11 @@ void TableGrid::ColumnsContext::useAsLogicalWidth(WidthConstraintsType type)
 {
     for (auto& column : m_columns)
         column.setLogicalWidth(type == WidthConstraintsType::Minimum ? column.widthConstraints().minimum : column.widthConstraints().maximum);
+}
+
+TableGrid::Row::Row(const Box& rowBox)
+    : m_layoutBox(rowBox)
+{
 }
 
 TableGrid::CellInfo::CellInfo(const Box& tableCellBox, SlotPosition position, CellSize size)
@@ -133,7 +152,7 @@ void TableGrid::appendCell(const Box& tableCellBox)
         m_columnsContext.addColumn();
 
     if (isInNewRow)
-        m_rows.append({ });
+        m_rows.append({ *tableCellBox.parent() });
 
     m_cellList.add(WTFMove(cellInfo));
 }

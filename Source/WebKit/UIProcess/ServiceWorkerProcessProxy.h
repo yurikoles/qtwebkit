@@ -41,14 +41,13 @@ public:
 
     static bool hasRegisteredServiceWorkers(const String& serviceWorkerDirectory);
 
-    void didReceiveAuthenticationChallenge(WebCore::PageIdentifier, WebCore::FrameIdentifier, Ref<AuthenticationChallengeProxy>&&);
-
     void start(const WebPreferencesStore&, Optional<PAL::SessionID> initialSessionID);
     void setUserAgent(const String&);
     void updatePreferencesStore(const WebPreferencesStore&);
 
     const WebCore::RegistrableDomain& registrableDomain() { return m_registrableDomain; }
-    WebCore::PageIdentifier pageID() const { return m_serviceWorkerPageID; }
+    WebPageProxyIdentifier webPageProxyID() const { return m_serviceWorkerPageProxyID; }
+    WebCore::PageIdentifier webPageID() const { return m_serviceWorkerPageID; }
 
 private:
     // AuxiliaryProcessProxy
@@ -59,6 +58,7 @@ private:
     ServiceWorkerProcessProxy(WebProcessPool&, const WebCore::RegistrableDomain&, WebsiteDataStore&);
 
     WebCore::RegistrableDomain m_registrableDomain;
+    WebPageProxyIdentifier m_serviceWorkerPageProxyID;
     WebCore::PageIdentifier m_serviceWorkerPageID;
 };
 

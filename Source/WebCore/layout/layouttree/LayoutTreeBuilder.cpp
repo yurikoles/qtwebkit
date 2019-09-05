@@ -106,8 +106,6 @@ std::unique_ptr<Box> TreeBuilder::createLayoutBox(const RenderElement& parentRen
                 return Box::ElementAttributes { Box::ElementType::TableRow };
             if (element->hasTagName(HTMLNames::colgroupTag))
                 return Box::ElementAttributes { Box::ElementType::TableColumnGroup };
-            if (element->hasTagName(HTMLNames::tbodyTag))
-                return Box::ElementAttributes { Box::ElementType::TableRowGroup };
             if (element->hasTagName(HTMLNames::theadTag))
                 return Box::ElementAttributes { Box::ElementType::TableHeaderGroup };
             if (element->hasTagName(HTMLNames::tbodyTag))
@@ -133,6 +131,7 @@ std::unique_ptr<Box> TreeBuilder::createLayoutBox(const RenderElement& parentRen
             childLayoutBox = makeUnique<Box>(downcast<RenderText>(childRenderer).originalText(), RenderStyle::clone(parentRenderer.style()));
         else
             childLayoutBox = makeUnique<Box>(downcast<RenderText>(childRenderer).originalText(), RenderStyle::createAnonymousStyleWithDisplay(parentRenderer.style(), DisplayType::Inline));
+        childLayoutBox->setIsAnonymous();
         return childLayoutBox;
     }
 
@@ -144,6 +143,7 @@ std::unique_ptr<Box> TreeBuilder::createLayoutBox(const RenderElement& parentRen
     if (is<RenderTable>(renderer)) {
         // Construct the principal table wrapper box (and not the table box itself).
         childLayoutBox = makeUnique<Container>(Box::ElementAttributes { Box::ElementType::TableWrapperBox }, RenderStyle::clone(renderer.style()));
+        childLayoutBox->setIsAnonymous();
     } else if (is<RenderReplaced>(renderer)) {
         if (displayType == DisplayType::Block)
             childLayoutBox = makeUnique<Box>(elementAttributes(renderer), RenderStyle::clone(renderer.style()));
@@ -192,6 +192,9 @@ std::unique_ptr<Box> TreeBuilder::createLayoutBox(const RenderElement& parentRen
             childLayoutBox->setColumnSpan(columnSpan);
     }
 
+    if (childRenderer.isAnonymous())
+        childLayoutBox->setIsAnonymous();
+
     return childLayoutBox;
 }
 
@@ -212,9 +215,14 @@ void TreeBuilder::createTableStructure(const RenderTable& tableRenderer, Contain
 
     auto tableBox = makeUnique<Container>(Box::ElementAttributes { Box::ElementType::TableBox }, RenderStyle::clone(tableRenderer.style()));
     appendChild(tableWrapperBox, *tableBox);
-    while (tableChild) {
-        TreeBuilder::createSubTree(downcast<RenderElement>(*tableChild), *tableBox);
-        tableChild = tableChild->nextSibling();
+    auto* sectionRenderer = tableChild;
+    while (sectionRenderer) {
+        auto sectionBox = createLayoutBox(tableRenderer, *sectionRenderer);
+        appendChild(*tableBox, *sectionBox);
+        auto& sectionContainer = downcast<Container>(*sectionBox);
+        TreeBuilder::createSubTree(downcast<RenderElement>(*sectionRenderer), sectionContainer);
+        sectionBox.release();
+        sectionRenderer = sectionRenderer->nextSibling();
     }
     // Temporary
     tableBox.release();
@@ -242,8 +250,9 @@ static void outputInlineRuns(TextStream& stream, const LayoutState& layoutState,
     auto& lineBoxes = inlineFormattingState.lineBoxes();
 
     unsigned printedCharacters = 0;
-    while (++printedCharacters <= depth * 3)
+    while (++printedCharacters <= depth * 2)
         stream << " ";
+    stream << "  ";
 
     stream << "lines are -> ";
     for (auto& lineBox : lineBoxes)
@@ -252,11 +261,12 @@ static void outputInlineRuns(TextStream& stream, const LayoutState& layoutState,
 
     for (auto& inlineRun : inlineRuns) {
         unsigned printedCharacters = 0;
-        while (++printedCharacters <= depth * 3)
+        while (++printedCharacters <= depth * 2)
             stream << " ";
+        stream << "  ";
         if (inlineRun->textContext())
             stream << "inline text box";
-        else  
+        else
             stream << "inline box";
         stream << " at (" << inlineRun->logicalLeft() << "," << inlineRun->logicalTop() << ") size " << inlineRun->logicalWidth() << "x" << inlineRun->logicalHeight();
         if (inlineRun->textContext())
@@ -286,6 +296,12 @@ static void outputLayoutBox(TextStream& stream, const Box& layoutBox, const Disp
         stream << "TABLE";
     else if (layoutBox.isTableCaption())
         stream << "CAPTION";
+    else if (layoutBox.isTableHeader())
+        stream << "THEAD";
+    else if (layoutBox.isTableBody())
+        stream << "TBODY";
+    else if (layoutBox.isTableFooter())
+        stream << "TFOOT";
     else if (layoutBox.isTableCell())
         stream << "TD";
     else if (layoutBox.isTableRow())

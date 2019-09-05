@@ -310,8 +310,6 @@ constexpr bool enableWebAssemblyStreamingApi = false;
     \
     v(unsigned, maximumVarargsForInlining, 100, Normal, nullptr) \
     \
-    v(bool, useMaximalFlushInsertionPhase, false, Normal, "Setting to true allows the DFG's MaximalFlushInsertionPhase to run.") \
-    \
     v(unsigned, maximumBinaryStringSwitchCaseLength, 50, Normal, nullptr) \
     v(unsigned, maximumBinaryStringSwitchTotalLength, 2000, Normal, nullptr) \
     \
@@ -498,7 +496,7 @@ constexpr bool enableWebAssemblyStreamingApi = false;
     v(bool, useWebAssemblyStreamingApi, enableWebAssemblyStreamingApi, Normal, "Allow to run WebAssembly's Streaming API") \
     v(bool, useCallICsForWebAssemblyToJSCalls, true, Normal, "If true, we will use CallLinkInfo to inline cache Wasm to JS calls.") \
     v(bool, useEagerWebAssemblyModuleHashing, false, Normal, "Unnamed WebAssembly modules are identified in backtraces through their hash, if available.") \
-    v(bool, useWebAssemblyReferences, false, Normal, "Allow types from the wasm references spec.") \
+    v(bool, useWebAssemblyReferences, true, Normal, "Allow types from the wasm references spec.") \
     v(bool, useWeakRefs, false, Normal, "Expose the WeakRef constructor.") \
     v(bool, useBigInt, false, Normal, "If true, we will enable BigInt support.") \
     v(bool, useNullishAwareOperators, false, Normal, "Enable support for ?. and ?? operators.") \
@@ -545,7 +543,6 @@ enum OptionEquivalence {
     v(enableArchitectureSpecificOptimizations, useArchitectureSpecificOptimizations, SameOption) \
     v(enablePolyvariantCallInlining, usePolyvariantCallInlining, SameOption) \
     v(enablePolyvariantByIdInlining, usePolyvariantByIdInlining, SameOption) \
-    v(enableMaximalFlushInsertionPhase, useMaximalFlushInsertionPhase, SameOption) \
     v(objectsAreImmortal, useImmortalObjects, SameOption) \
     v(showObjectStatistics, dumpObjectStatistics, SameOption) \
     v(disableGC, useGC, InvertedOption) \

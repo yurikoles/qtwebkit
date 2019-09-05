@@ -60,7 +60,7 @@ namespace {
 void reportTransactionFailed(ExecuteSQLCallback& requestCallback, SQLError& error)
 {
     auto errorObject = Inspector::Protocol::Database::Error::create()
-        .setMessage(error.message())
+        .setMessage(error.messageIsolatedCopy())
         .setCode(error.code())
         .release();
     requestCallback.sendSuccess(nullptr, nullptr, WTFMove(errorObject));
@@ -205,12 +205,12 @@ void InspectorDatabaseAgent::didCommitLoad()
 
 void InspectorDatabaseAgent::didOpenDatabase(Database& database)
 {
-    if (auto resource = findByFileName(database.fileName())) {
+    if (auto resource = findByFileName(database.fileNameIsolatedCopy())) {
         resource->setDatabase(database);
         return;
     }
 
-    auto resource = InspectorDatabaseResource::create(database, database.securityOrigin().host, database.stringIdentifier(), database.expectedVersion());
+    auto resource = InspectorDatabaseResource::create(database, database.securityOrigin().host, database.stringIdentifierIsolatedCopy(), database.expectedVersionIsolatedCopy());
     m_resources.add(resource->id(), resource.ptr());
     resource->bind(*m_frontendDispatcher);
 }
@@ -222,20 +222,22 @@ InspectorDatabaseAgent::InspectorDatabaseAgent(WebAgentContext& context)
 {
 }
 
+InspectorDatabaseAgent::~InspectorDatabaseAgent() = default;
+
 void InspectorDatabaseAgent::didCreateFrontendAndBackend(Inspector::FrontendRouter*, Inspector::BackendDispatcher*)
 {
 }
 
 void InspectorDatabaseAgent::willDestroyFrontendAndBackend(Inspector::DisconnectReason)
 {
-    ErrorString unused;
-    disable(unused);
+    ErrorString ignored;
+    disable(ignored);
 }
 
 void InspectorDatabaseAgent::enable(ErrorString& errorString)
 {
     if (m_instrumentingAgents.inspectorDatabaseAgent() == this) {
-        errorString = "DatabaseAgent already enabled"_s;
+        errorString = "Database domain already enabled"_s;
         return;
     }
 
@@ -248,7 +250,7 @@ void InspectorDatabaseAgent::enable(ErrorString& errorString)
 void InspectorDatabaseAgent::disable(ErrorString& errorString)
 {
     if (m_instrumentingAgents.inspectorDatabaseAgent() != this) {
-        errorString = "DatabaseAgent already disabled"_s;
+        errorString = "Database domain already disabled"_s;
         return;
     }
 
@@ -260,7 +262,7 @@ void InspectorDatabaseAgent::disable(ErrorString& errorString)
 void InspectorDatabaseAgent::getDatabaseTableNames(ErrorString& errorString, const String& databaseId, RefPtr<JSON::ArrayOf<String>>& names)
 {
     if (m_instrumentingAgents.inspectorDatabaseAgent() != this) {
-        errorString = "Database agent is not enabled"_s;
+        errorString = "Database domain must be enabled"_s;
         return;
     }
 
@@ -275,13 +277,13 @@ void InspectorDatabaseAgent::getDatabaseTableNames(ErrorString& errorString, con
 void InspectorDatabaseAgent::executeSQL(const String& databaseId, const String& query, Ref<ExecuteSQLCallback>&& requestCallback)
 {
     if (m_instrumentingAgents.inspectorDatabaseAgent() != this) {
-        requestCallback->sendFailure("Database agent is not enabled"_s);
+        requestCallback->sendFailure("Database domain must be enabled"_s);
         return;
     }
 
     auto* database = databaseForId(databaseId);
     if (!database) {
-        requestCallback->sendFailure("Database not found");
+        requestCallback->sendFailure("Missing database for given databaseId");
         return;
     }
 
@@ -302,7 +304,7 @@ String InspectorDatabaseAgent::databaseId(Database& database)
 InspectorDatabaseResource* InspectorDatabaseAgent::findByFileName(const String& fileName)
 {
     for (auto& resource : m_resources.values()) {
-        if (resource->database().fileName() == fileName)
+        if (resource->database().fileNameIsolatedCopy() == fileName)
             return resource.get();
     }
     return nullptr;

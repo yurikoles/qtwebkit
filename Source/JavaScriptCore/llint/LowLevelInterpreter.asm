@@ -386,8 +386,8 @@ _%label%_wide32:
 end
 
 macro op(l, fn)
-    commonOp(l, macro () end, macro (unused)
-        fn()
+    commonOp(l, macro () end, macro (size)
+        size(fn, macro() end, macro() end, macro(gen) gen() end)
     end)
 end
 
@@ -1488,6 +1488,7 @@ slowPathOp(create_lexical_environment)
 slowPathOp(create_rest)
 slowPathOp(create_scoped_arguments)
 slowPathOp(create_this)
+slowPathOp(create_promise)
 slowPathOp(define_accessor_property)
 slowPathOp(define_data_property)
 slowPathOp(enumerator_generic_pname)
@@ -1522,6 +1523,7 @@ slowPathOp(throw_static_error)
 slowPathOp(to_index_string)
 slowPathOp(typeof)
 slowPathOp(unreachable)
+slowPathOp(new_promise)
 
 macro llintSlowPathOp(opcodeName)
     llintOp(op_%opcodeName%, unused, macro (unused, unused, dispatch)

@@ -50,6 +50,9 @@
     --background-color-content: white;
     --background-color-code: white;
 
+    --background-color-alternate: hsla(0, 0%, var(--foreground-lightness), 0.05);
+    --background-color-selected: hsla(0, 0%, var(--foreground-lightness), 0.1);
+
     /* Gray background with lighter foreground. In dark mode this is lighter. */
     --gray-background-color: hsl(0, 0%, 66%);
     --gray-foreground-color: white;
@@ -85,10 +88,15 @@
     --panel-background-color: hsl(0, 0%, 93%);
     --panel-background-color-light: hsl(0, 0%, 96%);
 
+    --warning-color: hsl(50, 100%, 94%);
     --warning-background-color: hsl(43, 97%, 84%);
     --warning-background-color-secondary: hsl(51, 87%, 93%);
+
     --error-background-color: hsl(11, 100%, 80%);
     --error-background-color-secondary: hsl(15, 100%, 90%);
+
+    --yellow-highlight-background-color: var(--warning-color);
+    --yellow-highlight-text-color: var(--text-color);
 
     --console-secondary-text-color: hsla(0, 0%, 0%, 0.33);
     --console-prompt-min-height: 30px;
@@ -202,7 +210,6 @@ body.window-inactive * {
 }
 
 @media (prefers-color-scheme: dark) {
-
     :root {
         color: var(--text-color);
 
@@ -232,9 +239,6 @@ body.window-inactive * {
         --gray-background-color: hsl(0, 0%, 50%);
 
         --link-text-color: var(--text-color-secondary);
-
-        --background-color-alternate: hsla(0, 0%, var(--foreground-lightness), 0.05);
-        --background-color-selected: hsla(0, 0%, var(--foreground-lightness), 0.1);
 
         --color-button: hsl(0, 0%, 99%);
         --color-button-active: var(--text-color-active);

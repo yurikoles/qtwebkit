@@ -193,6 +193,7 @@
 #include "SegmentedString.h"
 #include "SelectorQuery.h"
 #include "ServiceWorkerClientData.h"
+#include "ServiceWorkerContainer.h"
 #include "ServiceWorkerProvider.h"
 #include "Settings.h"
 #include "ShadowRoot.h"
@@ -3014,6 +3015,9 @@ void Document::implicitClose()
 
     m_processingLoadEvent = false;
 
+    if (auto* fontFaceSet = fontSelector().optionalFontFaceSet())
+        fontFaceSet->didFirstLayout();
+
 #if PLATFORM(COCOA) || PLATFORM(WIN) || PLATFORM(GTK)
     if (f && hasLivingRenderTree() && AXObjectCache::accessibilityEnabled()) {
         // The AX cache may have been cleared at this point, but we need to make sure it contains an
@@ -5705,6 +5709,14 @@ void Document::finishedParsing()
 
     // Parser should have picked up all speculative preloads by now
     m_cachedResourceLoader->clearPreloads(CachedResourceLoader::ClearPreloadsMode::ClearSpeculativePreloads);
+
+#if ENABLE(SERVICE_WORKER)
+    if (RuntimeEnabledFeatures::sharedFeatures().serviceWorkerEnabled()) {
+        // Stop queuing service worker client messages now that the DOMContentLoaded event has been fired.
+        if (auto* serviceWorkerContainer = this->serviceWorkerContainer())
+            serviceWorkerContainer->startMessages();
+    }
+#endif
 }
 
 void Document::clearSharedObjectPool()
@@ -5933,6 +5945,8 @@ bool Document::isContextThread() const
 bool Document::isSecureContext() const
 {
     if (!m_frame)
+        return true;
+    if (!RuntimeEnabledFeatures::sharedFeatures().secureContextChecksEnabled())
         return true;
     if (!securityOrigin().isPotentiallyTrustworthy())
         return false;
@@ -8267,5 +8281,10 @@ void Document::setApplePayIsActive()
 }
 
 #endif
+
+MessagePortChannelProvider& Document::messagePortChannelProvider()
+{
+    return MessagePortChannelProvider::singleton();
+}
 
 } // namespace WebCore

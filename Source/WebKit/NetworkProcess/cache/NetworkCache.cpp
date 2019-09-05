@@ -59,7 +59,7 @@ static const AtomString& resourceType()
     return resource;
 }
 
-RefPtr<Cache> Cache::open(NetworkProcess& networkProcess, const String& cachePath, OptionSet<CacheOption> options)
+RefPtr<Cache> Cache::open(NetworkProcess& networkProcess, const String& cachePath, OptionSet<CacheOption> options, PAL::SessionID sessionID)
 {
     auto storage = Storage::open(cachePath, options.contains(CacheOption::TestingMode) ? Storage::Mode::AvoidRandomness : Storage::Mode::Normal);
 
@@ -68,7 +68,7 @@ RefPtr<Cache> Cache::open(NetworkProcess& networkProcess, const String& cachePat
     if (!storage)
         return nullptr;
 
-    return adoptRef(*new Cache(networkProcess, storage.releaseNonNull(), options));
+    return adoptRef(*new Cache(networkProcess, storage.releaseNonNull(), options, sessionID));
 }
 
 #if PLATFORM(GTK) || PLATFORM(WPE)
@@ -78,9 +78,10 @@ static void dumpFileChanged(Cache* cache)
 }
 #endif
 
-Cache::Cache(NetworkProcess& networkProcess, Ref<Storage>&& storage, OptionSet<CacheOption> options)
+Cache::Cache(NetworkProcess& networkProcess, Ref<Storage>&& storage, OptionSet<CacheOption> options, PAL::SessionID sessionID)
     : m_storage(WTFMove(storage))
     , m_networkProcess(networkProcess)
+    , m_sessionID(sessionID)
 {
 #if ENABLE(NETWORK_CACHE_SPECULATIVE_REVALIDATION)
     if (options.contains(CacheOption::SpeculativeRevalidation)) {
@@ -108,7 +109,7 @@ Cache::Cache(NetworkProcess& networkProcess, Ref<Storage>&& storage, OptionSet<C
 #endif
 #if PLATFORM(GTK) || PLATFORM(WPE)
         // Triggers with "touch $cachePath/dump".
-        CString dumpFilePath = fileSystemRepresentation(pathByAppendingComponent(m_storage->basePath(), "dump"));
+        CString dumpFilePath = fileSystemRepresentation(pathByAppendingComponent(m_storage->basePathIsolatedCopy(), "dump"));
         GRefPtr<GFile> dumpFile = adoptGRef(g_file_new_for_path(dumpFilePath.data()));
         GFileMonitor* monitor = g_file_monitor_file(dumpFile.get(), G_FILE_MONITOR_NONE, nullptr, nullptr);
         g_signal_connect_swapped(monitor, "changed", G_CALLBACK(dumpFileChanged), this);
@@ -415,7 +416,8 @@ std::unique_ptr<Entry> Cache::store(const WebCore::ResourceRequest& request, con
             mappedBody.shareableResource->createHandle(mappedBody.shareableResourceHandle);
         }
 #endif
-        completionHandler(mappedBody);
+        if (completionHandler)
+            completionHandler(mappedBody);
         LOG(NetworkCache, "(NetworkProcess) stored");
     });
 
@@ -592,9 +594,9 @@ void Cache::clear()
     clear(-WallTime::infinity(), nullptr);
 }
 
-String Cache::recordsPath() const
+String Cache::recordsPathIsolatedCopy() const
 {
-    return m_storage->recordsPath();
+    return m_storage->recordsPathIsolatedCopy();
 }
 
 void Cache::retrieveData(const DataKey& dataKey, Function<void(const uint8_t*, size_t)> completionHandler)

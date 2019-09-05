@@ -46,19 +46,6 @@ bool defaultPassiveTouchListenersAsDefaultOnDocument()
 #endif
 }
 
-bool defaultCustomPasteboardDataEnabled()
-{
-#if PLATFORM(MACCATALYST)
-    return true;
-#elif PLATFORM(IOS_FAMILY)
-    return WebCore::IOSApplication::isMobileSafari() || dyld_get_program_sdk_version() >= DYLD_IOS_VERSION_11_3;
-#elif PLATFORM(MAC)
-    return WebCore::MacApplication::isSafari() || dyld_get_program_sdk_version() > DYLD_MACOSX_VERSION_10_13;
-#else
-    return false;
-#endif
-}
-
 bool defaultCSSOMViewScrollingAPIEnabled()
 {
 #if PLATFORM(IOS_FAMILY)
@@ -76,5 +63,16 @@ bool defaultTextAutosizingUsesIdempotentMode()
 }
 
 #endif // ENABLE(TEXT_AUTOSIZING) && !PLATFORM(IOS_FAMILY)
+
+bool defaultWebAuthenticationEnabled()
+{
+#if PLATFORM(IOS_FAMILY)
+    return WebCore::IOSApplication::isMobileSafari() || WebCore::IOSApplication::isSafariViewService();
+#elif PLATFORM(MAC)
+    return true;
+#else
+    return false;
+#endif
+}
 
 } // namespace WebKit

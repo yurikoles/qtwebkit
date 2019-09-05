@@ -435,6 +435,11 @@ bool HTMLInputElement::hasCustomFocusLogic() const
     return m_inputType->hasCustomFocusLogic();
 }
 
+int HTMLInputElement::defaultTabIndex() const
+{
+    return 0;
+}
+
 bool HTMLInputElement::isKeyboardFocusable(KeyboardEvent* event) const
 {
     return m_inputType->isKeyboardFocusable(event);
@@ -443,6 +448,11 @@ bool HTMLInputElement::isKeyboardFocusable(KeyboardEvent* event) const
 bool HTMLInputElement::isMouseFocusable() const
 {
     return m_inputType->isMouseFocusable();
+}
+
+bool HTMLInputElement::isInteractiveContent() const
+{
+    return m_inputType->isInteractiveContent();
 }
 
 bool HTMLInputElement::isTextFormControlFocusable() const

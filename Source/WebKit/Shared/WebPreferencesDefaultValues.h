@@ -250,6 +250,12 @@
 #define DEFAULT_DATALIST_ELEMENT_ENABLED true
 #endif
 
+#if PLATFORM(COCOA)
+#define DEFAULT_CUSTOM_PASTEBOARD_DATA_ENABLED true
+#else
+#define DEFAULT_CUSTOM_PASTEBOARD_DATA_ENABLED false
+#endif
+
 #if PLATFORM(IOS)
 #define DEFAULT_DOM_PASTE_ACCESS_REQUESTS_ENABLED true
 #else
@@ -270,20 +276,15 @@
 #define DEFAULT_APPLE_PAY_ENABLED false
 #endif
 
-#if PLATFORM(MAC)
-#define DEFAULT_WEB_AUTHENTICATION_ENABLED true
-#else
-#define DEFAULT_WEB_AUTHENTICATION_ENABLED false
-#endif
-
 namespace WebKit {
 
 bool defaultPassiveTouchListenersAsDefaultOnDocument();
-bool defaultCustomPasteboardDataEnabled();
 bool defaultCSSOMViewScrollingAPIEnabled();
 
 #if ENABLE(TEXT_AUTOSIZING)
 bool defaultTextAutosizingUsesIdempotentMode();
 #endif
+
+bool defaultWebAuthenticationEnabled();
 
 } // namespace WebKit

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "StorageAreaIdentifier.h"
+#include "StorageNamespaceIdentifier.h"
 #include <WebCore/SecurityOriginData.h>
 #include <wtf/Forward.h>
 #include <wtf/HashMap.h>
@@ -40,7 +42,7 @@ class LocalStorageNamespace : public CanMakeWeakPtr<LocalStorageNamespace> {
     WTF_MAKE_NONCOPYABLE(LocalStorageNamespace);
     WTF_MAKE_FAST_ALLOCATED;
 public:
-    LocalStorageNamespace(StorageManager&, uint64_t storageManagerID);
+    LocalStorageNamespace(StorageManager&, StorageNamespaceIdentifier);
     ~LocalStorageNamespace();
 
     StorageManager* storageManager() const { return &m_storageManager; }
@@ -52,6 +54,8 @@ public:
     void clearAllStorageAreas();
 
     Vector<WebCore::SecurityOriginData> ephemeralOrigins() const;
+
+    Vector<StorageAreaIdentifier> storageAreaIdentifiers() const;
 
 private:
     StorageManager& m_storageManager;

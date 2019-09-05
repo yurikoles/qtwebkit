@@ -1324,19 +1324,14 @@ bool WebProcessPool::mayHaveRegisteredServiceWorkers(const WebsiteDataStore& sto
 }
 #endif
 
-void WebProcessPool::pageBeginUsingWebsiteDataStore(PageIdentifier pageID, WebsiteDataStore& dataStore)
+void WebProcessPool::pageBeginUsingWebsiteDataStore(WebPageProxyIdentifier pageID, WebsiteDataStore& dataStore)
 {
-    auto result = m_sessionToPageIDsMap.add(dataStore.sessionID(), HashSet<PageIdentifier>()).iterator->value.add(pageID);
+    auto result = m_sessionToPageIDsMap.add(dataStore.sessionID(), HashSet<WebPageProxyIdentifier>()).iterator->value.add(pageID);
     ASSERT_UNUSED(result, result.isNewEntry);
 
     auto sessionID = dataStore.sessionID();
-    if (sessionID.isEphemeral()) {
-        ASSERT(dataStore.parameters().networkSessionParameters.sessionID == sessionID);
-        if (m_networkProcess) {
-            m_networkProcess->addSession(makeRef(dataStore));
-            dataStore.clearPendingCookies();
-        }
-    } else if (sessionID != PAL::SessionID::defaultSessionID()) {
+    if (sessionID != PAL::SessionID::defaultSessionID()) {
+        ASSERT(!sessionID.isEphemeral() || dataStore.parameters().networkSessionParameters.sessionID == sessionID);
         if (m_networkProcess) {
             m_networkProcess->addSession(makeRef(dataStore));
             dataStore.clearPendingCookies();
@@ -1344,7 +1339,7 @@ void WebProcessPool::pageBeginUsingWebsiteDataStore(PageIdentifier pageID, Websi
     }
 }
 
-void WebProcessPool::pageEndUsingWebsiteDataStore(PageIdentifier pageID, WebsiteDataStore& dataStore)
+void WebProcessPool::pageEndUsingWebsiteDataStore(WebPageProxyIdentifier pageID, WebsiteDataStore& dataStore)
 {
     auto sessionID = dataStore.sessionID();
     auto iterator = m_sessionToPageIDsMap.find(sessionID);
@@ -1356,14 +1351,8 @@ void WebProcessPool::pageEndUsingWebsiteDataStore(PageIdentifier pageID, Website
     if (iterator->value.isEmpty()) {
         m_sessionToPageIDsMap.remove(iterator);
 
-        if (sessionID == PAL::SessionID::defaultSessionID())
-            return;
-
-        // The last user of this non-default PAL::SessionID is gone, so clean it up in the child processes.
-        if (networkProcess())
-            networkProcess()->removeSession(sessionID);
-
-        m_webProcessCache->clearAllProcessesForSession(sessionID);
+        if (sessionID.isEphemeral())
+            m_webProcessCache->clearAllProcessesForSession(sessionID);
     }
 }
 
@@ -2228,18 +2217,6 @@ void WebProcessPool::updateProcessAssertions()
 #endif
 }
 
-#if ENABLE(SERVICE_WORKER)
-void WebProcessPool::postMessageToServiceWorkerClient(const ServiceWorkerClientIdentifier& destination, MessageWithMessagePorts&& message, ServiceWorkerIdentifier source, const String& sourceOrigin)
-{
-    sendToNetworkingProcessRelaunchingIfNecessary(Messages::NetworkProcess::PostMessageToServiceWorkerClient(destination, WTFMove(message), source, sourceOrigin));
-}
-
-void WebProcessPool::postMessageToServiceWorker(ServiceWorkerIdentifier destination, MessageWithMessagePorts&& message, const ServiceWorkerOrClientIdentifier& source, SWServerConnectionIdentifier connectionIdentifier)
-{
-    sendToNetworkingProcessRelaunchingIfNecessary(Messages::NetworkProcess::PostMessageToServiceWorker(destination, WTFMove(message), source, connectionIdentifier));
-}
-#endif
-
 void WebProcessPool::reinstateNetworkProcessAssertionState(NetworkProcessProxy& newNetworkProcessProxy)
 {
 #if PLATFORM(IOS_FAMILY)
@@ -2253,17 +2230,17 @@ void WebProcessPool::reinstateNetworkProcessAssertionState(NetworkProcessProxy& 
 #endif
 }
 
-#if ENABLE(SERVICE_WORKER)
-ServiceWorkerProcessProxy* WebProcessPool::serviceWorkerProcessProxyFromPageID(PageIdentifier pageID) const
+bool WebProcessPool::isServiceWorkerPageID(WebPageProxyIdentifier pageID) const
 {
+#if ENABLE(SERVICE_WORKER)
     // FIXME: This is inefficient.
     for (auto* serviceWorkerProcess : m_serviceWorkerProcesses.values()) {
-        if (serviceWorkerProcess->pageID() == pageID)
-            return serviceWorkerProcess;
+        if (serviceWorkerProcess->webPageProxyID() == pageID)
+            return true;
     }
-    return nullptr;
-}
 #endif
+    return false;
+}
 
 void WebProcessPool::addProcessToOriginCacheSet(WebProcessProxy& process, const URL& url)
 {
@@ -2364,11 +2341,6 @@ void WebProcessPool::processForNavigationInternal(WebPageProxy& page, const API:
 
         if (RefPtr<WebProcessProxy> process = WebProcessProxy::processForIdentifier(targetItem->lastProcessIdentifier())) {
             if (process->state() != WebProcessProxy::State::Terminated) {
-                // FIXME: Architecturally we do not currently support multiple WebPage's with the same ID in a given WebProcess.
-                // In the case where this WebProcess has a SuspendedPageProxy for this WebPage, we can throw it away to support
-                // WebProcess re-use.
-                removeAllSuspendedPagesForPage(page, process.get());
-
                 // Make sure we remove the process from the cache if it is in there since we're about to use it.
                 if (process->isInProcessCache()) {
                     webProcessCache().removeProcess(*process, WebProcessCache::ShouldShutDownProcess::No);
@@ -2406,12 +2378,6 @@ void WebProcessPool::processForNavigationInternal(WebPageProxy& page, const API:
             if (&process->websiteDataStore() == dataStore.ptr()) {
                 LOG(ProcessSwapping, "(ProcessSwapping) Reusing a previously cached process with pid %i to continue navigation to URL %s", process->processIdentifier(), targetURL.string().utf8().data());
 
-                // FIXME: Architecturally we do not currently support multiple WebPage's with the same ID in a given WebProcess.
-                // In the case where this WebProcess has a SuspendedPageProxy for this WebPage, we can throw it away to support
-                // WebProcess re-use.
-                // In the future it would be great to refactor-out this limitation (https://bugs.webkit.org/show_bug.cgi?id=191166).
-                removeAllSuspendedPagesForPage(page, process);
-
                 return completionHandler(makeRef(*process), nullptr, reason);
             }
         }
@@ -2425,18 +2391,7 @@ RefPtr<WebProcessProxy> WebProcessPool::findReusableSuspendedPageProcess(const W
     auto it = m_suspendedPages.findIf([&](auto& suspendedPage) {
         return suspendedPage->process().registrableDomain() == registrableDomain && &suspendedPage->process().websiteDataStore() == &dataStore;
     });
-    if (it == m_suspendedPages.end())
-        return nullptr;
-
-    Ref<WebProcessProxy> process = (*it)->process();
-
-    // FIXME: If the SuspendedPage is for this page, then we need to destroy the suspended page as we do not support having
-    // multiple WebPages with the same ID in a given WebProcess currently (https://bugs.webkit.org/show_bug.cgi?id=191166).
-    if (&(*it)->page() == &page)
-        m_suspendedPages.remove(it);
-
-
-    return process;
+    return it == m_suspendedPages.end() ? nullptr : &(*it)->process();
 }
 
 void WebProcessPool::addSuspendedPage(std::unique_ptr<SuspendedPageProxy>&& suspendedPage)
@@ -2563,12 +2518,12 @@ void WebProcessPool::clearCurrentModifierStateForTesting()
 }
 
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
-void WebProcessPool::didCommitCrossSiteLoadWithDataTransfer(PAL::SessionID sessionID, const RegistrableDomain& fromDomain, const RegistrableDomain& toDomain, OptionSet<CrossSiteNavigationDataTransfer::Flag> navigationDataTransfer, PageIdentifier pageID)
+void WebProcessPool::didCommitCrossSiteLoadWithDataTransfer(PAL::SessionID sessionID, const RegistrableDomain& fromDomain, const RegistrableDomain& toDomain, OptionSet<CrossSiteNavigationDataTransfer::Flag> navigationDataTransfer, WebPageProxyIdentifier webPageProxyID, PageIdentifier webPageID)
 {
     if (!m_networkProcess)
         return;
 
-    m_networkProcess->didCommitCrossSiteLoadWithDataTransfer(sessionID, fromDomain, toDomain, navigationDataTransfer, pageID);
+    m_networkProcess->didCommitCrossSiteLoadWithDataTransfer(sessionID, fromDomain, toDomain, navigationDataTransfer, webPageProxyID, webPageID);
 }
 #endif
 

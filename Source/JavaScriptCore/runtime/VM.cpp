@@ -251,7 +251,7 @@ VM::VM(VMType vmType, HeapType heapType)
 #if USE(CF)
     , m_runLoop(CFRunLoopGetCurrent())
 #endif // USE(CF)
-    , heap(this, heapType)
+    , heap(*this, heapType)
     , fastMallocAllocator(makeUnique<FastMallocAlignedMemoryAllocator>())
     , primitiveGigacageAllocator(makeUnique<GigacageAlignedMemoryAllocator>(Gigacage::Primitive))
     , jsValueGigacageAllocator(makeUnique<GigacageAlignedMemoryAllocator>(Gigacage::JSValue))
@@ -337,7 +337,7 @@ VM::VM(VMType vmType, HeapType heapType)
 
     smallStrings.initializeCommonStrings(*this);
 
-    propertyNames = new CommonIdentifiers(this);
+    propertyNames = new CommonIdentifiers(*this);
     terminatedExecutionErrorStructure.set(*this, TerminatedExecutionError::createStructure(*this, 0, jsNull()));
     propertyNameEnumeratorStructure.set(*this, JSPropertyNameEnumerator::createStructure(*this, 0, jsNull()));
     customGetterSetterStructure.set(*this, CustomGetterSetter::createStructure(*this, 0, jsNull()));
@@ -703,7 +703,7 @@ NativeExecutable* VM::getHostFunction(NativeFunction function, Intrinsic intrins
 #if ENABLE(JIT)
     if (canUseJIT()) {
         return jitStubs->hostFunctionStub(
-            this, function, constructor,
+            *this, function, constructor,
             intrinsic != NoIntrinsic ? thunkGeneratorForIntrinsic(intrinsic) : 0,
             intrinsic, signature, name);
     }
@@ -718,8 +718,8 @@ MacroAssemblerCodePtr<JSEntryPtrTag> VM::getCTIInternalFunctionTrampolineFor(Cod
 #if ENABLE(JIT)
     if (canUseJIT()) {
         if (kind == CodeForCall)
-            return jitStubs->ctiInternalFunctionCall(this).retagged<JSEntryPtrTag>();
-        return jitStubs->ctiInternalFunctionConstruct(this).retagged<JSEntryPtrTag>();
+            return jitStubs->ctiInternalFunctionCall(*this).retagged<JSEntryPtrTag>();
+        return jitStubs->ctiInternalFunctionConstruct(*this).retagged<JSEntryPtrTag>();
     }
 #endif
     if (kind == CodeForCall)
@@ -771,7 +771,7 @@ void VM::deleteAllCode(DeleteAllCodeEffort effort)
 void VM::shrinkFootprintWhenIdle()
 {
     whenIdle([=] () {
-        sanitizeStackForVM(this);
+        sanitizeStackForVM(*this);
         deleteAllCode(DeleteAllCodeIfNotCollecting);
         heap.collectNow(Synchronousness::Sync, CollectionScope::Full);
         // FIXME: Consider stopping various automatic threads here.
@@ -925,16 +925,16 @@ void VM::gatherScratchBufferRoots(ConservativeRoots& conservativeRoots)
 }
 #endif
 
-void logSanitizeStack(VM* vm)
+void logSanitizeStack(VM& vm)
 {
-    if (Options::verboseSanitizeStack() && vm->topCallFrame) {
+    if (Options::verboseSanitizeStack() && vm.topCallFrame) {
         int dummy;
         auto& stackBounds = Thread::current().stack();
         dataLog(
-            "Sanitizing stack for VM = ", RawPointer(vm), " with top call frame at ", RawPointer(vm->topCallFrame),
+            "Sanitizing stack for VM = ", RawPointer(&vm), " with top call frame at ", RawPointer(vm.topCallFrame),
             ", current stack pointer at ", RawPointer(&dummy), ", in ",
-            pointerDump(vm->topCallFrame->codeBlock()), ", last code origin = ",
-            vm->topCallFrame->codeOrigin(), ", last stack top = ", RawPointer(vm->lastStackTop()), ", in stack range [", RawPointer(stackBounds.origin()), ", ", RawPointer(stackBounds.end()), "]\n");
+            pointerDump(vm.topCallFrame->codeBlock()), ", last code origin = ",
+            vm.topCallFrame->codeOrigin(), ", last stack top = ", RawPointer(vm.lastStackTop()), ", in stack range [", RawPointer(stackBounds.origin()), ", ", RawPointer(stackBounds.end()), "]\n");
     }
 }
 
@@ -1090,13 +1090,51 @@ void VM::queueMicrotask(JSGlobalObject& globalObject, Ref<Microtask>&& task)
     m_microtaskQueue.append(makeUnique<QueuedTask>(*this, &globalObject, WTFMove(task)));
 }
 
+void VM::callPromiseRejectionCallback(Strong<JSPromise>& promise)
+{
+    JSObject* callback = promise->globalObject()->unhandledRejectionCallback();
+    if (!callback)
+        return;
+
+    auto scope = DECLARE_CATCH_SCOPE(*this);
+
+    CallData callData;
+    CallType callType = getCallData(*this, callback, callData);
+    ASSERT(callType != CallType::None);
+
+    MarkedArgumentBuffer args;
+    args.append(promise.get());
+    args.append(promise->result(*this));
+    call(promise->globalObject()->globalExec(), callback, callType, callData, jsNull(), args);
+    scope.clearException();
+}
+
+void VM::didExhaustMicrotaskQueue()
+{
+    auto unhandledRejections = WTFMove(m_aboutToBeNotifiedRejectedPromises);
+    for (auto& promise : unhandledRejections) {
+        if (promise->isHandled(*this))
+            continue;
+
+        callPromiseRejectionCallback(promise);
+    }
+}
+
+void VM::promiseRejected(JSPromise* promise)
+{
+    m_aboutToBeNotifiedRejectedPromises.constructAndAppend(*this, promise);
+}
+
 void VM::drainMicrotasks()
 {
-    while (!m_microtaskQueue.isEmpty()) {
-        m_microtaskQueue.takeFirst()->run();
-        if (m_onEachMicrotaskTick)
-            m_onEachMicrotaskTick(*this);
-    }
+    do {
+        while (!m_microtaskQueue.isEmpty()) {
+            m_microtaskQueue.takeFirst()->run();
+            if (m_onEachMicrotaskTick)
+                m_onEachMicrotaskTick(*this);
+        }
+        didExhaustMicrotaskQueue();
+    } while (!m_microtaskQueue.isEmpty());
     finalizeSynchronousJSExecution();
 }
 
@@ -1105,18 +1143,18 @@ void QueuedTask::run()
     m_microtask->run(m_globalObject->globalExec());
 }
 
-void sanitizeStackForVM(VM* vm)
+void sanitizeStackForVM(VM& vm)
 {
     logSanitizeStack(vm);
-    if (vm->topCallFrame) {
+    if (vm.topCallFrame) {
         auto& stackBounds = Thread::current().stack();
-        ASSERT(vm->currentThreadIsHoldingAPILock());
-        ASSERT_UNUSED(stackBounds, stackBounds.contains(vm->lastStackTop()));
+        ASSERT(vm.currentThreadIsHoldingAPILock());
+        ASSERT_UNUSED(stackBounds, stackBounds.contains(vm.lastStackTop()));
     }
 #if ENABLE(C_LOOP)
-    vm->interpreter->cloopStack().sanitizeStack();
+    vm.interpreter->cloopStack().sanitizeStack();
 #else
-    sanitizeStackForVMImpl(vm);
+    sanitizeStackForVMImpl(&vm);
 #endif
 }
 
@@ -1312,7 +1350,7 @@ JSCell* VM::sentinelMapBucketSlow()
 JSPropertyNameEnumerator* VM::emptyPropertyNameEnumeratorSlow()
 {
     ASSERT(!m_emptyPropertyNameEnumerator);
-    PropertyNameArray propertyNames(this, PropertyNameMode::Strings, PrivateSymbolMode::Exclude);
+    PropertyNameArray propertyNames(*this, PropertyNameMode::Strings, PrivateSymbolMode::Exclude);
     auto* enumerator = JSPropertyNameEnumerator::create(*this, nullptr, 0, 0, WTFMove(propertyNames));
     m_emptyPropertyNameEnumerator.set(*this, enumerator);
     return enumerator;

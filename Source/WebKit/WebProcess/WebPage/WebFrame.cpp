@@ -170,8 +170,8 @@ WebPage* WebFrame::page() const
     if (!m_coreFrame)
         return nullptr;
     
-    if (Page* page = m_coreFrame->page())
-        return WebPage::fromCorePage(page);
+    if (auto* page = m_coreFrame->page())
+        return &WebPage::fromCorePage(*page);
 
     return nullptr;
 }
@@ -738,7 +738,7 @@ JSValueRef WebFrame::jsWrapperForWorld(InjectedBundleRangeHandle* rangeHandle, I
 
 String WebFrame::counterValue(JSObjectRef element)
 {
-    if (!toJS(element)->inherits<JSElement>(*toJS(element)->vm()))
+    if (!toJS(element)->inherits<JSElement>(toJS(element)->vm()))
         return String();
 
     return counterValueForElement(&jsCast<JSElement*>(toJS(element))->wrapped());

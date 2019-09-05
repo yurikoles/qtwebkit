@@ -387,12 +387,6 @@ let InjectedScript = class InjectedScript
         return this._objectForId(parsedObjectId);
     }
 
-    inspectObject(object)
-    {
-        if (this._commandLineAPIImpl)
-            this._commandLineAPIImpl.inspect(object);
-    }
-
     releaseObject(objectId)
     {
         let parsedObjectId = this._parseObjectId(objectId);
@@ -417,27 +411,31 @@ let InjectedScript = class InjectedScript
         delete this._objectGroups[objectGroupName];
     }
 
+    // CommandLineAPI
+
+    inspectObject(object)
+    {
+        if (this._inspectObject)
+            this._inspectObject(object);
+    }
+
     // InjectedScriptModule C++ API
 
-    module(name)
+    hasInjectedModule(name)
     {
         return this._modules[name];
     }
 
     injectModule(name, source, host)
     {
-        delete this._modules[name];
+        this._modules[name] = false;
 
         let moduleFunction = InjectedScriptHost.evaluate("(" + source + ")");
-        if (typeof moduleFunction !== "function") {
-            if (inspectedGlobalObject.console)
-                inspectedGlobalObject.console.error("Web Inspector error: A function was expected for module %s evaluation", name);
-            return null;
-        }
+        if (typeof moduleFunction !== "function")
+            throw "Error: Web Inspector: a function was expected for injectModule";
+        moduleFunction(InjectedScriptHost, inspectedGlobalObject, injectedScriptId, this, {RemoteObject, CommandLineAPI}, host);
 
-        let module = moduleFunction.call(inspectedGlobalObject, InjectedScriptHost, inspectedGlobalObject, injectedScriptId, this, RemoteObject, host);
-        this._modules[name] = module;
-        return module;
+        this._modules[name] = true;
     }
 
     // InjectedScriptModule JavaScript API
@@ -568,13 +566,8 @@ let InjectedScript = class InjectedScript
     _evaluateOn(evalFunction, object, expression, isEvalOnCallFrame, includeCommandLineAPI)
     {
         let commandLineAPI = null;
-        if (includeCommandLineAPI) {
-            if (this.CommandLineAPI)
-                commandLineAPI = new this.CommandLineAPI(this._commandLineAPIImpl, isEvalOnCallFrame ? object : null);
-            else
-                commandLineAPI = new BasicCommandLineAPI(isEvalOnCallFrame ? object : null);
-        }
-
+        if (includeCommandLineAPI)
+            commandLineAPI = new CommandLineAPI(isEvalOnCallFrame ? object : null);
         return evalFunction.call(object, expression, commandLineAPI);
     }
 
@@ -868,11 +861,6 @@ let InjectedScript = class InjectedScript
         // $n is limited from $1-$99. $0 is special.
         if (this._nextSavedResultIndex >= 100)
             this._nextSavedResultIndex = 1;
-    }
-
-    _savedResult(index)
-    {
-        return this._savedResults[index];
     }
 };
 
@@ -1457,14 +1445,7 @@ InjectedScript.CallFrameProxy._createScopeJson = function(object, {name, type, l
 
 // -------
 
-function bind(func, thisObject, ...outerArgs)
-{
-    return function(...innerArgs) {
-        return func.apply(thisObject, outerArgs.concat(innerArgs));
-    };
-}
-
-function BasicCommandLineAPI(callFrame)
+function CommandLineAPI(callFrame)
 {
     let savedResultAlias = InjectedScriptHost.savedResultAlias;
 
@@ -1475,7 +1456,7 @@ function BasicCommandLineAPI(callFrame)
         }
 
         this.__defineGetter__("$" + key, value);
-        if (savedResultAlias)
+        if (savedResultAlias && savedResultAlias !== "$")
             this.__defineGetter__(savedResultAlias + key, value);
     };
 
@@ -1489,44 +1470,58 @@ function BasicCommandLineAPI(callFrame)
         defineGetter("event", injectedScript._eventValue);
 
     // $1-$99
-    for (let i = 1; i <= injectedScript._savedResults.length; ++i)
-        defineGetter(i, bind(injectedScript._savedResult, injectedScript, i));
+    for (let i = 1; i < injectedScript._savedResults.length; ++i)
+        defineGetter(i, injectedScript._savedResults[i]);
 
-    // Command Line API methods.
-    for (let i = 0; i < BasicCommandLineAPI.methods.length; ++i) {
-        let method = BasicCommandLineAPI.methods[i];
-        this[method.name] = method;
-    }
+    for (let name in CommandLineAPI.getters)
+        defineGetter(name, CommandLineAPI.getters[name]);
+
+    for (let name in CommandLineAPI.methods)
+        this[name] = CommandLineAPI.methods[name];
 }
 
-BasicCommandLineAPI.methods = [
-    function dir() { return inspectedGlobalObject.console.dir(...arguments); },
-    function clear() { return inspectedGlobalObject.console.clear(...arguments); },
-    function table() { return inspectedGlobalObject.console.table(...arguments); },
-    function profile() { return inspectedGlobalObject.console.profile(...arguments); },
-    function profileEnd() { return inspectedGlobalObject.console.profileEnd(...arguments); },
+CommandLineAPI.getters = {};
 
-    function keys(object) { return Object.keys(object); },
-    function values(object) {
-        let result = [];
-        for (let key in object)
-            result.push(object[key]);
-        return result;
-    },
+CommandLineAPI.methods = {};
 
-    function queryInstances() {
-        return InjectedScriptHost.queryInstances(...arguments);
-    },
+CommandLineAPI.methods["keys"] = function(object) { return Object.keys(object); };
+CommandLineAPI.methods["values"] = function(object) { return Object.values(object); };
 
-    function queryObjects() {
-        return InjectedScriptHost.queryInstances(...arguments);
-    },
-];
+CommandLineAPI.methods["queryInstances"] = function() { return InjectedScriptHost.queryInstances(...arguments); };
+CommandLineAPI.methods["queryObjects"] = function() { return InjectedScriptHost.queryInstances(...arguments); };
+CommandLineAPI.methods["queryHolders"] = function() { return InjectedScriptHost.queryHolders(...arguments); };
 
-for (let i = 0; i < BasicCommandLineAPI.methods.length; ++i) {
-    let method = BasicCommandLineAPI.methods[i];
-    method.toString = function() { return "function " + method.name + "() { [Command Line API] }"; };
-}
+CommandLineAPI.methods["inspect"] = function(object) { return injectedScript.inspectObject(object); };
+
+CommandLineAPI.methods["assert"] = function() { return inspectedGlobalObject.console.assert(...arguments); };
+CommandLineAPI.methods["clear"] = function() { return inspectedGlobalObject.console.clear(...arguments); };
+CommandLineAPI.methods["count"] = function() { return inspectedGlobalObject.console.count(...arguments); };
+CommandLineAPI.methods["countReset"] = function() { return inspectedGlobalObject.console.countReset(...arguments); };
+CommandLineAPI.methods["debug"] = function() { return inspectedGlobalObject.console.debug(...arguments); };
+CommandLineAPI.methods["dir"] = function() { return inspectedGlobalObject.console.dir(...arguments); };
+CommandLineAPI.methods["dirxml"] = function() { return inspectedGlobalObject.console.dirxml(...arguments); };
+CommandLineAPI.methods["error"] = function() { return inspectedGlobalObject.console.error(...arguments); };
+CommandLineAPI.methods["group"] = function() { return inspectedGlobalObject.console.group(...arguments); };
+CommandLineAPI.methods["groupCollapsed"] = function() { return inspectedGlobalObject.console.groupCollapsed(...arguments); };
+CommandLineAPI.methods["groupEnd"] = function() { return inspectedGlobalObject.console.groupEnd(...arguments); };
+CommandLineAPI.methods["info"] = function() { return inspectedGlobalObject.console.info(...arguments); };
+CommandLineAPI.methods["log"] = function() { return inspectedGlobalObject.console.log(...arguments); };
+CommandLineAPI.methods["profile"] = function() { return inspectedGlobalObject.console.profile(...arguments); };
+CommandLineAPI.methods["profileEnd"] = function() { return inspectedGlobalObject.console.profileEnd(...arguments); };
+CommandLineAPI.methods["record"] = function() { return inspectedGlobalObject.console.record(...arguments); };
+CommandLineAPI.methods["recordEnd"] = function() { return inspectedGlobalObject.console.recordEnd(...arguments); };
+CommandLineAPI.methods["screenshot"] = function() { return inspectedGlobalObject.console.screenshot(...arguments); };
+CommandLineAPI.methods["table"] = function() { return inspectedGlobalObject.console.table(...arguments); };
+CommandLineAPI.methods["takeHeapSnapshot"] = function() { return inspectedGlobalObject.console.takeHeapSnapshot(...arguments); };
+CommandLineAPI.methods["time"] = function() { return inspectedGlobalObject.console.time(...arguments); };
+CommandLineAPI.methods["timeEnd"] = function() { return inspectedGlobalObject.console.timeEnd(...arguments); };
+CommandLineAPI.methods["timeLog"] = function() { return inspectedGlobalObject.console.timeLog(...arguments); };
+CommandLineAPI.methods["timeStamp"] = function() { return inspectedGlobalObject.console.timeStamp(...arguments); };
+CommandLineAPI.methods["trace"] = function() { return inspectedGlobalObject.console.trace(...arguments); };
+CommandLineAPI.methods["warn"] = function() { return inspectedGlobalObject.console.warn(...arguments); };
+
+for (let name in CommandLineAPI.methods)
+    CommandLineAPI.methods[name].toString = function() { return "function " + name + "() { [Command Line API] }"; };
 
 return injectedScript;
 })

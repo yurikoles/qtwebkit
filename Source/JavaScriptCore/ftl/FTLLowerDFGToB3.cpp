@@ -1045,6 +1045,9 @@ private:
         case NewObject:
             compileNewObject();
             break;
+        case NewPromise:
+            compileNewPromise();
+            break;
         case NewStringObject:
             compileNewStringObject();
             break;
@@ -1059,6 +1062,9 @@ private:
             break;
         case CreateThis:
             compileCreateThis();
+            break;
+        case CreatePromise:
+            compileCreatePromise();
             break;
         case Spread:
             compileSpread();
@@ -1171,6 +1177,12 @@ private:
             break;
         case PutClosureVar:
             compilePutClosureVar();
+            break;
+        case GetPromiseInternalField:
+            compileGetPromiseInternalField();
+            break;
+        case PutPromiseInternalField:
+            compilePutPromiseInternalField();
             break;
         case GetFromArguments:
             compileGetFromArguments();
@@ -5573,7 +5585,7 @@ private:
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_allocator);
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_structure);
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_prototype);
-            m_out.storePtr(m_out.intPtrOne, rareData, m_heaps.FunctionRareData_objectAllocationProfileWatchpoint);
+            m_out.storePtr(m_out.intPtrOne, rareData, m_heaps.FunctionRareData_allocationProfileWatchpointSet);
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_internalFunctionAllocationProfile_structure);
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_boundFunctionStructure);
             m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_allocationProfileClearingWatchpoint);
@@ -5887,6 +5899,32 @@ private:
     {
         setJSValue(allocateObject(m_node->structure()));
         mutatorFence();
+    }
+
+    void compileNewPromise()
+    {
+        LBasicBlock slowCase = m_out.newBlock();
+        LBasicBlock continuation = m_out.newBlock();
+
+        LBasicBlock lastNext = m_out.insertNewBlocksBefore(slowCase);
+
+        LValue promise;
+        if (m_node->isInternalPromise())
+            promise = allocateObject<JSInternalPromise>(m_node->structure(), m_out.intPtrZero, slowCase);
+        else
+            promise = allocateObject<JSPromise>(m_node->structure(), m_out.intPtrZero, slowCase);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
+        mutatorFence();
+        ValueFromBlock fastResult = m_out.anchor(promise);
+        m_out.jump(continuation);
+
+        m_out.appendTo(slowCase, continuation);
+        ValueFromBlock slowResult = m_out.anchor(vmCall(pointerType(), m_out.operation(m_node->isInternalPromise() ? operationNewInternalPromise : operationNewPromise), m_callFrame, frozenPointer(m_graph.freezeStrong(m_node->structure().get()))));
+        m_out.jump(continuation);
+
+        m_out.appendTo(continuation, lastNext);
+        setJSValue(m_out.phi(pointerType(), fastResult, slowResult));
     }
 
     void compileNewStringObject()
@@ -6247,6 +6285,60 @@ private:
         setJSValue(result);
     }
 
+    void compileCreatePromise()
+    {
+        JSGlobalObject* globalObject = m_graph.globalObjectFor(m_node->origin.semantic);
+
+        LValue callee = lowCell(m_node->child1());
+
+        LBasicBlock derivedCase = m_out.newBlock();
+        LBasicBlock isFunctionBlock = m_out.newBlock();
+        LBasicBlock hasRareData = m_out.newBlock();
+        LBasicBlock checkGlobalObjectCase = m_out.newBlock();
+        LBasicBlock fastAllocationCase = m_out.newBlock();
+        LBasicBlock slowCase = m_out.newBlock();
+        LBasicBlock continuation = m_out.newBlock();
+
+        ValueFromBlock promiseStructure = m_out.anchor(weakStructure(m_graph.registerStructure(m_node->isInternalPromise() ? globalObject->internalPromiseStructure() : globalObject->promiseStructure())));
+        m_out.branch(m_out.equal(callee, weakPointer(m_node->isInternalPromise() ? globalObject->internalPromiseConstructor() : globalObject->promiseConstructor())), unsure(fastAllocationCase), unsure(derivedCase));
+
+        LBasicBlock lastNext = m_out.appendTo(derivedCase, isFunctionBlock);
+        m_out.branch(isFunction(callee, provenType(m_node->child1())), usually(isFunctionBlock), rarely(slowCase));
+
+        m_out.appendTo(isFunctionBlock, hasRareData);
+        LValue rareData = m_out.loadPtr(callee, m_heaps.JSFunction_rareData);
+        m_out.branch(m_out.isZero64(rareData), rarely(slowCase), usually(hasRareData));
+
+        m_out.appendTo(hasRareData, fastAllocationCase);
+        LValue structure = m_out.loadPtr(rareData, m_heaps.FunctionRareData_internalFunctionAllocationProfile_structure);
+        m_out.branch(m_out.equal(m_out.loadPtr(structure, m_heaps.Structure_classInfo), m_out.constIntPtr(m_node->isInternalPromise() ? JSInternalPromise::info() : JSPromise::info())), usually(checkGlobalObjectCase), rarely(slowCase));
+
+        m_out.appendTo(checkGlobalObjectCase, fastAllocationCase);
+        ValueFromBlock derivedStructure = m_out.anchor(structure);
+        m_out.branch(m_out.equal(m_out.loadPtr(structure, m_heaps.Structure_globalObject), weakPointer(globalObject)), usually(fastAllocationCase), rarely(slowCase));
+
+        m_out.appendTo(fastAllocationCase, slowCase);
+        LValue promise;
+        if (m_node->isInternalPromise())
+            promise = allocateObject<JSInternalPromise>(m_out.phi(pointerType(), promiseStructure, derivedStructure), m_out.intPtrZero, slowCase);
+        else
+            promise = allocateObject<JSPromise>(m_out.phi(pointerType(), promiseStructure, derivedStructure), m_out.intPtrZero, slowCase);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
+        mutatorFence();
+        ValueFromBlock fastResult = m_out.anchor(promise);
+        m_out.jump(continuation);
+
+        m_out.appendTo(slowCase, continuation);
+        ValueFromBlock slowResult = m_out.anchor(vmCall(Int64, m_out.operation(m_node->isInternalPromise() ? operationCreateInternalPromise : operationCreatePromise), m_callFrame, callee, weakPointer(globalObject)));
+        m_out.jump(continuation);
+
+        m_out.appendTo(continuation, lastNext);
+        LValue result = m_out.phi(Int64, fastResult, slowResult);
+
+        setJSValue(result);
+    }
+
     void compileSpread()
     {
         if (m_node->child1()->op() == PhantomNewArrayBuffer) {
@@ -6438,7 +6530,7 @@ private:
             m_out.jump(continuation);
 
             m_out.appendTo(slowPath, continuation);
-            LValue slowArray = vmCall(Int64, m_out.operation(operationNewArrayBuffer), m_callFrame, weakStructure(structure), m_out.weakPointer(m_node->cellOperand()));
+            LValue slowArray = vmCall(Int64, m_out.operation(operationNewArrayBuffer), m_callFrame, weakStructure(structure), frozenPointer(m_node->cellOperand()));
             ValueFromBlock slowResult = m_out.anchor(slowArray);
             m_out.jump(continuation);
 
@@ -6451,7 +6543,7 @@ private:
         
         setJSValue(vmCall(
             Int64, m_out.operation(operationNewArrayBuffer), m_callFrame,
-            weakStructure(structure), m_out.weakPointer(m_node->cellOperand())));
+            weakStructure(structure), frozenPointer(m_node->cellOperand())));
     }
 
     void compileNewArrayWithSize()
@@ -6869,7 +6961,7 @@ private:
         m_out.branch(m_out.isZero32(flagsAndLength.length), rarely(emptyCase), usually(continuation));
 
         LBasicBlock lastNext = m_out.appendTo(emptyCase, slowPath);
-        ValueFromBlock emptyResult = m_out.anchor(weakPointer(jsEmptyString(&m_graph.m_vm)));
+        ValueFromBlock emptyResult = m_out.anchor(weakPointer(jsEmptyString(m_graph.m_vm)));
         m_out.jump(continuation);
         
         m_out.appendTo(slowPath, continuation);
@@ -6978,20 +7070,19 @@ private:
             results.append(m_out.anchor(m_out.intPtrZero));
         } else {
             JSGlobalObject* globalObject = m_graph.globalObjectFor(m_node->origin.semantic);
-            
-            bool prototypeChainIsSane = false;
+            Structure* stringPrototypeStructure = globalObject->stringPrototype()->structure(vm());
+            Structure* objectPrototypeStructure = globalObject->objectPrototype()->structure(vm());
+            WTF::loadLoadFence();
+
             if (globalObject->stringPrototypeChainIsSane()) {
                 // FIXME: This could be captured using a Speculation mode that means
                 // "out-of-bounds loads return a trivial value", something like
                 // SaneChainOutOfBounds.
                 // https://bugs.webkit.org/show_bug.cgi?id=144668
                 
-                m_graph.registerAndWatchStructureTransition(globalObject->stringPrototype()->structure(vm()));
-                m_graph.registerAndWatchStructureTransition(globalObject->objectPrototype()->structure(vm()));
+                m_graph.registerAndWatchStructureTransition(stringPrototypeStructure);
+                m_graph.registerAndWatchStructureTransition(objectPrototypeStructure);
 
-                prototypeChainIsSane = globalObject->stringPrototypeChainIsSane();
-            }
-            if (prototypeChainIsSane) {
                 LBasicBlock negativeIndex = m_out.newBlock();
                     
                 results.append(m_out.anchor(m_out.constInt64(JSValue::encode(jsUndefined()))));
@@ -7413,6 +7504,22 @@ private:
             m_heaps.JSLexicalEnvironment_variables[m_node->scopeOffset().offset()]);
     }
     
+    void compileGetPromiseInternalField()
+    {
+        setJSValue(
+            m_out.load64(
+                lowCell(m_node->child1()),
+                m_heaps.JSPromise_internalFields[m_node->internalFieldIndex()]));
+    }
+
+    void compilePutPromiseInternalField()
+    {
+        m_out.store64(
+            lowJSValue(m_node->child2()),
+            lowCell(m_node->child1()),
+            m_heaps.JSPromise_internalFields[m_node->internalFieldIndex()]);
+    }
+
     void compileGetFromArguments()
     {
         setJSValue(
@@ -12282,7 +12389,7 @@ private:
         Vector<ValueFromBlock, 5> results;
 
         m_out.appendTo(emptyCase, notEmptyCase);
-        results.append(m_out.anchor(weakPointer(jsEmptyString(&vm()))));
+        results.append(m_out.anchor(weakPointer(jsEmptyString(vm()))));
         m_out.jump(continuation);
 
         m_out.appendTo(notEmptyCase, oneCharCase);
@@ -13880,7 +13987,7 @@ private:
                     edge, CellCaseSpeculatesObject, SpeculateNullOrUndefined,
                     ManualOperandSpeculation));
         case StringUse:
-            return m_out.notEqual(lowString(edge), weakPointer(jsEmptyString(&m_graph.m_vm)));
+            return m_out.notEqual(lowString(edge), weakPointer(jsEmptyString(m_graph.m_vm)));
         case StringOrOtherUse: {
             LValue value = lowJSValue(edge, ManualOperandSpeculation);
 
@@ -13892,7 +13999,7 @@ private:
             
             LBasicBlock lastNext = m_out.appendTo(cellCase, notCellCase);
             FTL_TYPE_CHECK(jsValueValue(value), edge, (~SpecCellCheck) | SpecString, isNotString(value));
-            ValueFromBlock stringResult = m_out.anchor(m_out.notEqual(value, weakPointer(jsEmptyString(&m_graph.m_vm))));
+            ValueFromBlock stringResult = m_out.anchor(m_out.notEqual(value, weakPointer(jsEmptyString(m_graph.m_vm))));
             m_out.jump(continuation);
 
             m_out.appendTo(notCellCase, continuation);
@@ -13949,7 +14056,7 @@ private:
                 unsure(bigIntCase), unsure(notStringOrBigIntCase));
 
             m_out.appendTo(stringCase, bigIntCase);
-            results.append(m_out.anchor(m_out.notEqual(value, weakPointer(jsEmptyString(&m_graph.m_vm)))));
+            results.append(m_out.anchor(m_out.notEqual(value, weakPointer(jsEmptyString(m_graph.m_vm)))));
             m_out.jump(continuation);
 
             m_out.appendTo(bigIntCase, notStringOrBigIntCase);
@@ -14190,15 +14297,28 @@ private:
 
     LValue caged(Gigacage::Kind kind, LValue ptr, LValue base)
     {
+        auto doUntagArrayPtr = [&](LValue taggedPtr) {
+#if CPU(ARM64E)
+            if (kind == Gigacage::Primitive) {
+                LValue size = m_out.load32(base, m_heaps.JSArrayBufferView_length);
+                return untagArrayPtr(taggedPtr, size);
+            }
+            return ptr;
+#else
+            UNUSED_PARAM(taggedPtr);
+            return ptr;
+#endif
+        };
+
 #if GIGACAGE_ENABLED
         if (!Gigacage::isEnabled(kind))
-            return ptr;
+            return doUntagArrayPtr(ptr);
         
         if (kind == Gigacage::Primitive && Gigacage::canPrimitiveGigacageBeDisabled()) {
             if (vm().primitiveGigacageEnabled().isStillValid())
                 m_graph.watchpoints().addLazily(vm().primitiveGigacageEnabled());
             else
-                return ptr;
+                return doUntagArrayPtr(ptr);
         }
         
         LValue basePtr = m_out.constIntPtr(Gigacage::basePtr(kind));
@@ -14217,8 +14337,7 @@ private:
                 jit.bitFieldInsert64(params[1].gpr(), 0, 64 - MacroAssembler::numberOfPACBits, params[0].gpr());
             });
 
-            LValue size = m_out.load32(base, m_heaps.JSArrayBufferView_length);
-            result = untagArrayPtr(merge, size);
+            result = doUntagArrayPtr(merge);
         }
 #endif // CPU(ARM64E)
 
@@ -14238,7 +14357,7 @@ private:
 
         UNUSED_PARAM(kind);
         UNUSED_PARAM(base);
-        return ptr;
+        return doUntagArrayPtr(ptr);
     }
     
     void buildSwitch(SwitchData* data, LType type, LValue switchValue)
@@ -15810,6 +15929,9 @@ private:
         case RegExpObjectUse:
             speculateRegExpObject(edge);
             break;
+        case PromiseObjectUse:
+            speculatePromiseObject(edge);
+            break;
         case ProxyObjectUse:
             speculateProxyObject(edge);
             break;
@@ -16327,6 +16449,17 @@ private:
     void speculateDerivedArray(Edge edge)
     {
         speculateDerivedArray(edge, lowCell(edge));
+    }
+
+    void speculatePromiseObject(Edge edge, LValue cell)
+    {
+        FTL_TYPE_CHECK(
+            jsValueValue(cell), edge, SpecPromiseObject, isNotType(cell, JSPromiseType));
+    }
+
+    void speculatePromiseObject(Edge edge)
+    {
+        speculatePromiseObject(edge, lowCell(edge));
     }
 
     void speculateMapObject(Edge edge, LValue cell)

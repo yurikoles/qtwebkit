@@ -116,7 +116,8 @@ public:
     void requestSpace(const ClientOrigin&, uint64_t taskSize, CompletionHandler<void(StorageQuotaManager::Decision)>&&);
     void increasePotentialSpaceUsed(const ClientOrigin&, uint64_t taskSize);
     void decreasePotentialSpaceUsed(const ClientOrigin&, uint64_t taskSize);
-    void setSpaceUsed(const ClientOrigin&, uint64_t spaceUsed);
+    void increaseSpaceUsed(const ClientOrigin&, uint64_t size);
+    void decreaseSpaceUsed(const ClientOrigin&, uint64_t size);
     void resetSpaceUsed(const ClientOrigin&);
 
     void initializeQuotaUser(const ClientOrigin& origin) { ensureQuotaUser(origin); }
@@ -129,6 +130,8 @@ private:
     IDBServer(PAL::SessionID, const String& databaseDirectoryPath, IDBBackingStoreTemporaryFileHandler&, QuotaManagerGetter&&);
 
     UniqueIDBDatabase& getOrCreateUniqueIDBDatabase(const IDBDatabaseIdentifier&);
+    
+    String databaseDirectoryPathIsolatedCopy() const { return m_databaseDirectoryPath.isolatedCopy(); }
 
     void performGetAllDatabaseNames(uint64_t serverConnectionIdentifier, const SecurityOriginData& mainFrameOrigin, const SecurityOriginData& openingOrigin, uint64_t callbackID);
     void didGetAllDatabaseNames(uint64_t serverConnectionIdentifier, uint64_t callbackID, const Vector<String>& databaseNames);
@@ -158,6 +161,8 @@ private:
             ASSERT(m_estimatedSpaceIncrease >= decrease);
             m_estimatedSpaceIncrease -= decrease;
         }
+        void increaseSpaceUsed(uint64_t size);
+        void decreaseSpaceUsed(uint64_t size);
 
         void initializeSpaceUsed(uint64_t spaceUsed);
 

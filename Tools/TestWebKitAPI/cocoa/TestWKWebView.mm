@@ -40,7 +40,6 @@
 #if PLATFORM(MAC)
 #import <AppKit/AppKit.h>
 #import <Carbon/Carbon.h>
-#import <wtf/mac/AppKitCompatibilityDeclarations.h>
 #endif
 
 #if PLATFORM(IOS_FAMILY)
@@ -433,6 +432,17 @@ static UICalloutBar *suppressUICalloutBar()
     }];
 
     TestWebKitAPI::Util::run(&done);
+}
+
+- (void)forceDarkMode
+{
+#if HAVE(OS_DARK_MODE_SUPPORT)
+#if USE(APPKIT)
+    [self setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
+#else
+    [self setOverrideUserInterfaceStyle:UIUserInterfaceStyleDark];
+#endif
+#endif
 }
 
 - (NSString *)stylePropertyAtSelectionStart:(NSString *)propertyName

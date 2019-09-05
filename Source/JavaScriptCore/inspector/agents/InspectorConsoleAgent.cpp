@@ -50,6 +50,8 @@ InspectorConsoleAgent::InspectorConsoleAgent(AgentContext& context)
 {
 }
 
+InspectorConsoleAgent::~InspectorConsoleAgent() = default;
+
 void InspectorConsoleAgent::didCreateFrontendAndBackend(FrontendRouter*, BackendDispatcher*)
 {
 }
@@ -106,8 +108,8 @@ void InspectorConsoleAgent::clearMessages(ErrorString&)
 
 void InspectorConsoleAgent::reset()
 {
-    ErrorString unused;
-    clearMessages(unused);
+    ErrorString ignored;
+    clearMessages(ignored);
 
     m_times.clear();
     m_counts.clear();
@@ -119,8 +121,8 @@ void InspectorConsoleAgent::addMessageToConsole(std::unique_ptr<ConsoleMessage> 
         return;
 
     if (message->type() == MessageType::Clear) {
-        ErrorString unused;
-        clearMessages(unused);
+        ErrorString ignored;
+        clearMessages(ignored);
     }
 
     addConsoleMessage(WTFMove(message));
@@ -286,7 +288,7 @@ void InspectorConsoleAgent::getLoggingChannels(ErrorString&, RefPtr<JSON::ArrayO
 
 void InspectorConsoleAgent::setLoggingChannelLevel(ErrorString& errorString, const String&, const String&)
 {
-    errorString = "No such channel to enable"_s;
+    errorString = "Not supported"_s;
 }
 
 } // namespace Inspector

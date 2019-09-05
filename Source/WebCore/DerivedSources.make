@@ -171,12 +171,12 @@ JS_BINDING_IDLS = \
     $(WebCore)/Modules/gamepad/GamepadButton.idl \
     $(WebCore)/Modules/gamepad/GamepadEvent.idl \
     $(WebCore)/Modules/gamepad/NavigatorGamepad.idl \
-    $(WebCore)/Modules/geolocation/Coordinates.idl \
     $(WebCore)/Modules/geolocation/Geolocation.idl \
-    $(WebCore)/Modules/geolocation/Geoposition.idl \
+    $(WebCore)/Modules/geolocation/GeolocationCoordinates.idl \
+    $(WebCore)/Modules/geolocation/GeolocationPosition.idl \
+    $(WebCore)/Modules/geolocation/GeolocationPositionError.idl \
     $(WebCore)/Modules/geolocation/NavigatorGeolocation.idl \
     $(WebCore)/Modules/geolocation/PositionCallback.idl \
-    $(WebCore)/Modules/geolocation/PositionError.idl \
     $(WebCore)/Modules/geolocation/PositionErrorCallback.idl \
     $(WebCore)/Modules/geolocation/PositionOptions.idl \
     $(WebCore)/Modules/indexeddb/DOMWindowIndexedDatabase.idl \
@@ -716,6 +716,7 @@ JS_BINDING_IDLS = \
     $(WebCore)/html/HTMLOptGroupElement.idl \
     $(WebCore)/html/HTMLOptionElement.idl \
     $(WebCore)/html/HTMLOptionsCollection.idl \
+    $(WebCore)/html/HTMLOrForeignElement.idl \
     $(WebCore)/html/HTMLOutputElement.idl \
     $(WebCore)/html/HTMLParagraphElement.idl \
     $(WebCore)/html/HTMLParamElement.idl \

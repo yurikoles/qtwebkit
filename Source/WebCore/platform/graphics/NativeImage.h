@@ -27,8 +27,7 @@
 
 #pragma once
 
-#include "GraphicsTypes.h"
-#include "ImageOrientation.h"
+#include "ImagePaintingOptions.h"
 
 #if USE(CG)
 #include <wtf/RetainPtr.h>
@@ -61,7 +60,7 @@ typedef RetainPtr<CGImageRef> NativeImagePtr;
 #elif PLATFORM(QT)
 typedef QPixmap* NativeImagePtr;
 #elif USE(DIRECT2D)
-typedef COMPtr<IWICBitmap> NativeImagePtr;
+typedef COMPtr<ID2D1Bitmap> NativeImagePtr;
 #elif USE(CAIRO)
 typedef RefPtr<cairo_surface_t> NativeImagePtr;
 #elif USE(WINGDI)
@@ -72,7 +71,7 @@ IntSize nativeImageSize(const NativeImagePtr&);
 bool nativeImageHasAlpha(const NativeImagePtr&);
 Color nativeImageSinglePixelSolidColor(const NativeImagePtr&);
 
-void drawNativeImage(const NativeImagePtr&, GraphicsContext&, const FloatRect&, const FloatRect&, const IntSize&, CompositeOperator, BlendMode, ImageOrientation);
+void drawNativeImage(const NativeImagePtr&, GraphicsContext&, const FloatRect&, const FloatRect&, const IntSize&, const ImagePaintingOptions&);
 void clearNativeImageSubimages(const NativeImagePtr&);
     
 }

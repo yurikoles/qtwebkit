@@ -43,6 +43,7 @@ Box::Box(Optional<ElementAttributes> attributes, RenderStyle&& style, BaseTypeFl
     , m_elementAttributes(attributes)
     , m_baseTypeFlags(baseTypeFlags)
     , m_hasRareData(false)
+    , m_isAnonymous(false)
 {
     if (isReplaced())
         ensureRareData().replaced = makeUnique<Replaced>(*this);
@@ -88,6 +89,9 @@ bool Box::establishesBlockFormattingContext() const
         return true;
 
     if (isBlockLevelBox() && !isOverflowVisible())
+        return true;
+
+    if (isTableWrapperBox())
         return true;
 
     return false;
@@ -175,7 +179,7 @@ bool Box::hasFloatClear() const
 
 bool Box::isFloatAvoider() const
 {
-    return establishesBlockFormattingContext() || isFloatingPositioned();
+    return establishesBlockFormattingContext() || establishesTableFormattingContext() || isFloatingPositioned() || hasFloatClear();
 }
 
 const Container* Box::containingBlock() const
@@ -275,7 +279,7 @@ bool Box::isBlockLevelBox() const
 {
     // Block level elements generate block level boxes.
     auto display = m_style.display();
-    return display == DisplayType::Block || display == DisplayType::ListItem || (display == DisplayType::Table && !isTableWrapperBox());
+    return display == DisplayType::Block || display == DisplayType::ListItem || display == DisplayType::Table;
 }
 
 bool Box::isInlineLevelBox() const
@@ -366,8 +370,8 @@ bool Box::isPaddingApplicable() const
         return false;
 
     auto elementType = m_elementAttributes.value().elementType;
-    return elementType != ElementType::TableRowGroup
-        && elementType != ElementType::TableHeaderGroup
+    return elementType != ElementType::TableHeaderGroup
+        && elementType != ElementType::TableBodyGroup
         && elementType != ElementType::TableFooterGroup
         && elementType != ElementType::TableRow
         && elementType != ElementType::TableColumnGroup

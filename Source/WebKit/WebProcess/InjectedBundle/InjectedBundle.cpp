@@ -62,7 +62,7 @@
 #include <WebCore/GCController.h>
 #include <WebCore/GeolocationClient.h>
 #include <WebCore/GeolocationController.h>
-#include <WebCore/GeolocationPosition.h>
+#include <WebCore/GeolocationPositionData.h>
 #include <WebCore/JSDOMConvertBufferSource.h>
 #include <WebCore/JSDOMExceptionHandling.h>
 #include <WebCore/JSDOMWindow.h>
@@ -157,25 +157,25 @@ void InjectedBundle::overrideBoolPreferenceForTestRunner(WebPageGroupProxy* page
     if (preference == "WebKitTabToLinksPreferenceKey") {
         WebPreferencesStore::overrideBoolValueForKey(WebPreferencesKey::tabsToLinksKey(), enabled);
         for (auto* page : pages)
-            WebPage::fromCorePage(page)->setTabToLinksEnabled(enabled);
+            WebPage::fromCorePage(*page).setTabToLinksEnabled(enabled);
     }
 
     if (preference == "WebKit2AsynchronousPluginInitializationEnabled") {
         WebPreferencesStore::overrideBoolValueForKey(WebPreferencesKey::asynchronousPluginInitializationEnabledKey(), enabled);
         for (auto* page : pages)
-            WebPage::fromCorePage(page)->setAsynchronousPluginInitializationEnabled(enabled);
+            WebPage::fromCorePage(*page).setAsynchronousPluginInitializationEnabled(enabled);
     }
 
     if (preference == "WebKit2AsynchronousPluginInitializationEnabledForAllPlugins") {
         WebPreferencesStore::overrideBoolValueForKey(WebPreferencesKey::asynchronousPluginInitializationEnabledForAllPluginsKey(), enabled);
         for (auto* page : pages)
-            WebPage::fromCorePage(page)->setAsynchronousPluginInitializationEnabledForAllPlugins(enabled);
+            WebPage::fromCorePage(*page).setAsynchronousPluginInitializationEnabledForAllPlugins(enabled);
     }
 
     if (preference == "WebKit2ArtificialPluginInitializationDelayEnabled") {
         WebPreferencesStore::overrideBoolValueForKey(WebPreferencesKey::artificialPluginInitializationDelayEnabledKey(), enabled);
         for (auto* page : pages)
-            WebPage::fromCorePage(page)->setArtificialPluginInitializationDelayEnabled(enabled);
+            WebPage::fromCorePage(*page).setArtificialPluginInitializationDelayEnabled(enabled);
     }
 
 #if ENABLE(SERVICE_CONTROLS)
@@ -354,7 +354,7 @@ void InjectedBundle::setPrivateBrowsingEnabled(WebPageGroupProxy* pageGroup, boo
 
     PageGroup::pageGroup(pageGroup->identifier())->enableLegacyPrivateBrowsingForTesting(enabled);
 
-    auto webStorageNameSpaceProvider = WebStorageNamespaceProvider::getOrCreate(pageGroup->pageGroupID());
+    auto webStorageNameSpaceProvider = WebStorageNamespaceProvider::getOrCreate(*pageGroup);
     webStorageNameSpaceProvider->enableLegacyPrivateBrowsingForTesting(enabled);
 }
 

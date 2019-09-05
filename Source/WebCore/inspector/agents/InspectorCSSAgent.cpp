@@ -302,6 +302,8 @@ InspectorCSSAgent::InspectorCSSAgent(WebAgentContext& context)
 {
 }
 
+InspectorCSSAgent::~InspectorCSSAgent() = default;
+
 void InspectorCSSAgent::didCreateFrontendAndBackend(Inspector::FrontendRouter*, Inspector::BackendDispatcher*)
 {
 }
@@ -472,7 +474,7 @@ void InspectorCSSAgent::getMatchedStylesForNode(ErrorString& errorString, int no
     if (elementPseudoId != PseudoId::None) {
         element = downcast<PseudoElement>(*element).hostElement();
         if (!element) {
-            errorString = "Pseudo element has no parent"_s;
+            errorString = "Missing parent of pseudo-element node for given nodeId"_s;
             return;
         }
     }
@@ -622,7 +624,7 @@ void InspectorCSSAgent::setStyleSheetText(ErrorString& errorString, const String
 
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return;
     }
 
@@ -642,7 +644,7 @@ void InspectorCSSAgent::setStyleText(ErrorString& errorString, const JSON::Objec
 
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return;
     }
 
@@ -666,7 +668,7 @@ void InspectorCSSAgent::setRuleSelector(ErrorString& errorString, const JSON::Ob
 
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return;
     }
 
@@ -681,21 +683,25 @@ void InspectorCSSAgent::setRuleSelector(ErrorString& errorString, const JSON::Ob
 
 void InspectorCSSAgent::createStyleSheet(ErrorString& errorString, const String& frameId, String* styleSheetId)
 {
-    Frame* frame = m_instrumentingAgents.inspectorPageAgent()->frameForId(frameId);
-    if (!frame) {
-        errorString = "No frame for given id found"_s;
+    auto* pageAgent = m_instrumentingAgents.inspectorPageAgent();
+    if (!pageAgent) {
+        errorString = "Page domain must be enabled"_s;
         return;
     }
 
+    auto* frame = pageAgent->assertFrame(errorString, frameId);
+    if (!frame)
+        return;
+
     Document* document = frame->document();
     if (!document) {
-        errorString = "No document for frame"_s;
+        errorString = "Missing document of frame for given frameId"_s;
         return;
     }
 
     InspectorStyleSheet* inspectorStyleSheet = createInspectorStyleSheetForDocument(*document);
     if (!inspectorStyleSheet) {
-        errorString = "Could not create stylesheet for the frame."_s;
+        errorString = "Could not create style sheet for document of frame for given frameId"_s;
         return;
     }
 
@@ -746,14 +752,12 @@ InspectorStyleSheet* InspectorCSSAgent::createInspectorStyleSheetForDocument(Doc
 void InspectorCSSAgent::addRule(ErrorString& errorString, const String& styleSheetId, const String& selector, RefPtr<Inspector::Protocol::CSS::CSSRule>& result)
 {
     InspectorStyleSheet* inspectorStyleSheet = assertStyleSheetForId(errorString, styleSheetId);
-    if (!inspectorStyleSheet) {
-        errorString = "No target stylesheet found"_s;
+    if (!inspectorStyleSheet)
         return;
-    }
 
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return;
     }
 
@@ -835,7 +839,7 @@ void InspectorCSSAgent::forcePseudoState(ErrorString& errorString, int nodeId, c
 {
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return;
     }
 
@@ -875,20 +879,11 @@ Element* InspectorCSSAgent::elementForId(ErrorString& errorString, int nodeId)
 {
     auto* domAgent = m_instrumentingAgents.inspectorDOMAgent();
     if (!domAgent) {
-        errorString = "Missing DOM agent"_s;
+        errorString = "DOM domain must be enabled"_s;
         return nullptr;
     }
 
-    Node* node = domAgent->nodeForId(nodeId);
-    if (!node) {
-        errorString = "No node with given id found"_s;
-        return nullptr;
-    }
-    if (!is<Element>(*node)) {
-        errorString = "Not an element node"_s;
-        return nullptr;
-    }
-    return downcast<Element>(node);
+    return domAgent->assertElement(errorString, nodeId);
 }
 
 String InspectorCSSAgent::unbindStyleSheet(InspectorStyleSheet* inspectorStyleSheet)
@@ -921,7 +916,7 @@ InspectorStyleSheet* InspectorCSSAgent::assertStyleSheetForId(ErrorString& error
 {
     IdToInspectorStyleSheet::iterator it = m_idToInspectorStyleSheet.find(styleSheetId);
     if (it == m_idToInspectorStyleSheet.end()) {
-        errorString = "No stylesheet with given id found"_s;
+        errorString = "Missing style sheet for given styleSheetId"_s;
         return nullptr;
     }
     return it->value.get();
