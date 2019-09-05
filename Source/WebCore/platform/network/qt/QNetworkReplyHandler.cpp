@@ -171,7 +171,7 @@ void FormDataIODevice::openFileForCurrentElement(const FormDataElement::EncodedF
     m_currentFile->open(QFile::ReadOnly);
     if (fileData.expectedFileModificationTime) {
         QFileInfo info(*m_currentFile);
-        if (!info.exists() || fileData.expectedFileModificationTime.value().secondsSinceEpoch().value() < info.lastModified().toSecsSinceEpoch()) {
+        if (!info.exists() || (fileData.expectedFileModificationTime.value().secondsSinceEpoch().milliseconds() < info.lastModified().toMSecsSinceEpoch())) {
             moveToNextElement();
             return;
         }
