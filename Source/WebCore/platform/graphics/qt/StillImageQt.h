@@ -55,7 +55,7 @@ namespace WebCore {
         // to prune because these functions are not implemented yet.
         void destroyDecodedData(bool destroyAll = true) override { Q_UNUSED(destroyAll); }
 
-        FloatSize size() const override;
+        FloatSize size(ImageOrientation) const override;
         NativeImagePtr nativeImageForCurrentFrame(const GraphicsContext*) override;
         ImageDrawResult draw(GraphicsContext&, const FloatRect& dstRect, const FloatRect& srcRect, const ImagePaintingOptions&) override;
 

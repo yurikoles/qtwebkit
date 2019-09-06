@@ -63,7 +63,7 @@ bool StillImage::currentFrameKnownToBeOpaque() const
     return !m_pixmap->hasAlpha();
 }
 
-FloatSize StillImage::size() const
+FloatSize StillImage::size(ImageOrientation) const
 {
     return FloatSize(m_pixmap->width(), m_pixmap->height());
 }
