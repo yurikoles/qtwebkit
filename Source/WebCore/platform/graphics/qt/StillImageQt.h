@@ -57,7 +57,7 @@ namespace WebCore {
 
         FloatSize size() const override;
         NativeImagePtr nativeImageForCurrentFrame(const GraphicsContext*) override;
-        ImageDrawResult draw(GraphicsContext&, const FloatRect& dstRect, const FloatRect& srcRect, CompositeOperator, BlendMode, DecodingMode, ImageOrientation) override;
+        ImageDrawResult draw(GraphicsContext&, const FloatRect& dstRect, const FloatRect& srcRect, const ImagePaintingOptions&) override;
 
     private:
         StillImage(const QPixmap&);

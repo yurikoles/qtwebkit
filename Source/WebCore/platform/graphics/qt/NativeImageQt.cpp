@@ -64,7 +64,7 @@ Color nativeImageSinglePixelSolidColor(const NativeImagePtr& image)
     return QColor::fromRgba(image->toImage().pixel(0, 0));
 }
 
-void drawNativeImage(const NativeImagePtr& image, GraphicsContext& ctxt, const FloatRect& destRect, const FloatRect& srcRect, const IntSize& srcSize, CompositeOperator op, BlendMode blendMode, ImageOrientation)
+void drawNativeImage(const NativeImagePtr& image, GraphicsContext& ctxt, const FloatRect& destRect, const FloatRect& srcRect, const IntSize& srcSize, const ImagePaintingOptions& options)
 {
     // QTFIXME: Handle imageSize? See e.g. NativeImageDirect2D
 
@@ -73,7 +73,7 @@ void drawNativeImage(const NativeImagePtr& image, GraphicsContext& ctxt, const F
 
     CompositeOperator previousOperator = ctxt.compositeOperation();
     BlendMode previousBlendMode = ctxt.blendModeOperation();
-    ctxt.setCompositeOperation(!image->hasAlpha() && op == CompositeSourceOver && blendMode == BlendMode::Normal ? CompositeCopy : op, blendMode);
+    ctxt.setCompositeOperation(!image->hasAlpha() && options.compositeOperator() == CompositeSourceOver && options.blendMode() == BlendMode::Normal ? CompositeCopy : options.compositeOperator(), options.blendMode());
 
     if (ctxt.hasShadow()) {
         ShadowBlur shadow(ctxt.state());

@@ -138,10 +138,9 @@ struct ImageBufferDataPrivateAccelerated final : public TextureMapperPlatformLay
 
     void invalidateState() const;
     void draw(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect,
-        CompositeOperator, BlendMode, bool ownContext) final;
+        const ImagePaintingOptions&, bool ownContext) final;
     void drawPattern(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
-        const FloatPoint& phase, const FloatSize& spacing, CompositeOperator,
-        BlendMode, bool ownContext) final;
+        const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions&, bool ownContext) final;
     void clip(GraphicsContext&, const IntRect& floatRect) const final;
     void platformTransformColorSpace(const std::array<uint8_t, 256>& lookUpTable) final;
 
@@ -203,7 +202,7 @@ void ImageBufferDataPrivateAccelerated::invalidateState() const
 }
 
 void ImageBufferDataPrivateAccelerated::draw(GraphicsContext& destContext, const FloatRect& destRect,
-    const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool /*ownContext*/)
+    const FloatRect& srcRect, const ImagePaintingOptions& options, bool /*ownContext*/)
 {
     if (destContext.isAcceleratedContext()) {
         invalidateState();
@@ -249,7 +248,7 @@ void ImageBufferDataPrivateAccelerated::draw(GraphicsContext& destContext, const
 
 
 void ImageBufferDataPrivateAccelerated::drawPattern(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
-    const FloatPoint& phase, const FloatSize& spacing, CompositeOperator op, BlendMode blendMode, bool /*ownContext*/)
+    const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions& options, bool /*ownContext*/)
 {
     Ref<Image> image = StillImage::create(QPixmap::fromImage(toQImage()));
     image->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, op, blendMode);
@@ -358,10 +357,9 @@ struct ImageBufferDataPrivateUnaccelerated final : public ImageBufferDataPrivate
     bool isAccelerated() const final { return false; }
     PlatformLayer* platformLayer() final { return 0; }
     void draw(GraphicsContext& destContext, const FloatRect& destRect,
-        const FloatRect& srcRect, CompositeOperator, BlendMode, bool ownContext) final;
+        const FloatRect& srcRect, const ImagePaintingOptions&, bool ownContext) final;
     void drawPattern(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
-        const FloatPoint& phase, const FloatSize& spacing, CompositeOperator,
-        BlendMode, bool ownContext) final;
+        const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions&, bool ownContext) final;
     void clip(GraphicsContext&, const IntRect& floatRect) const final;
     void platformTransformColorSpace(const std::array<uint8_t, 256>& lookUpTable) final;
 
@@ -408,26 +406,25 @@ RefPtr<Image> ImageBufferDataPrivateUnaccelerated::takeImage()
 }
 
 void ImageBufferDataPrivateUnaccelerated::draw(GraphicsContext& destContext, const FloatRect& destRect,
-    const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool ownContext)
+    const FloatRect& srcRect, const ImagePaintingOptions& options, bool ownContext)
 {
     if (ownContext) {
         // We're drawing into our own buffer. In order for this to work, we need to copy the source buffer first.
         RefPtr<Image> copy = copyImage();
-        destContext.drawImage(*copy, destRect, srcRect, ImagePaintingOptions(op, blendMode, DecodingMode::Synchronous, ImageOrientation::None));
+        destContext.drawImage(*copy, destRect, srcRect, options);
     } else
-        destContext.drawImage(m_image, destRect, srcRect, ImagePaintingOptions(op, blendMode, DecodingMode::Synchronous, ImageOrientation::None));
+        destContext.drawImage(m_image, destRect, srcRect, options);
 }
 
 void ImageBufferDataPrivateUnaccelerated::drawPattern(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
-    const FloatPoint& phase, const FloatSize& spacing, CompositeOperator op,
-    BlendMode blendMode, bool ownContext)
+    const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions& options, bool ownContext)
 {
     if (ownContext) {
         // We're drawing into our own buffer. In order for this to work, we need to copy the source buffer first.
         RefPtr<Image> copy = copyImage();
-        copy->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, op, blendMode);
+        copy->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, options);
     } else
-        m_image->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, op, blendMode);
+        m_image->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, options);
 }
 
 void ImageBufferDataPrivateUnaccelerated::clip(GraphicsContext& context, const IntRect& rect) const

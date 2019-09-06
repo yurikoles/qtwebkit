@@ -73,8 +73,7 @@ NativeImagePtr StillImage::nativeImageForCurrentFrame(const GraphicsContext*)
     return const_cast<NativeImagePtr>(m_pixmap);
 }
 
-ImageDrawResult StillImage::draw(GraphicsContext& ctxt, const FloatRect& dst,
-    const FloatRect& src, CompositeOperator op, BlendMode blendMode, DecodingMode, ImageOrientation)
+ImageDrawResult StillImage::draw(GraphicsContext& ctxt, const FloatRect& dst, const FloatRect& src, const ImagePaintingOptions& options)
 {
     if (m_pixmap->isNull())
         return ImageDrawResult::DidNothing;
@@ -87,7 +86,7 @@ ImageDrawResult StillImage::draw(GraphicsContext& ctxt, const FloatRect& dst,
 
     CompositeOperator previousOperator = ctxt.compositeOperation();
     BlendMode previousBlendMode = ctxt.blendModeOperation();
-    ctxt.setCompositeOperation(op, blendMode);
+    ctxt.setCompositeOperation(options.compositeOperator(), options.blendMode());
 
     if (ctxt.hasShadow()) {
         ShadowBlur shadow(ctxt.state());

@@ -116,21 +116,20 @@ BackingStoreCopy ImageBuffer::fastCopyImageMode()
     return DontCopyBackingStore;
 }
 
-void ImageBuffer::drawConsuming(std::unique_ptr<ImageBuffer> imageBuffer, GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode)
+void ImageBuffer::drawConsuming(std::unique_ptr<ImageBuffer> imageBuffer, GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const ImagePaintingOptions& options)
 {
-    imageBuffer->draw(destContext, destRect, srcRect, op, blendMode);
+    imageBuffer->draw(destContext, destRect, srcRect, options);
 }
 
-void ImageBuffer::draw(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect,
-    CompositeOperator op, BlendMode blendMode)
+void ImageBuffer::draw(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const ImagePaintingOptions& options)
 {
-    m_data.m_impl->draw(destContext, destRect, srcRect, op, blendMode, &destContext == &context());
+    m_data.m_impl->draw(destContext, destRect, srcRect, options, &destContext == &context());
 }
 
 void ImageBuffer::drawPattern(GraphicsContext& destContext, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
-                              const FloatPoint& phase, const FloatSize& spacing, CompositeOperator op, BlendMode blendMode)
+    const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions& options)
 {
-    m_data.m_impl->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, op, blendMode, &destContext == &context());
+    m_data.m_impl->drawPattern(destContext, destRect, srcRect, patternTransform, phase, spacing, options, &destContext == &context());
 }
 
 void ImageBuffer::platformTransformColorSpace(const std::array<uint8_t, 256>& lookUpTable)

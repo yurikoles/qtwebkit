@@ -504,7 +504,7 @@ void GraphicsContext::drawEllipse(const FloatRect& rect)
 }
 
 void GraphicsContext::drawPattern(Image& image, const FloatRect &destRect, const FloatRect& tileRect, const AffineTransform& patternTransform,
-    const FloatPoint& phase, const FloatSize& spacing, CompositeOperator op, BlendMode blendMode)
+    const FloatPoint& phase, const FloatSize& spacing, const ImagePaintingOptions& options)
 {
     if (paintingDisabled() || !patternTransform.isInvertible())
         return;
@@ -514,7 +514,7 @@ void GraphicsContext::drawPattern(Image& image, const FloatRect &destRect, const
         return;
 
     if (m_impl) {
-        m_impl->drawPattern(image, destRect, tileRect, patternTransform, phase, spacing, op, blendMode);
+        m_impl->drawPattern(image, destRect, tileRect, patternTransform, phase, spacing, options);
         return;
     }
 
@@ -538,7 +538,7 @@ void GraphicsContext::drawPattern(Image& image, const FloatRect &destRect, const
 
     CompositeOperator previousOperator = compositeOperation();
 
-    setCompositeOperation(!pixmap.hasAlpha() && op == CompositeSourceOver ? CompositeCopy : op);
+    setCompositeOperation(!pixmap.hasAlpha() && options.compositeOperator() == CompositeSourceOver ? CompositeCopy : options.compositeOperator());
 
     QPainter* p = platformContext();
     QTransform transform(patternTransform);
