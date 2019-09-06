@@ -40,6 +40,7 @@ typedef HICON HCURSOR;
 #include "GRefPtrGtk.h"
 #elif PLATFORM(QT)
 #include <QCursor>
+#include <wtf/Optional.h>
 #endif
 
 #if USE(APPKIT)
@@ -172,7 +173,7 @@ private:
 #endif
 
 #if PLATFORM(QT)
-    mutable std::unique_ptr<QCursor> m_platformCursor;
+    mutable Optional<QCursor> m_platformCursor;
 #elif !USE(APPKIT)
     mutable PlatformCursor m_platformCursor { nullptr };
 #else

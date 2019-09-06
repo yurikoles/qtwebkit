@@ -13,6 +13,10 @@ set(PROJECT_VERSION_STRING "${PROJECT_VERSION}")
 
 set(QT_CONAN_DIR "" CACHE PATH "Directory containing conanbuildinfo.cmake and conanfile.txt")
 if (QT_CONAN_DIR)
+    find_program(CONAN_COMMAND NAMES conan PATHS $ENV{PIP3_PATH})
+    if (NOT CONAN_COMMAND)
+        message(FATAL_ERROR "conan executable not found. Make sure that Conan is installed and available in PATH")
+    endif ()
     include("${QT_CONAN_DIR}/conanbuildinfo.cmake")
 
     # Remove this workaround when libxslt package is fixed
@@ -33,10 +37,13 @@ if (QT_CONAN_DIR)
             set(_conan_imports_dest \"\${_absolute_destdir}\${_conan_imports_dest}\")
         endif ()
 
+        message(\"Importing dependencies from conan to \${_conan_imports_dest}\")
         execute_process(
-            COMMAND conan imports -f \"${QT_CONAN_DIR}/conanfile.txt\" --dest \${_conan_imports_dest}
+            COMMAND \"${CONAN_COMMAND}\" imports --import-folder \${_conan_imports_dest} \"${QT_CONAN_DIR}/conanfile.txt\"
             WORKING_DIRECTORY \"${QT_CONAN_DIR}\"
+            RESULT_VARIABLE _conan_imports_result
         )
+        message(\"conan imports result: \${_conan_imports_result}\")
 
         set(_conan_imports_manifest \"\${_conan_imports_dest}/conan_imports_manifest.txt\")
         if (EXISTS \${_conan_imports_manifest})
@@ -153,6 +160,7 @@ if (COMPILER_IS_GCC_OR_CLANG)
     add_definitions(-DQT_NO_DYNAMIC_CAST)
 endif ()
 
+# Align build product names with QMake conventions
 if (WIN32)
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         set(CMAKE_DEBUG_POSTFIX d)
@@ -160,6 +168,8 @@ if (WIN32)
 
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
     set(CMAKE_SHARED_MODULE_PREFIX "")
+    # QMake doesn't treat import libraries as a separate product kind
+    set(CMAKE_IMPORT_LIBRARY_SUFFIX "${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif ()
 
 WEBKIT_OPTION_BEGIN()

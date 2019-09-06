@@ -151,6 +151,11 @@ static inline QPainter::CompositionMode toQtCompositionMode(BlendMode op)
         return QPainter::CompositionMode_Difference;
     case BlendMode::Exclusion:
         return QPainter::CompositionMode_Exclusion;
+    case BlendMode::PlusLighter:
+        return QPainter::CompositionMode_Plus;
+    case BlendMode::PlusDarker:
+        // there is no exact match, but this is the closest
+        return QPainter::CompositionMode_Darken;
     case BlendMode::Hue:
     case BlendMode::Saturation:
     case BlendMode::Color:

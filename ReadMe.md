@@ -1,4 +1,4 @@
-# Qt Port of WebKit
+# Qt port of WebKit
 
 WebKit is an open source web browser engine. WebKit's HTML and JavaScript code began as a branch of the KHTML and KJS libraries from KDE. As part of KDE framework KHTML was based on Qt but during their porting efforts Apple's engineers made WebKit toolkit independent. QtWebKit is a project aiming at porting this fabulous engine back to Qt.
 
@@ -35,7 +35,7 @@ Development of the WebKit engine happens at https://webkit.org. All development 
 
 ## More information
 
-See https://github.com/annulen/webkit/wiki
+See https://github.com/qtwebkit/qtwebkit/wiki
 
 ## Contacts
 
