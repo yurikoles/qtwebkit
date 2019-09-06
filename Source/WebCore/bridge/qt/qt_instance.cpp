@@ -185,19 +185,20 @@ void QtInstance::getPropertyNames(ExecState* exec, PropertyNameArray& array)
     // slots
     QObject* obj = getObject();
     if (obj) {
+        VM& vm = exec->vm();
         const QMetaObject* meta = obj->metaObject();
 
         int i;
         for (i = 0; i < meta->propertyCount(); i++) {
             QMetaProperty prop = meta->property(i);
             if (prop.isScriptable())
-                array.add(Identifier::fromString(exec, prop.name()));
+                array.add(Identifier::fromString(vm, prop.name()));
         }
 
 #ifndef QT_NO_PROPERTIES
         QList<QByteArray> dynProps = obj->dynamicPropertyNames();
         foreach (const QByteArray& ba, dynProps)
-            array.add(Identifier::fromString(exec, ba.constData()));
+            array.add(Identifier::fromString(vm, ba.constData()));
 #endif
 
         const int methodCount = meta->methodCount();
@@ -205,7 +206,7 @@ void QtInstance::getPropertyNames(ExecState* exec, PropertyNameArray& array)
             QMetaMethod method = meta->method(i);
             if (method.access() != QMetaMethod::Private) {
                 QByteArray sig = method.methodSignature();
-                array.add(Identifier::fromString(exec, String(sig.constData(), sig.length())));
+                array.add(Identifier::fromString(vm, String(sig.constData(), sig.length())));
             }
         }
     }
@@ -276,7 +277,7 @@ JSValue QtInstance::stringValue(ExecState* exec) const
 
         buf = str.toLatin1();
     }
-    return jsString(exec, buf.constData());
+    return jsString(exec->vm(), buf.constData());
 }
 
 JSValue QtInstance::numberValue(ExecState*) const
