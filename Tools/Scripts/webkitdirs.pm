@@ -2128,7 +2128,7 @@ sub wrapperPrefixIfNeeded()
 
 sub shouldUseJhbuild()
 {
-    return ((isGtk() or isWPE()) and -e getJhbuildPath());
+    return ((isGtk() or isWPE() or isQt()) and -e getJhbuildPath());
 }
 
 sub shouldUseFlatpak()
