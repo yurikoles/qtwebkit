@@ -69,7 +69,6 @@ QGradient* Gradient::platformGradient()
 
     sortStopsIfNecessary();
 
-    QColor stopColor;
     qreal lastStop(0.0);
     const qreal lastStopDiff = 0.0000001;
 
@@ -78,7 +77,6 @@ QGradient* Gradient::platformGradient()
         if (lastStop >= 1)
             break;
 
-        stopColor.setRgbF(stop.color.red(), stop.color.green(), stop.color.blue(), stop.color.alpha());
         if (qFuzzyCompare(lastStop, qreal(stop.offset)))
             lastStop = stop.offset + lastStopDiff;
         else
@@ -107,7 +105,7 @@ QGradient* Gradient::platformGradient()
             },
             [&] (const ConicData&) {});
 
-        m_gradient->setColorAt(stopPosition, stopColor);
+        m_gradient->setColorAt(stopPosition, stop.color);
         // Keep the lastStop as orginal value, since the following stopColor depend it
         lastStop = stop.offset;
     }
