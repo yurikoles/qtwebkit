@@ -470,6 +470,9 @@ VM::VM(VMType vmType, HeapType heapType)
         ensureShadowChicken();
 
     VMInspector::instance().add(this);
+
+    if (!g_jscConfig.disabledFreezingForTesting)
+        Config::permanentlyFreeze();
 }
 
 static ReadWriteLock s_destructionLock;
@@ -640,6 +643,8 @@ static ThunkGenerator thunkGeneratorForIntrinsic(Intrinsic intrinsic)
         return charCodeAtThunkGenerator;
     case CharAtIntrinsic:
         return charAtThunkGenerator;
+    case StringPrototypeCodePointAtIntrinsic:
+        return stringPrototypeCodePointAtThunkGenerator;
     case Clz32Intrinsic:
         return clz32ThunkGenerator;
     case FromCharCodeIntrinsic:

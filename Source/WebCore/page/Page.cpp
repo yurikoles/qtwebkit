@@ -1676,14 +1676,6 @@ void Page::storageBlockingStateChanged()
         view->storageBlockingStateChanged();
 }
 
-void Page::enableLegacyPrivateBrowsing(bool privateBrowsingEnabled)
-{
-    // Don't allow changing the legacy private browsing state if we have set a session ID.
-    ASSERT(m_sessionID == PAL::SessionID::defaultSessionID() || m_sessionID == PAL::SessionID::legacyPrivateSessionID());
-
-    setSessionID(privateBrowsingEnabled ? PAL::SessionID::legacyPrivateSessionID() : PAL::SessionID::defaultSessionID());
-}
-
 void Page::updateIsPlayingMedia(uint64_t sourceElementID)
 {
     MediaProducer::MediaStateFlags state = MediaProducer::IsNotPlaying;
@@ -2998,6 +2990,9 @@ void Page::configureLoggingChannel(const String& channelName, WTFLogChannelState
 
 void Page::didFinishLoadingImageForElement(HTMLImageElement& element)
 {
+    auto protectedElement = makeRef(element);
+    if (auto frame = makeRefPtr(element.document().frame()))
+        frame->editor().revealSelectionIfNeededAfterLoadingImageForElement(element);
     chrome().client().didFinishLoadingImageForElement(element);
 }
 

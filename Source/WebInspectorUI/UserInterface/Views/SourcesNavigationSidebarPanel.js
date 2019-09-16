@@ -443,7 +443,7 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
         // A custom implementation is needed for this since the frames are populated lazily.
 
         if (representedObject instanceof WI.LocalResourceOverride)
-            return this._localResourceOverridesTreeOutline.findTreeElement(localResource);
+            return this._localResourceOverridesTreeOutline.findTreeElement(representedObject);
 
         if (representedObject instanceof WI.LocalResource) {
             let localResourceOverride = WI.networkManager.localResourceOverrideForURL(representedObject.url);
@@ -737,10 +737,19 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
         return a.mainTitle.extendedLocaleCompare(b.mainTitle) || a.subtitle.extendedLocaleCompare(b.subtitle);
     }
 
+    _closeContentViewsFilter(contentView)
+    {
+        // Local Resource Override content views do not need to be closed across page navigations.
+        if (contentView.representedObject instanceof WI.LocalResource && contentView.representedObject.isLocalResourceOverride)
+            return false;
+
+        return true;
+    }
+
     _updateMainFrameTreeElement(mainFrame)
     {
         if (this.didInitialLayout)
-            this.contentBrowser.contentViewContainer.closeAllContentViews();
+            this.contentBrowser.contentViewContainer.closeAllContentViews(this._closeContentViewsFilter);
 
         let oldMainFrameTreeElement = this._mainFrameTreeElement;
         if (this._mainFrameTreeElement) {
@@ -1759,15 +1768,16 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
 
         if (event.type === WI.TreeOutline.Event.ElementRemoved) {
             let selectedTreeElement = this._breakpointsTreeOutline.selectedTreeElement;
-            console.assert(selectedTreeElement);
-            if (selectedTreeElement.representedObject === WI.debuggerManager.assertionFailuresBreakpoint || !WI.debuggerManager.isBreakpointRemovable(selectedTreeElement.representedObject)) {
-                const skipUnrevealed = true;
-                const dontPopulate = true;
-                let treeElementToSelect = selectedTreeElement.traverseNextTreeElement(skipUnrevealed, dontPopulate);
-                if (treeElementToSelect) {
-                    const omitFocus = true;
-                    const selectedByUser = true;
-                    treeElementToSelect.select(omitFocus, selectedByUser);
+            if (selectedTreeElement) {
+                if (selectedTreeElement.representedObject === WI.debuggerManager.assertionFailuresBreakpoint || !WI.debuggerManager.isBreakpointRemovable(selectedTreeElement.representedObject)) {
+                    const skipUnrevealed = true;
+                    const dontPopulate = true;
+                    let treeElementToSelect = selectedTreeElement.traverseNextTreeElement(skipUnrevealed, dontPopulate);
+                    if (treeElementToSelect) {
+                        const omitFocus = true;
+                        const selectedByUser = true;
+                        treeElementToSelect.select(omitFocus, selectedByUser);
+                    }
                 }
             }
         }

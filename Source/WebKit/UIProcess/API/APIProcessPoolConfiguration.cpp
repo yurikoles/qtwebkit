@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Apple Inc. All rights reserved.
+ * Copyright (C) 2014-2019 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,16 +34,6 @@ namespace API {
 Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::create()
 {
     return adoptRef(*new ProcessPoolConfiguration);
-}
-
-Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::createWithLegacyOptions()
-{
-    auto configuration = ProcessPoolConfiguration::createWithWebsiteDataStoreConfiguration(WebsiteDataStore::legacyDefaultDataStoreConfiguration());
-
-    configuration->m_shouldHaveLegacyDataStore = true;
-    configuration->m_cacheModel = WebKit::CacheModel::DocumentViewer;
-
-    return configuration;
 }
 
 Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::createWithWebsiteDataStoreConfiguration(const WebKit::WebsiteDataStoreConfiguration& legacyConfiguration)
@@ -86,7 +76,6 @@ Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::copy()
 {
     auto copy = this->create();
 
-    copy->m_shouldHaveLegacyDataStore = this->m_shouldHaveLegacyDataStore;
     copy->m_cacheModel = this->m_cacheModel;
     copy->m_diskCacheDirectory = this->m_diskCacheDirectory;
     copy->m_diskCacheSpeculativeValidationEnabled = this->m_diskCacheSpeculativeValidationEnabled;
@@ -111,6 +100,7 @@ Ref<ProcessPoolConfiguration> ProcessPoolConfiguration::copy()
     copy->m_shouldTakeUIBackgroundAssertion = this->m_shouldTakeUIBackgroundAssertion;
     copy->m_shouldCaptureAudioInUIProcess = this->m_shouldCaptureAudioInUIProcess;
     copy->m_shouldCaptureDisplayInUIProcess = this->m_shouldCaptureDisplayInUIProcess;
+    copy->m_shouldConfigureJSCForTesting = this->m_shouldConfigureJSCForTesting;
     copy->m_isJITEnabled = this->m_isJITEnabled;
     copy->m_downloadMonitorSpeedMultiplier = this->m_downloadMonitorSpeedMultiplier;
 #if PLATFORM(IOS_FAMILY)

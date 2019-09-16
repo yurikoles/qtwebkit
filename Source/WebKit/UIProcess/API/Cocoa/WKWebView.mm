@@ -5037,6 +5037,32 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(FORWARD_ACTION_TO_WKCONTENTVIEW)
     });
 }
 
+- (void)_takePDFSnapshotWithConfiguration:(WKSnapshotConfiguration *)snapshotConfiguration completionHandler:(void (^)(NSData *, NSError *))completionHandler
+{
+    WebCore::FrameIdentifier frameID;
+    if (auto mainFrame = _page->mainFrame())
+        frameID = mainFrame->frameID();
+    else {
+        completionHandler(nil, createNSError(WKErrorUnknown).get());
+        return;
+    }
+
+    Optional<WebCore::FloatRect> floatRect;
+    if (snapshotConfiguration && !CGRectIsNull(snapshotConfiguration.rect))
+        floatRect = WebCore::FloatRect(snapshotConfiguration.rect);
+
+    auto handler = makeBlockPtr(completionHandler);
+    _page->drawToPDF(frameID, floatRect, [retainedSelf = retainPtr(self), handler = WTFMove(handler)](const IPC::DataReference& pdfData, WebKit::CallbackBase::Error error) {
+        if (error != WebKit::CallbackBase::Error::None) {
+            handler(nil, createNSError(WKErrorUnknown).get());
+            return;
+        }
+
+        auto data = adoptCF(CFDataCreate(kCFAllocatorDefault, pdfData.data(), pdfData.size()));
+        handler((NSData *)data.get(), nil);
+    });
+}
+
 #if PLATFORM(MAC)
 - (void)_setShouldSuppressFirstResponderChanges:(BOOL)shouldSuppress
 {
@@ -7442,8 +7468,20 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
     WebKit::UserMediaProcessManager::singleton().denyNextUserMediaRequest();
 #endif
 }
-@end
 
+#if PLATFORM(IOS_FAMILY)
+- (void)_triggerSystemPreviewActionOnFrame:(uint64_t)frameID page:(uint64_t)pageID
+{
+#if USE(SYSTEM_PREVIEW)
+    if (_page) {
+        if (auto* previewController = _page->systemPreviewController())
+            previewController->triggerSystemPreviewActionWithTargetForTesting(frameID, pageID);
+    }
+#endif
+}
+#endif
+
+@end
 
 #if ENABLE(FULLSCREEN_API) && PLATFORM(IOS_FAMILY)
 

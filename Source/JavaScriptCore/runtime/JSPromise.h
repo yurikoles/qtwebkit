@@ -25,20 +25,13 @@
 
 #pragma once
 
-#include "JSObject.h"
+#include "JSInternalFieldObjectImpl.h"
 
 namespace JSC {
 
-class JSPromise : public JSNonFinalObject {
+class JSPromise : public JSInternalFieldObjectImpl<2> {
 public:
-    friend class LLIntOffsetsExtractor;
-    using Base = JSNonFinalObject;
-
-    static size_t allocationSize(Checked<size_t> inlineCapacity)
-    {
-        ASSERT_UNUSED(inlineCapacity, !inlineCapacity);
-        return sizeof(JSPromise);
-    }
+    using Base = JSInternalFieldObjectImpl<2>;
 
     static JSPromise* create(VM&, Structure*);
     static Structure* createStructure(VM&, JSGlobalObject*, JSValue);
@@ -58,7 +51,7 @@ public:
         Flags = 0,
         ReactionsOrResult = 1,
     };
-    static constexpr unsigned numberOfInternalFields = 2;
+    static_assert(numberOfInternalFields == 2);
 
     JS_EXPORT_PRIVATE Status status(VM&) const;
     JS_EXPORT_PRIVATE JSValue result(VM&) const;
@@ -68,14 +61,9 @@ public:
 
     static void visitChildren(JSCell*, SlotVisitor&);
 
-    static ptrdiff_t offsetOfInternalFields() { return OBJECT_OFFSETOF(JSPromise, m_internalFields); }
-    static ptrdiff_t offsetOfInternalField(unsigned index) { return OBJECT_OFFSETOF(JSPromise, m_internalFields) + index * sizeof(WriteBarrier<Unknown>); }
-
 protected:
     JSPromise(VM&, Structure*);
     void finishCreation(VM&);
-
-    WriteBarrier<Unknown> m_internalFields[numberOfInternalFields] { };
 };
 
 } // namespace JSC

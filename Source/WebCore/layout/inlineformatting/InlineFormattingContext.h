@@ -45,8 +45,8 @@ struct LineInput;
 class InlineFormattingContext : public FormattingContext {
     WTF_MAKE_ISO_ALLOCATED(InlineFormattingContext);
 public:
-    InlineFormattingContext(const Box& formattingContextRoot, InlineFormattingState&);
-    void layout() override;
+    InlineFormattingContext(const Container& formattingContextRoot, InlineFormattingState&);
+    void layoutInFlowContent() override;
 
 private:
     IntrinsicWidthConstraints computedIntrinsicWidthConstraints() override;
@@ -60,7 +60,7 @@ private:
     private:
         LayoutState& layoutState() const { return m_inlineFormattingContext.layoutState(); }
         const InlineFormattingContext& formattingContext() const { return m_inlineFormattingContext; }
-        const Container& formattingRoot() const { return downcast<Container>(m_inlineFormattingContext.root()); }
+        const Container& formattingRoot() const { return m_inlineFormattingContext.root(); }
         LineContent placeInlineItems(const LineInput&) const;
         void createDisplayRuns(const Line::Content&, const Vector<WeakPtr<InlineItem>>& floats, LayoutUnit widthConstraint) const;
         void alignRuns(TextAlignMode, InlineRuns&, unsigned firstRunIndex, LayoutUnit availableWidth) const;
@@ -86,7 +86,7 @@ private:
     public:
         Geometry(const InlineFormattingContext&);
 
-        HeightAndMargin inlineBlockHeightAndMargin(const Box&) const;
+        HeightAndMargin inlineBlockHeightAndMargin(const Box&, UsedHorizontalValues) const;
         WidthAndMargin inlineBlockWidthAndMargin(const Box&, UsedHorizontalValues);
 
     private:

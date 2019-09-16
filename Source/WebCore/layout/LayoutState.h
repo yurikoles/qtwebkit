@@ -58,8 +58,6 @@ class FormattingState;
 class LayoutState {
     WTF_MAKE_ISO_ALLOCATED(LayoutState);
 public:
-    LayoutState(const Container& initialContainingBlock);
-
     // FIXME: This is a temporary entry point for LFC layout.
     static void run(const RenderView&);
 
@@ -71,18 +69,18 @@ public:
     enum class UpdateType {
         Overflow = 1 << 0,
         Position = 1 << 1,
-        Size     = 1 << 2,
-        All      = Overflow | Position | Size
+        Size     = 1 << 2
     };
-    void markNeedsUpdate(const Box&, OptionSet<UpdateType>);
+    static constexpr OptionSet<UpdateType> updateAll() { return { UpdateType::Overflow, UpdateType::Position, UpdateType::Size }; }
+    void markNeedsUpdate(const Box&, OptionSet<UpdateType> = updateAll());
     bool needsUpdate(const Box&) const;
 
     FormattingState& formattingStateForBox(const Box&) const;
-    FormattingState& establishedFormattingState(const Box& formattingRoot) const;
-    bool hasFormattingState(const Box& formattingRoot) const { return m_formattingStates.contains(&formattingRoot); }
-    FormattingState& createFormattingStateForFormattingRootIfNeeded(const Box& formattingRoot);
+    FormattingState& establishedFormattingState(const Container& formattingRoot) const;
+    bool hasFormattingState(const Container& formattingRoot) const { return m_formattingStates.contains(&formattingRoot); }
+    FormattingState& createFormattingStateForFormattingRootIfNeeded(const Container& formattingRoot);
 
-    std::unique_ptr<FormattingContext> createFormattingContext(const Box& formattingContextRoot);
+    std::unique_ptr<FormattingContext> createFormattingContext(const Container& formattingContextRoot);
 #ifndef NDEBUG
     void registerFormattingContext(const FormattingContext&);
     void deregisterFormattingContext(const FormattingContext& formattingContext) { m_formattingContextList.remove(&formattingContext); }
@@ -95,15 +93,13 @@ public:
     bool inLimitedQuirksMode() const { return m_quirksMode == QuirksMode::Limited; }
     bool inNoQuirksMode() const { return m_quirksMode == QuirksMode::No; }
     // For testing purposes only
-    void verifyAndOutputMismatchingLayoutTree(const RenderView&) const;
+    void verifyAndOutputMismatchingLayoutTree(const RenderView&, const Container& initialContainingBlock) const;
 
 private:
-    const Container& initialContainingBlock() const { return *m_initialContainingBlock; }
-    void layoutFormattingContextSubtree(const Box&);
+    void layoutFormattingContextSubtree(const Container&);
 
-    WeakPtr<const Container> m_initialContainingBlock;
     HashSet<const Container*> m_formattingContextRootListForLayout;
-    HashMap<const Box*, std::unique_ptr<FormattingState>> m_formattingStates;
+    HashMap<const Container*, std::unique_ptr<FormattingState>> m_formattingStates;
 #ifndef NDEBUG
     HashSet<const FormattingContext*> m_formattingContextList;
 #endif

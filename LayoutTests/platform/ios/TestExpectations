@@ -44,7 +44,8 @@ webkit.org/b/200308 fast/events/touch/ios/content-observation/non-visible-conten
 # WebGPU is not enabled on iOS Simulator.
 webgpu [ Skip ]
 inspector/canvas/create-context-webgpu.html [ Skip ]
-inspector/canvas/resolveCanvasContext-webgpu.html [ Skip ]
+inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
+inspector/canvas/resolveContext-webgpu.html [ Skip ]
 
 # Encrypted Media Extensions are not enabled
 media/encrypted-media/
@@ -1217,9 +1218,7 @@ http/tests/security/cross-origin-plugin-private-browsing-toggled.html [ Failure 
 http/tests/security/cross-origin-plugin.html [ Failure ]
 http/tests/security/local-user-CSS-from-remote.html [ Failure ]
 http/tests/security/storage-blocking-loosened-plugin.html [ Failure ]
-http/tests/security/storage-blocking-loosened-private-browsing-plugin.html [ Failure ]
 http/tests/security/storage-blocking-strengthened-plugin.html [ Failure ]
-http/tests/security/storage-blocking-strengthened-private-browsing-plugin.html [ Failure ]
 http/tests/security/svg-image-with-css-cross-domain.html [ ImageOnlyFailure ]
 
 # HTTP tests that are flaky:
@@ -1331,7 +1330,6 @@ webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-polygon-004.h
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-shape-arguments-000.html [ Failure ]
 
 webkit.org/b/178952 fast/css/font-calculated-value.html [ Failure ]
-webkit.org/b/178954 fast/css/font-shorthand-from-longhands.html [ Failure ]
 webkit.org/b/178955 fast/css/font-shorthand-line-height.html [ Failure ]
 webkit.org/b/178957 fast/css/getComputedStyle/computed-style-font.html [ Failure ]
 
@@ -2422,8 +2420,6 @@ fast/forms/file/open-file-panel.html [ Skip ]
 
 # Tests that are failing after bug 157170 (WPT test sync). These tests may just need rebasing.
 imported/w3c/web-platform-tests/html/semantics/selectors/pseudo-classes/readwrite-readonly.html [ Failure ]
-[ Release ] imported/w3c/web-platform-tests/html/dom/interfaces.html [ Failure ]
-imported/w3c/web-platform-tests/dom/nodes/Document-createEvent.html [ Failure ]
 imported/w3c/web-platform-tests/html/semantics/forms/the-input-element/selection.html [ Failure ]
 imported/w3c/web-platform-tests/html/semantics/forms/constraints/form-validation-validity-badInput.html [ Failure ]
 imported/w3c/web-platform-tests/html/semantics/selectors/pseudo-classes/inrange-outofrange.html [ Failure ]
@@ -3203,10 +3199,6 @@ webkit.org/b/190764 editing/spelling/spelling-dots-position-3.html [ Skip ]
 
 webkit.org/b/192279 imported/w3c/web-platform-tests/service-workers/service-worker/register-closed-window.https.html [ Pass Failure ]
 
-webkit.org/b/192250 imported/w3c/web-platform-tests/service-workers/service-worker/update-missing-import-scripts.https.html [ Pass Failure ]
-
-webkit.org/b/192398 imported/w3c/web-platform-tests/service-workers/service-worker/update-registration-with-type.https.html [ Pass Failure ]
-
 webkit.org/b/191704 imported/w3c/web-platform-tests/service-workers/service-worker/windowclient-navigate.https.html [ Pass Failure ]
 
 webkit.org/b/193955 compositing/iframes/remove-reinsert-webview-with-iframe.html [ Skip ]
@@ -3318,10 +3310,6 @@ http/wpt/resource-timing/rt-initiatorType-script-module.html [ Pass Failure ]
 http/wpt/resource-timing/rt-initiatorType-element.html [ Pass Failure ]
 http/wpt/resource-timing/rt-initiatorType-xmlhttprequest.html [ Pass Failure ]
 
-# <rdar://problem/51766135> imported/w3c/web-platform-tests/preload/ tests landed failing after import
-imported/w3c/web-platform-tests/preload/dynamic-adding-preload-imagesrcset.html [ Failure ]
-imported/w3c/web-platform-tests/preload/link-header-preload-imagesrcset.html [ Failure ]
-
 # <rdar://problem/51826131> REGRESSION (r241747) 2 Layout tests are failing on Internal iOS 13 iOS / iPad Simulator testers fast/repaint/placeholder-after-caps-lock-hidden.html imported/blink/svg/custom/focus-ring-2.svg
 imported/blink/svg/custom/focus-ring-2.svg [ ImageOnlyFailure ]
 fast/repaint/placeholder-after-caps-lock-hidden.html [ Failure ]
@@ -3347,4 +3335,13 @@ fast/events/ios/multiple-key-press-and-release-ordering.html [ Skip ]
 
 # rdar://54561673 (REGRESSION: Layout test http/tests/security/frameNavigation/sandbox-ALLOWED-top-navigation-with-user-gesture-2.html is a flaky timeout)
 http/tests/security/frameNavigation/sandbox-ALLOWED-top-navigation-with-user-gesture-2.html [ Pass Timeout ]
+
+# rdar://55081191 (Layout Test media/audio-concurrent-supported.html is a flaky failure (184612))
+media/audio-concurrent-supported.html [ Pass Failure ]
+
+webkit.org/b/181837 [ Release ] imported/w3c/web-platform-tests/service-workers/service-worker/ready.https.html [ Pass Failure ]
+
+webkit.org/b/201190 imported/w3c/web-platform-tests/service-workers/service-worker/registration-mime-types.https.html [ Pass Failure ]
+
+webkit.org/b/201784 webgl/2.0.0/conformance/glsl/misc/shaders-with-invariance.html [ Failure ]
 

@@ -39,8 +39,8 @@ namespace Layout {
 class TableFormattingContext : public FormattingContext {
     WTF_MAKE_ISO_ALLOCATED(TableFormattingContext);
 public:
-    TableFormattingContext(const Box& formattingContextRoot, TableFormattingState&);
-    void layout() override;
+    TableFormattingContext(const Container& formattingContextRoot, TableFormattingState&);
+    void layoutInFlowContent() override;
 
 private:
     class Geometry : public FormattingContext::Geometry {
@@ -56,10 +56,16 @@ private:
 
     IntrinsicWidthConstraints computedIntrinsicWidthConstraints() override;
     LayoutUnit computedTableWidth();
+    void layoutTableCellBox(const Box& cellLayoutBox, const TableGrid::Column&);
+    void positionTableCells();
+    void setComputedGeometryForRows();
+    void setComputedGeometryForSections();
 
     void ensureTableGrid();
     void computePreferredWidthForColumns();
     void distributeAvailableWidth(LayoutUnit extraHorizontalSpace);
+    enum class WidthConstraintsType { Minimum, Maximum };
+    void useAsContentLogicalWidth(WidthConstraintsType);
 
     void initializeDisplayBoxToBlank(Display::Box&) const;
 

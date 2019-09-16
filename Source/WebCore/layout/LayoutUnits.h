@@ -98,11 +98,15 @@ inline void Point::moveBy(LayoutPoint offset)
 struct HorizontalEdges {
     LayoutUnit left;
     LayoutUnit right;
+
+    LayoutUnit width() const { return left + right; }
 };
 
 struct VerticalEdges {
     LayoutUnit top;
     LayoutUnit bottom;
+
+    LayoutUnit height() const { return top + bottom; }
 };
 
 struct Edges {
@@ -156,6 +160,7 @@ struct UsedHorizontalValues {
 };
 
 struct UsedVerticalValues {
+    Optional<LayoutUnit> containingBlockHeight;
     Optional<LayoutUnit> height;
 };
 

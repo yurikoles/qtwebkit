@@ -205,6 +205,7 @@
 #import <WebCore/Settings.h>
 #import <WebCore/ShouldTreatAsContinuingLoad.h>
 #import <WebCore/SocketProvider.h>
+#import <WebCore/SocketStreamHandleImpl.h>
 #import <WebCore/StringUtilities.h>
 #import <WebCore/StyleProperties.h>
 #import <WebCore/TextResourceDecoder.h>
@@ -1419,6 +1420,9 @@ static void WebKitInitializeGamepadProviderIfNecessary()
         if (IOSApplication::isMobileSafari())
             DeprecatedGlobalSettings::setShouldManageAudioSessionCategory(true);
 #endif
+        
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"WebKitEnableLegacyTLS"])
+            SocketStreamHandleImpl::setLegacyTLSEnabled(true);
 
         didOneTimeInitialization = true;
     }
@@ -2888,8 +2892,8 @@ static bool needsSelfRetainWhileLoadingQuirk()
     settings.setPluginsEnabled([preferences arePlugInsEnabled]);
     settings.setLocalStorageEnabled([preferences localStorageEnabled]);
 
-    _private->page->enableLegacyPrivateBrowsing([preferences privateBrowsingEnabled]);
-    _private->group->storageNamespaceProvider().enableLegacyPrivateBrowsingForTesting([preferences privateBrowsingEnabled]);
+    _private->page->setSessionID([preferences privateBrowsingEnabled] ? PAL::SessionID::legacyPrivateSessionID() : PAL::SessionID::defaultSessionID());
+    _private->group->storageNamespaceProvider().setSessionIDForTesting([preferences privateBrowsingEnabled] ? PAL::SessionID::legacyPrivateSessionID() : PAL::SessionID::defaultSessionID());
     settings.setSansSerifFontFamily([preferences sansSerifFontFamily]);
     settings.setSerifFontFamily([preferences serifFontFamily]);
     settings.setStandardFontFamily([preferences standardFontFamily]);
@@ -3184,7 +3188,6 @@ static bool needsSelfRetainWhileLoadingQuirk()
     RuntimeEnabledFeatures::sharedFeatures().setLinkPreloadResponsiveImagesEnabled([preferences linkPreloadResponsiveImagesEnabled]);
     RuntimeEnabledFeatures::sharedFeatures().setDialogElementEnabled([preferences dialogElementEnabled]);
     RuntimeEnabledFeatures::sharedFeatures().setKeygenElementEnabled([preferences keygenElementEnabled]);
-    RuntimeEnabledFeatures::sharedFeatures().setLazyImageLoadingEnabled([preferences lazyImageLoadingEnabled]);
 
 #if ENABLE(LEGACY_ENCRYPTED_MEDIA)
     RuntimeEnabledFeatures::sharedFeatures().setLegacyEncryptedMediaAPIEnabled(preferences.legacyEncryptedMediaAPIEnabled);

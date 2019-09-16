@@ -1,3 +1,580 @@
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: HTML Formatter - XML mode
+        https://bugs.webkit.org/show_bug.cgi?id=201758
+
+        Reviewed by Devin Rousso.
+
+        * Tools/HTMLFormatter/index.html:
+        * Tools/SourceMaps/index.html:
+        Update Tools to more easily test XML.
+
+        * UserInterface/Proxies/FormatterWorkerProxy.js:
+        (WI.FormatterWorkerProxy.prototype.formatXML):
+        * UserInterface/Views/TextEditor.js:
+        (WI.TextEditor.prototype.hasFormatter):
+        (WI.TextEditor.prototype._startWorkerPrettyPrint):
+        Allow formatting XML content.
+
+        * UserInterface/Workers/Formatter/FormatterWorker.js:
+        (FormatterWorker.prototype.formatHTML):
+        (FormatterWorker.prototype.formatXML):
+        Expose "formatXML".
+
+        * UserInterface/Workers/Formatter/HTMLFormatter.js:
+        (HTMLFormatter.let.dom):
+        (HTMLFormatter):
+        (HTMLFormatter.prototype._shouldHaveNoChildren):
+        (HTMLFormatter.prototype._before):
+        (HTMLFormatter.prototype._after):
+        * UserInterface/Workers/Formatter/HTMLParser.js:
+        (HTMLParser.prototype.parseDocument):
+        * UserInterface/Workers/Formatter/HTMLTreeBuilderFormatter.js:
+        (HTMLTreeBuilderFormatter.prototype._isEmptyNode):
+        Give the HTMLFormatter and related classes an XML mode that
+        has less of the smarts of XML.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: HTML Formatting: Handle infinite loop for incomplete script data
+        https://bugs.webkit.org/show_bug.cgi?id=201769
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Workers/Formatter/HTMLParser.js:
+        (HTMLParser):
+        Handle EOF in the script data's loop.
+        Better handle EOF at the end of text data.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Improve auto completion typing performance by avoiding global forced layouts
+        https://bugs.webkit.org/show_bug.cgi?id=201735
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/Main.css:
+        (#layout-measurement-container):
+        * UserInterface/Base/Main.js:
+        (WI.measureElement):
+        Provide a helper for measuring an element in a hidden container
+        that helps avoid more global layout.
+
+        * UserInterface/Views/CompletionSuggestionsView.js:
+        (WI.CompletionSuggestionsView.prototype.show):
+        Use measure element to avoid a global forced layout.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Tighter autocomplete bubbles
+        https://bugs.webkit.org/show_bug.cgi?id=201742
+
+        Reviewed by Timothy Hatcher.
+
+        * UserInterface/Views/CompletionSuggestionsView.js:
+        (WI.CompletionSuggestionsView.prototype.show):
+        Eliminate the trailing space. Use bounding client rect to get
+        fractional widths and raise the value so we are at an even number.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        REGRESSION: Web Inspector: Layout Timeline View does not show popover for initiator data
+        https://bugs.webkit.org/show_bug.cgi?id=201732
+        <rdar://problem/55312339>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/LayoutTimelineDataGrid.js:
+        (WI.LayoutTimelineDataGrid.prototype.callFramePopoverAnchorElement):
+        (WI.LayoutTimelineDataGrid.prototype.shouldShowCallFramePopover):
+        The column name was incorrect.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Uncaught Exception: null is not an object (evaluating 'Object.keys(propertyNames)​')​ (at JavaScriptRuntimeCompletionProvider.js:​244:​57)​
+        https://bugs.webkit.org/show_bug.cgi?id=201729
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Controllers/JavaScriptRuntimeCompletionProvider.js:
+        (WI.JavaScriptRuntimeCompletionProvider):
+        (WI.JavaScriptRuntimeCompletionProvider.prototype.completionControllerCompletionsNeeded):
+        Don't clear the completion object group until all ongoing requests have completed.
+        Percision for the lifetime of the object group objects is not important, but we
+        surely don't want to delete an object too soon.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Formatter: Pretty Print HTML resources (including inline <script>/<style>)
+        https://bugs.webkit.org/show_bug.cgi?id=201535
+        <rdar://problem/29119232>
+
+        Reviewed by Devin Rousso.
+
+        Introduce HTMLFormatter, HTMLParser, and HTMLTreeBuilderFormatter.
+
+            - HTMLParser tokenizes HTML content and passes it to a tree builder.
+            - HTMLTreeBuilderFormatter uses those tokens to create a formatted dom tree of fake nodes.
+            - HTMLFormatter then builds formatted content and a FormatterSourceMap from that DOM tree.
+        
+        The output of HTMLFormatter is intended to just modify whitespace. So it won't be a
+        100% compatible DOM, but will be useful for debugging and reading inline <style>
+        and <script>, which is a more common debugging scenario. It also maintains original
+        author attribute quotations or lack therefore, because again it tries to only
+        change whitespace. A separate tree builder could be used for tidying content.
+
+        This introduces a few tools for working with formatting:
+
+            - Tools/HTMLFormatter - debug the parser, tree builder, and output format
+            - Tools/SourceMaps - debug formatted content and source mappings
+
+        This also:
+        
+            - renames "EsprimaFormatter" to "JSFormatter"
+            - eliminates an extra trailing newline in CSSFormatter output
+
+        * Tools/HTMLFormatter/HTMLTreeBuilderDebug.js: Added.
+        * Tools/HTMLFormatter/index.html: Added.
+        * Tools/HTMLFormatter/styles.css: Added.
+        Tool for debugging the HTML formatter components.
+
+        * Tools/SourceMaps/.gitignore: Added.
+        * Tools/SourceMaps/index.html: Added.
+        * Tools/SourceMaps/setup.sh: Added.
+        * Tools/SourceMaps/styles.css: Added.
+        Tool for debugging Formatter generated Source Maps.
+
+        * Tools/JSFormatter/JSFormatterDebug.js: Renamed from Source/WebInspectorUI/Tools/Formatting/EsprimaFormatterDebug.js.
+        * Tools/JSFormatter/codemirror-additions.css: Renamed from Source/WebInspectorUI/Tools/Formatting/codemirror-additions.css.
+        * Tools/JSFormatter/index.html: Renamed from Source/WebInspectorUI/Tools/Formatting/index.html.
+        Renamed this tool. EsprimaFormatter => JSFormatter.
+
+        * UserInterface/Controllers/FormatterSourceMap.js:
+        (WI.FormatterSourceMap.prototype.originalPositionToFormattedPosition):
+        (WI.FormatterSourceMap.prototype.formattedPositionToOriginalPosition):
+        New APIs used by tools and tests for translating "position" offsets and not line/columns.
+
+        * UserInterface/Workers/Formatter/JSFormatter.js: Renamed from Source/WebInspectorUI/UserInterface/Workers/Formatter/EsprimaFormatter.js.
+        (JSFormatter):
+        * UserInterface/Workers/Formatter/CSSFormatter.js:
+        (CSSFormatter):
+        Allow using a supplied builder, which is useful when formatting
+        inline content from HTMLFormatter (<style> / <script>).
+
+        * UserInterface/Workers/Formatter/FormatterContentBuilder.js:
+        (FormatterContentBuilder.prototype.get indentString):
+        (FormatterContentBuilder.prototype.get originalContent):
+        (FormatterContentBuilder.prototype.get indentLevel):
+        (FormatterContentBuilder.prototype.get originalOffset):
+        (FormatterContentBuilder.prototype.set originalOffset):
+        (FormatterContentBuilder.prototype.appendNonToken):
+        (FormatterContentBuilder.prototype.appendToken):
+        (FormatterContentBuilder.prototype.appendTokenWithPossibleNewlines):
+        (FormatterContentBuilder.prototype.appendMapping):
+        (FormatterContentBuilder.prototype.indentToLevel):
+        (FormatterContentBuilder.prototype.finish):
+        Provide API for getting / setting the original offset and indent level.
+        This is useful when the HTMLFormatter runs the CSSFormatter/JSFormatter
+        in a nested context (<style> / <script>). Add a few more APIs for
+        conveniences when appending tokens or important positions.
+
+        * UserInterface/Workers/Formatter/HTMLParser.js: Added.
+        (HTMLParser.prototype.parseDocument):
+        (HTMLParser.prototype._isEOF):
+        (HTMLParser.prototype._peek):
+        (HTMLParser.prototype._peekCharacterRegex):
+        (HTMLParser.prototype._peekString):
+        (HTMLParser.prototype._peekCaseInsensitiveString):
+        (HTMLParser.prototype._consumeWhitespace):
+        (HTMLParser.prototype._consumeUntilString):
+        (HTMLParser.prototype._consumeUntilRegex):
+        (HTMLParser.prototype._consumeDoubleQuotedString):
+        (HTMLParser):
+        Tokenize HTML content into nodes.
+
+        * UserInterface/Workers/Formatter/HTMLTreeBuilderFormatter.js: Added.
+        (HTMLTreeBuilderFormatter.prototype.get dom):
+        (HTMLTreeBuilderFormatter.prototype.begin):
+        (HTMLTreeBuilderFormatter.prototype.pushParserNode):
+        (HTMLTreeBuilderFormatter.prototype.end):
+        (HTMLTreeBuilderFormatter.prototype._pushParserNodeTopLevel):
+        (HTMLTreeBuilderFormatter.prototype._pushParserNodeStack):
+        (HTMLTreeBuilderFormatter.prototype._isEmptyNode):
+        (HTMLTreeBuilderFormatter.prototype._buildDOMNodeFromOpenTag):
+        (HTMLTreeBuilderFormatter.prototype._buildErrorNodeFromCloseTag):
+        (HTMLTreeBuilderFormatter.prototype._buildSimpleNodeFromParserNode):
+        (HTMLTreeBuilderFormatter):
+        Build a simple DOM tree from parser nodes.
+
+        * UserInterface/Workers/Formatter/HTMLFormatter.js: Added.
+        (HTMLFormatter.let.dom):
+        (HTMLFormatter):
+        (HTMLFormatter.prototype.get success):
+        (HTMLFormatter.prototype.get formattedText):
+        (HTMLFormatter.prototype.get sourceMapData):
+        (HTMLFormatter.prototype._walk):
+        (HTMLFormatter.prototype._walkChildren):
+        (HTMLFormatter.prototype._isNodeSelfClosing):
+        (HTMLFormatter.prototype._shouldHaveInlineContent):
+        (HTMLFormatter.prototype._hasMultipleNewLines):
+        (HTMLFormatter.prototype._buildAttributeString):
+        (HTMLFormatter.prototype._before):
+        (HTMLFormatter.prototype._after):
+        (HTMLFormatter.prototype._formatWithNestedFormatter):
+        (HTMLFormatter.prototype._formatScript):
+        (HTMLFormatter.prototype._formatStyle):
+        Output pretty printed text from a HTMLTreeBuilderFormatter dom tree.
+
+        * UserInterface/Proxies/FormatterWorkerProxy.js:
+        (WI.FormatterWorkerProxy.prototype.formatHTML):
+        * UserInterface/Workers/Formatter/FormatterWorker.js:
+        (FormatterWorker.prototype.formatJavaScript):
+        (FormatterWorker.prototype.formatCSS):
+        (FormatterWorker.prototype.formatHTML):
+        * UserInterface/Views/TextEditor.js:
+        (WI.TextEditor.prototype.hasFormatter):
+        (WI.TextEditor.prototype._canUseFormatterWorker):
+        (WI.TextEditor.prototype._startWorkerPrettyPrint):
+        Allow pretty printing HTML resources.
+
+        * UserInterface/Main.html:
+        * UserInterface/Test.html:
+        New resources.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: [Overrides] Command-Z doesn't undo changes after page reload
+        https://bugs.webkit.org/show_bug.cgi?id=201698
+        <rdar://problem/55276645>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/ContentViewContainer.js:
+        (WI.ContentViewContainer.prototype.closeAllContentViews):
+        Provide a filter to opt out of closing some content views.
+
+        * UserInterface/Views/SourcesNavigationSidebarPanel.js:
+        (WI.SourcesNavigationSidebarPanel.prototype._closeContentViewsFilter):
+        (WI.SourcesNavigationSidebarPanel.prototype._updateMainFrameTreeElement):
+        Avoid closing ContentViews for local resource overrides. This keeps the
+        SourceCodeTextEditor around and thus its undo/redo stack.
+
+2019-09-12  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Uncaught Exception: TypeError: null is not an object (evaluating 'selectedTreeElement.representedObject')
+        https://bugs.webkit.org/show_bug.cgi?id=201716
+        <rdar://problem/55292615>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/DebuggerSidebarPanel.js:
+        (WI.DebuggerSidebarPanel.prototype._handleBreakpointElementAddedOrRemoved):
+        * UserInterface/Views/SourcesNavigationSidebarPanel.js:
+        (WI.SourcesNavigationSidebarPanel.prototype._handleBreakpointElementAddedOrRemoved):
+        If a breakpoint was removed without a selection in the breakpoint tree outline
+        then there may be no selected tree element.
+
+2019-09-11  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: REGRESSION: Inspector Timeline always starts at about 500ms mark on a reload
+        https://bugs.webkit.org/show_bug.cgi?id=200637
+        <rdar://problem/54218967>
+
+        Reviewed by Devin Rousso.
+
+        The Timeline was getting a startTime value from before the user started
+        the timeline recording because of artificial adjustments that were made
+        to CPUTimelineRecords. Ignore adjusted values when updating the Timeline's
+        start and end times.
+
+        * UserInterface/Models/Timeline.js:
+        (WI.Timeline.prototype._updateTimesIfNeeded):
+        Use unadjusted times, which should fall in the user started / stopped
+        timeline range.
+
+        * UserInterface/Models/TimelineRecord.js:
+        (WI.TimelineRecord.prototype.get unadjustedStartTime):
+        (WI.TimelineRecord.prototype.get unadjustedEndTime):
+        Default implementation uses startTime/endTime.
+
+        * UserInterface/Models/CPUTimelineRecord.js:
+        (WI.CPUTimelineRecord.prototype.get unadjustedStartTime):
+        * UserInterface/Models/MemoryTimelineRecord.js:
+        (WI.MemoryTimelineRecord.prototype.get unadjustedStartTime):
+        Each of these adjusted their startTime.
+
+2019-09-11  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: REGRESSION: CPU: Overlay Markers for Thread views are off by 500ms
+        https://bugs.webkit.org/show_bug.cgi?id=201709
+        <rdar://problem/55289279>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/CPUTimelineView.js:
+        (WI.CPUTimelineView.prototype.layout):
+        Use the CPUTimelineRecord's timestamp (same as the record's endTime) as the
+        point when the CPU sample is taken. This aligns with the rest of the UI that
+        assumes that the 500ms before the sample point leads up to the sample value.
+
+2019-09-11  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Do not show override actions unless Sources tab is enabled
+        https://bugs.webkit.org/show_bug.cgi?id=201708
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Controllers/NetworkManager.js:
+        (WI.NetworkManager.supportsLocalResourceOverrides):
+
+2019-09-11  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: checkerboard has too much contrast in dark mode
+        https://bugs.webkit.org/show_bug.cgi?id=201670
+
+        Reviewed by Timothy Hatcher.
+
+        * UserInterface/Views/CanvasTabContentView.css:
+        (.content-view.canvas > .preview > img, .content-view.canvas .preview-container > canvas): Deleted.
+        Don't force a `background-color: white;` in dark mode.
+
+2019-09-11  Nikita Vasilyev  <nvasilyev@apple.com>
+
+        Web Inspector: Elements: don't show Changes panel when selecting text node
+        https://bugs.webkit.org/show_bug.cgi?id=201669
+
+        Reviewed by Joseph Pecoraro.
+
+        Show Changes panel only for elements regardless of "Show only for selected node" setting.
+
+        * UserInterface/Views/ChangesDetailsSidebarPanel.js:
+        (WI.ChangesDetailsSidebarPanel.prototype.supportsDOMNode):
+        (WI.ChangesDetailsSidebarPanel.prototype.inspect): Deleted.
+
+2019-09-11  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: instrument WebGPUDevice instead of GPUCanvasContext
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+
+        Reviewed by Joseph Pecoraro.
+
+        Most of the actual "work" done with Web GPU actually uses a `WebGPUDevice`.
+
+        A `GPUCanvasContext` is basically just a display "client" of the device, and isn't even
+        required (e.g. compute pipeline).  We should treat the `GPUCanvasContext` almost like a
+        `-webkit-canvas` client of a `WebGPUDevice`.
+
+        * UserInterface/Protocol/CanvasObserver.js:
+        (WI.CanvasObserver.prototype.clientNodesChanged): Added.
+        (WI.CanvasObserver.prototype.cssCanvasClientNodesChanged):
+        * UserInterface/Controllers/CanvasManager.js:
+        (WI.CanvasManager.prototype.clientNodesChanged): Added.
+        (WI.CanvasManager.prototype.cssCanvasClientNodesChanged): Deleted.
+        * UserInterface/Models/Canvas.js:
+        (WI.Canvas.resetUniqueDisplayNameNumbers):
+        (WI.Canvas.prototype.get displayName):
+        (WI.Canvas.prototype.requestNode):
+        (WI.Canvas.prototype.requestClientNodes): Added.
+        (WI.Canvas.prototype.requestSize):
+        (WI.Canvas.prototype.clientNodesChanged): Added.
+        (WI.Canvas.prototype.requestCSSCanvasClientNodes): Deleted.
+        (WI.Canvas.prototype.cssCanvasClientNodesChanged): Deleted.
+
+        * UserInterface/Protocol/RemoteObject.js:
+        (WI.RemoteObject.resolveCanvasContext):
+
+        * UserInterface/Views/CanvasContentView.js:
+        (WI.CanvasContentView.prototype.attached):
+        (WI.CanvasContentView.prototype._refreshPixelSize):
+        * UserInterface/Views/CanvasDetailsSidebarPanel.js:
+        (WI.CanvasDetailsSidebarPanel.prototype.set canvas):
+        (WI.CanvasDetailsSidebarPanel.prototype.initialLayout):
+        (WI.CanvasDetailsSidebarPanel.prototype.layout):
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshSourceSection):
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshClientsSection): Added.
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshCSSCanvasSection): Deleted.
+        * UserInterface/Views/CanvasOverviewContentView.js:
+        (WI.CanvasOverviewContentView.prototype._contentViewMouseEnter):
+        * UserInterface/Views/CanvasTreeElement.js:
+        (WI.CanvasTreeElement.prototype._handleMouseOver):
+
+        * Localizations/en.lproj/localizedStrings.js:
+
+2019-09-11  Truitt Savell  <tsavell@apple.com>
+
+        Unreviewed, rolling out r249753.
+
+        caused inspector/canvas/shaderProgram-add-remove-webgl.html to
+        crash on all Mac platforms.
+
+        Reverted changeset:
+
+        "Web Inspector: Canvas: instrument WebGPUDevice instead of
+        GPUCanvasContext"
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+        https://trac.webkit.org/changeset/249753
+
+2019-09-10  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: instrument WebGPUDevice instead of GPUCanvasContext
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+
+        Reviewed by Joseph Pecoraro.
+
+        Most of the actual "work" done with Web GPU actually uses a `WebGPUDevice`.
+
+        A `GPUCanvasContext` is basically just a display "client" of the device, and isn't even
+        required (e.g. compute pipeline).  We should treat the `GPUCanvasContext` almost like a
+        `-webkit-canvas` client of a `WebGPUDevice`.
+
+        * UserInterface/Protocol/CanvasObserver.js:
+        (WI.CanvasObserver.prototype.clientNodesChanged): Added.
+        (WI.CanvasObserver.prototype.cssCanvasClientNodesChanged):
+        * UserInterface/Controllers/CanvasManager.js:
+        (WI.CanvasManager.prototype.clientNodesChanged): Added.
+        (WI.CanvasManager.prototype.cssCanvasClientNodesChanged): Deleted.
+        * UserInterface/Models/Canvas.js:
+        (WI.Canvas.resetUniqueDisplayNameNumbers):
+        (WI.Canvas.prototype.get displayName):
+        (WI.Canvas.prototype.requestNode):
+        (WI.Canvas.prototype.requestClientNodes): Added.
+        (WI.Canvas.prototype.requestSize):
+        (WI.Canvas.prototype.clientNodesChanged): Added.
+        (WI.Canvas.prototype.requestCSSCanvasClientNodes): Deleted.
+        (WI.Canvas.prototype.cssCanvasClientNodesChanged): Deleted.
+
+        * UserInterface/Protocol/RemoteObject.js:
+        (WI.RemoteObject.resolveCanvasContext):
+
+        * UserInterface/Views/CanvasContentView.js:
+        (WI.CanvasContentView.prototype.attached):
+        (WI.CanvasContentView.prototype._refreshPixelSize):
+        * UserInterface/Views/CanvasDetailsSidebarPanel.js:
+        (WI.CanvasDetailsSidebarPanel.prototype.set canvas):
+        (WI.CanvasDetailsSidebarPanel.prototype.initialLayout):
+        (WI.CanvasDetailsSidebarPanel.prototype.layout):
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshSourceSection):
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshClientsSection): Added.
+        (WI.CanvasDetailsSidebarPanel.prototype._refreshCSSCanvasSection): Deleted.
+        * UserInterface/Views/CanvasOverviewContentView.js:
+        (WI.CanvasOverviewContentView.prototype._contentViewMouseEnter):
+        * UserInterface/Views/CanvasTreeElement.js:
+        (WI.CanvasTreeElement.prototype._handleMouseOver):
+
+        * Localizations/en.lproj/localizedStrings.js:
+
+2019-09-10  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Remove legacy CodeMirror based pretty printers
+        https://bugs.webkit.org/show_bug.cgi?id=201624
+
+        Reviewed by Devin Rousso.
+
+        * Tools/PrettyPrinting/FormatterDebug.js: Removed.
+        * Tools/PrettyPrinting/Utilities.js: Removed.
+        * Tools/PrettyPrinting/codemirror-additions.css: Removed.
+        * Tools/PrettyPrinting/index.html: Removed.
+        * Tools/PrettyPrinting/populate/apple.css: Removed.
+        * UserInterface/Controllers/Formatter.js: Removed.
+        * UserInterface/Main.html:
+        * UserInterface/Test.html:
+        * UserInterface/Views/CodeMirrorFormatters.js: Removed.
+        * UserInterface/Views/TextEditor.js:
+        (WI.TextEditor.prototype.prettyPrint):
+        (WI.TextEditor.prototype._canUseFormatterWorker): Deleted.
+        (WI.TextEditor.prototype._startCodeMirrorPrettyPrint): Deleted.
+        * WebInspectorUI.vcxproj/WebInspectorUI.vcxproj:
+        * WebInspectorUI.vcxproj/WebInspectorUI.vcxproj.filters:
+
+2019-09-09  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Dark Mode: Overview Timeline View has jarring white box-shadows in dark mode
+        https://bugs.webkit.org/show_bug.cgi?id=201442
+        <rdar://problem/54999794>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/DataGrid.css:
+        (.data-grid:not(.variable-height-rows) table.data):
+        (.data-grid:not(.variable-height-rows) table.data.even-first-zebra-stripe):
+        (.data-grid.variable-height-rows.even-first-zebra-stripe table.data tr:nth-child(odd)):
+        (.data-grid.variable-height-rows.even-first-zebra-stripe table.data tr:nth-child(even)):
+        (.data-grid:not(.variable-height-rows) table.data.odd-first-zebra-stripe): Deleted.
+        (.data-grid.variable-height-rows.odd-first-zebra-stripe table.data tr:nth-child(odd)): Deleted.
+        (.data-grid.variable-height-rows.odd-first-zebra-stripe table.data tr:nth-child(even)): Deleted.
+        * UserInterface/Views/DataGrid.js:
+        (WI.DataGrid.prototype.updateVisibleRows):
+        * UserInterface/Views/Table.css:
+        (.table > .data-container > .data-list):
+        (.table > .data-container > .data-list.even-first-zebra-stripe):
+        (.table > .data-container > .data-list.odd-first-zebra-stripe): Deleted.
+        * UserInterface/Views/Table.js:
+        In the gradients "even" was mistakenly first. Fix these so that "odd" is first and the
+        unusual case would be having "even" first. This allows us to line up with `nth-of-type(even)`.
+
+        * UserInterface/Views/Main.css:
+        (:root):
+        (@media (prefers-color-scheme: dark)):
+        Flip even and odd so we maintain the same styles for gradients.
+
+        * UserInterface/Views/OverviewTimelineView.css:
+        (.timeline-view.overview > .data-grid tr):
+        (.timeline-view.overview > .data-grid tr:nth-child(even)):
+        (.timeline-view.overview > .data-grid tr.parent:not(.expanded) td.graph-column .timeline-record-bar:not(.has-inactive-segment) > .segment):
+        (.timeline-view.overview > .data-grid tr.parent:not(.expanded).selected td.graph-column .timeline-record-bar:not(.has-inactive-segment) > .segment):
+        (.timeline-view.overview > .data-grid tr.parent:not(.expanded) td.graph-column .timeline-record-bar.has-inactive-segment > .segment:not(.inactive)):
+        (.timeline-view.overview > .data-grid tr.parent:not(.expanded).selected td.graph-column .timeline-record-bar.has-inactive-segment > .segment:not(.inactive)):
+        (@media (prefers-color-scheme: dark)):
+        (WI.Table.prototype._updateVisibleRows):
+        * UserInterface/Views/Variables.css:
+
+2019-09-06  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: CSS Formatter: the closing } of nested @media aren't indented
+        https://bugs.webkit.org/show_bug.cgi?id=201560
+
+        Reviewed by Joseph Pecoraro.
+
+        * UserInterface/Workers/Formatter/FormatterContentBuilder.js:
+        (FormatterContentBuilder.prototype.removeLastNewline):
+        It's possible that there were multiple newlines in a row, so we should update `_startOfLine`
+        to be `true` if the previous line was empty.
+
+2019-09-06  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: CSS Formatter: links to CSS resources don't map to the right line after pretty printing if the line is after a multiline comment
+        https://bugs.webkit.org/show_bug.cgi?id=201559
+
+        Reviewed by Joseph Pecoraro.
+
+        Newlines in multiline comments weren't added as line endings, so they weren't considered
+        when a source code location updated after pretty printing.
+
+        * UserInterface/Workers/Formatter/CSSFormatter.js:
+        (CSSFormatter.prototype._format):
+
+2019-09-06  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Better position for Sources tab when enabling the experimental setting
+        https://bugs.webkit.org/show_bug.cgi?id=201539
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/SettingsTabContentView.js:
+        Place the Sources tab where the Debugger tab was.
+
+2019-09-06  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Network: Error response headers summary has wrong color border
+        https://bugs.webkit.org/show_bug.cgi?id=201538
+        <rdar://problem/55104469>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/ResourceHeadersContentView.css:
+        (body[dir] .resource-headers > section.error > .details):
+        Re-apply an error style for resource-header sections.
+
 2019-09-04  Devin Rousso  <drousso@apple.com>
 
         Web Inspector: unify the interaction of show/hide status icons in Sources and Canvas

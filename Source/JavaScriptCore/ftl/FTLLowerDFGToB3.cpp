@@ -1113,6 +1113,9 @@ private:
         case StringCharCodeAt:
             compileStringCharCodeAt();
             break;
+        case StringCodePointAt:
+            compileStringCodePointAt();
+            break;
         case StringFromCharCode:
             compileStringFromCharCode();
             break;
@@ -1178,11 +1181,11 @@ private:
         case PutClosureVar:
             compilePutClosureVar();
             break;
-        case GetPromiseInternalField:
-            compileGetPromiseInternalField();
+        case GetInternalField:
+            compileGetInternalField();
             break;
-        case PutPromiseInternalField:
-            compilePutPromiseInternalField();
+        case PutInternalField:
+            compilePutInternalField();
             break;
         case GetFromArguments:
             compileGetFromArguments();
@@ -2945,18 +2948,17 @@ private:
                 LValue value = lowDouble(m_node->child1());
                 result = m_out.doubleFloor(m_out.doubleAdd(value, m_out.constDouble(0.5)));
             } else {
-                LBasicBlock realPartIsMoreThanHalf = m_out.newBlock();
+                LBasicBlock shouldRoundDown = m_out.newBlock();
                 LBasicBlock continuation = m_out.newBlock();
 
                 LValue value = lowDouble(m_node->child1());
                 LValue integerValue = m_out.doubleCeil(value);
                 ValueFromBlock integerValueResult = m_out.anchor(integerValue);
 
-                LValue realPart = m_out.doubleSub(integerValue, value);
+                LValue ceilMinusHalf = m_out.doubleSub(integerValue, m_out.constDouble(0.5));
+                m_out.branch(m_out.doubleGreaterThanOrUnordered(ceilMinusHalf, value), unsure(shouldRoundDown), unsure(continuation));
 
-                m_out.branch(m_out.doubleGreaterThanOrUnordered(realPart, m_out.constDouble(0.5)), unsure(realPartIsMoreThanHalf), unsure(continuation));
-
-                LBasicBlock lastNext = m_out.appendTo(realPartIsMoreThanHalf, continuation);
+                LBasicBlock lastNext = m_out.appendTo(shouldRoundDown, continuation);
                 LValue integerValueRoundedDown = m_out.doubleSub(integerValue, m_out.constDouble(1));
                 ValueFromBlock integerValueRoundedDownResult = m_out.anchor(integerValueRoundedDown);
                 m_out.jump(continuation);
@@ -5576,25 +5578,7 @@ private:
         m_out.storePtr(scope, fastObject, m_heaps.JSFunction_scope);
         m_out.storePtr(weakPointer(executable), fastObject, m_heaps.JSFunction_executable);
         m_out.storePtr(m_out.intPtrZero, fastObject, m_heaps.JSFunction_rareData);
-        
-        VM& vm = this->vm();
-        if (executable->isAnonymousBuiltinFunction()) {
-            mutatorFence();
-            Allocator allocator = allocatorForNonVirtualConcurrently<FunctionRareData>(vm, sizeof(FunctionRareData), AllocatorForMode::AllocatorIfExists);
-            LValue rareData = allocateCell(m_out.constIntPtr(allocator.localAllocator()), vm.functionRareDataStructure.get(), slowPath);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_allocator);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_structure);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_prototype);
-            m_out.storePtr(m_out.intPtrOne, rareData, m_heaps.FunctionRareData_allocationProfileWatchpointSet);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_internalFunctionAllocationProfile_structure);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_boundFunctionStructure);
-            m_out.storePtr(m_out.intPtrZero, rareData, m_heaps.FunctionRareData_allocationProfileClearingWatchpoint);
-            m_out.store32As8(m_out.int32One, rareData, m_heaps.FunctionRareData_hasReifiedName);
-            m_out.store32As8(m_out.int32Zero, rareData, m_heaps.FunctionRareData_hasReifiedLength);
-            mutatorFence();
-            m_out.storePtr(rareData, fastObject, m_heaps.JSFunction_rareData);
-        } else
-            mutatorFence();
+        mutatorFence();
 
         ValueFromBlock fastResult = m_out.anchor(fastObject);
         m_out.jump(continuation);
@@ -5603,6 +5587,7 @@ private:
 
         Vector<LValue> slowPathArguments;
         slowPathArguments.append(scope);
+        VM& vm = this->vm();
         LValue callResult = lazySlowPath(
             [=, &vm] (const Vector<Location>& locations) -> RefPtr<LazySlowPath::Generator> {
                 auto* operation = operationNewFunctionWithInvalidatedReallocationWatchpoint;
@@ -5913,8 +5898,8 @@ private:
             promise = allocateObject<JSInternalPromise>(m_node->structure(), m_out.intPtrZero, slowCase);
         else
             promise = allocateObject<JSPromise>(m_node->structure(), m_out.intPtrZero, slowCase);
-        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
-        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSInternalFieldObjectImpl_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSInternalFieldObjectImpl_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
         mutatorFence();
         ValueFromBlock fastResult = m_out.anchor(promise);
         m_out.jump(continuation);
@@ -6323,8 +6308,8 @@ private:
             promise = allocateObject<JSInternalPromise>(m_out.phi(pointerType(), promiseStructure, derivedStructure), m_out.intPtrZero, slowCase);
         else
             promise = allocateObject<JSPromise>(m_out.phi(pointerType(), promiseStructure, derivedStructure), m_out.intPtrZero, slowCase);
-        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
-        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSPromise_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsNumber(static_cast<unsigned>(JSPromise::Status::Pending)))), promise, m_heaps.JSInternalFieldObjectImpl_internalFields[static_cast<unsigned>(JSPromise::Field::Flags)]);
+        m_out.store64(m_out.constInt64(JSValue::encode(jsUndefined())), promise, m_heaps.JSInternalFieldObjectImpl_internalFields[static_cast<unsigned>(JSPromise::Field::ReactionsOrResult)]);
         mutatorFence();
         ValueFromBlock fastResult = m_out.anchor(promise);
         m_out.jump(continuation);
@@ -7149,6 +7134,64 @@ private:
         setInt32(m_out.phi(Int32, char8Bit, char16Bit));
     }
 
+    void compileStringCodePointAt()
+    {
+        LBasicBlock is8Bit = m_out.newBlock();
+        LBasicBlock is16Bit = m_out.newBlock();
+        LBasicBlock isLeadSurrogate = m_out.newBlock();
+        LBasicBlock mayHaveTrailSurrogate = m_out.newBlock();
+        LBasicBlock hasTrailSurrogate = m_out.newBlock();
+        LBasicBlock continuation = m_out.newBlock();
+
+        LValue base = lowString(m_node->child1());
+        LValue index = lowInt32(m_node->child2());
+        LValue storage = lowStorage(m_node->child3());
+
+        LValue stringImpl = m_out.loadPtr(base, m_heaps.JSString_value);
+        LValue length = m_out.load32NonNegative(stringImpl, m_heaps.StringImpl_length);
+
+        speculate(Uncountable, noValue(), 0, m_out.aboveOrEqual(index, length));
+
+        m_out.branch(
+            m_out.testIsZero32(
+                m_out.load32(stringImpl, m_heaps.StringImpl_hashAndFlags),
+                m_out.constInt32(StringImpl::flagIs8Bit())),
+            unsure(is16Bit), unsure(is8Bit));
+
+        LBasicBlock lastNext = m_out.appendTo(is8Bit, is16Bit);
+        // FIXME: Need to cage strings!
+        // https://bugs.webkit.org/show_bug.cgi?id=174924
+        ValueFromBlock char8Bit = m_out.anchor(
+            m_out.load8ZeroExt32(m_out.baseIndex(
+                m_heaps.characters8, storage, m_out.zeroExtPtr(index),
+                provenValue(m_node->child2()))));
+        m_out.jump(continuation);
+
+        m_out.appendTo(is16Bit, isLeadSurrogate);
+        LValue leadCharacter = m_out.load16ZeroExt32(m_out.baseIndex(m_heaps.characters16, storage, m_out.zeroExtPtr(index), provenValue(m_node->child2())));
+        ValueFromBlock char16Bit = m_out.anchor(leadCharacter);
+        LValue nextIndex = m_out.add(index, m_out.int32One);
+        m_out.branch(m_out.aboveOrEqual(nextIndex, length), unsure(continuation), unsure(isLeadSurrogate));
+
+        m_out.appendTo(isLeadSurrogate, mayHaveTrailSurrogate);
+        m_out.branch(m_out.notEqual(m_out.bitAnd(leadCharacter, m_out.constInt32(0xfffffc00)), m_out.constInt32(0xd800)), unsure(continuation), unsure(mayHaveTrailSurrogate));
+
+        m_out.appendTo(mayHaveTrailSurrogate, hasTrailSurrogate);
+        JSValue indexValue = provenValue(m_node->child2());
+        JSValue nextIndexValue;
+        if (indexValue && indexValue.isInt32() && indexValue.asInt32() != INT32_MAX)
+            nextIndexValue = jsNumber(indexValue.asInt32() + 1);
+        LValue trailCharacter = m_out.load16ZeroExt32(m_out.baseIndex(m_heaps.characters16, storage, m_out.zeroExtPtr(nextIndex), nextIndexValue));
+        m_out.branch(m_out.notEqual(m_out.bitAnd(trailCharacter, m_out.constInt32(0xfffffc00)), m_out.constInt32(0xdc00)), unsure(continuation), unsure(hasTrailSurrogate));
+
+        m_out.appendTo(hasTrailSurrogate, continuation);
+        ValueFromBlock charSurrogatePair = m_out.anchor(m_out.sub(m_out.add(m_out.shl(leadCharacter, m_out.constInt32(10)), trailCharacter), m_out.constInt32(U16_SURROGATE_OFFSET)));
+        m_out.jump(continuation);
+
+        m_out.appendTo(continuation, lastNext);
+        setInt32(m_out.phi(Int32, char8Bit, char16Bit, charSurrogatePair));
+    }
+
     void compileStringFromCharCode()
     {
         Edge childEdge = m_node->child1();
@@ -7504,20 +7547,20 @@ private:
             m_heaps.JSLexicalEnvironment_variables[m_node->scopeOffset().offset()]);
     }
     
-    void compileGetPromiseInternalField()
+    void compileGetInternalField()
     {
         setJSValue(
             m_out.load64(
                 lowCell(m_node->child1()),
-                m_heaps.JSPromise_internalFields[m_node->internalFieldIndex()]));
+                m_heaps.JSInternalFieldObjectImpl_internalFields[m_node->internalFieldIndex()]));
     }
 
-    void compilePutPromiseInternalField()
+    void compilePutInternalField()
     {
         m_out.store64(
             lowJSValue(m_node->child2()),
             lowCell(m_node->child1()),
-            m_heaps.JSPromise_internalFields[m_node->internalFieldIndex()]);
+            m_heaps.JSInternalFieldObjectImpl_internalFields[m_node->internalFieldIndex()]);
     }
 
     void compileGetFromArguments()
@@ -17449,12 +17492,12 @@ private:
     LValue weakPointer(JSCell* pointer)
     {
         addWeakReference(pointer);
-        return m_out.weakPointer(m_graph, pointer);
+        return m_out.alreadyRegisteredWeakPointer(m_graph, pointer);
     }
 
     LValue frozenPointer(FrozenValue* value)
     {
-        return m_out.weakPointer(value);
+        return m_out.alreadyRegisteredFrozenPointer(value);
     }
 
     LValue weakStructureID(RegisteredStructure structure)
@@ -17465,7 +17508,7 @@ private:
     LValue weakStructure(RegisteredStructure structure)
     {
         ASSERT(!!structure.get());
-        return m_out.weakPointer(m_graph, structure.get());
+        return m_out.alreadyRegisteredWeakPointer(m_graph, structure.get());
     }
     
     TypedPointer addressFor(LValue base, int operand, ptrdiff_t offset = 0)

@@ -38,7 +38,6 @@
 #include "PlugInAutoStartProvider.h"
 #include "PluginInfoStore.h"
 #include "ProcessThrottler.h"
-#include "ServiceWorkerProcessProxy.h"
 #include "StatisticsRequest.h"
 #include "VisitedLinkStore.h"
 #include "WebContextClient.h"
@@ -100,7 +99,6 @@ class DownloadProxy;
 class HighPerformanceGraphicsUsageSampler;
 class UIGamepad;
 class PerActivityStateCPUUsageSampler;
-class ServiceWorkerProcessProxy;
 class SuspendedPageProxy;
 class WebAutomationSession;
 class WebContextSupplement;
@@ -224,6 +222,10 @@ public:
 
     void populateVisitedLinks();
 
+#if PLATFORM(IOS_FAMILY)
+    static void applicationIsAboutToSuspend();
+#endif
+
     void handleMemoryPressureWarning(Critical);
 
 #if ENABLE(NETSCAPE_PLUGIN_API)
@@ -269,8 +271,6 @@ public:
     void registerURLSchemeAsCachePartitioned(const String&);
     void registerURLSchemeServiceWorkersCanHandle(const String&);
     void registerURLSchemeAsCanDisplayOnlyIfCanRequest(const String&);
-
-    void preconnectToServer(const URL&);
 
     VisitedLinkStore& visitedLinkStore() { return m_visitedLinkStore.get(); }
 
@@ -381,8 +381,8 @@ public:
 
     bool isServiceWorkerPageID(WebPageProxyIdentifier) const;
 #if ENABLE(SERVICE_WORKER)
-    void establishWorkerContextConnectionToNetworkProcess(NetworkProcessProxy&, WebCore::RegistrableDomain&&, Optional<PAL::SessionID>);
-    const HashMap<WebCore::RegistrableDomain, ServiceWorkerProcessProxy*>& serviceWorkerProxies() const { return m_serviceWorkerProcesses; }
+    void establishWorkerContextConnectionToNetworkProcess(NetworkProcessProxy&, WebCore::RegistrableDomain&&, PAL::SessionID);
+    size_t serviceWorkerProxiesCount() const { return m_serviceWorkerProcesses.size(); }
     void setAllowsAnySSLCertificateForServiceWorker(bool allows) { m_allowsAnySSLCertificateForServiceWorker = allows; }
     bool allowsAnySSLCertificateForServiceWorker() const { return m_allowsAnySSLCertificateForServiceWorker; }
     void updateServiceWorkerUserAgent(const String& userAgent);
@@ -465,11 +465,11 @@ public:
 #if PLATFORM(COCOA)
     bool cookieStoragePartitioningEnabled() const { return m_cookieStoragePartitioningEnabled; }
     void setCookieStoragePartitioningEnabled(bool);
-    bool storageAccessAPIEnabled() const { return m_storageAccessAPIEnabled; }
-    void setStorageAccessAPIEnabled(bool);
 
     void clearPermanentCredentialsForProtectionSpace(WebCore::ProtectionSpace&&);
 #endif
+    bool storageAccessAPIEnabled() const { return m_storageAccessAPIEnabled; }
+    void setStorageAccessAPIEnabled(bool);
 
     static uint64_t registerProcessPoolCreationListener(Function<void(WebProcessPool&)>&&);
     static void unregisterProcessPoolCreationListener(uint64_t identifier);
@@ -528,6 +528,8 @@ public:
     void setJavaScriptConfigurationDirectory(String&& directory) { m_javaScriptConfigurationDirectory = directory; }
     const String& javaScriptConfigurationDirectory() const { return m_javaScriptConfigurationDirectory; }
     
+    WebProcessDataStoreParameters webProcessDataStoreParameters(WebProcessProxy&, WebsiteDataStore&);
+
 private:
     void platformInitialize();
 
@@ -540,7 +542,6 @@ private:
 
     WebProcessProxy& createNewWebProcess(WebsiteDataStore*, WebProcessProxy::IsPrewarmed = WebProcessProxy::IsPrewarmed::No);
     void initializeNewWebProcess(WebProcessProxy&, WebsiteDataStore*, WebProcessProxy::IsPrewarmed = WebProcessProxy::IsPrewarmed::No);
-    void sendWebProcessDataStoreParameters(WebProcessProxy&, WebsiteDataStore&);
 
     void requestWebContentStatistics(StatisticsRequest&);
     void requestNetworkingStatistics(StatisticsRequest&);
@@ -620,7 +621,8 @@ private:
 
     WebProcessProxy* m_processWithPageCache { nullptr };
 #if ENABLE(SERVICE_WORKER)
-    HashMap<WebCore::RegistrableDomain, ServiceWorkerProcessProxy*> m_serviceWorkerProcesses;
+    using RegistrableDomainWithSessionID = std::pair<WebCore::RegistrableDomain, PAL::SessionID>;
+    HashMap<RegistrableDomainWithSessionID, WebProcessProxy*> m_serviceWorkerProcesses;
     bool m_waitingForWorkerContextProcessConnection { false };
     bool m_allowsAnySSLCertificateForServiceWorker { false };
     bool m_shouldDisableServiceWorkerProcessTerminationDelay { false };
@@ -756,8 +758,8 @@ private:
 
 #if PLATFORM(COCOA)
     bool m_cookieStoragePartitioningEnabled { false };
-    bool m_storageAccessAPIEnabled { false };
 #endif
+    bool m_storageAccessAPIEnabled { false };
 
     struct Paths {
         String injectedBundlePath;

@@ -432,6 +432,7 @@ typedef NS_OPTIONS(NSUInteger, _WKRectEdge) {
 - (void)_requestTextInputContextsInRect:(CGRect)rect completionHandler:(void(^)(NSArray<_WKTextInputContext *> *))completionHandler WK_API_AVAILABLE(macos(WK_MAC_TBA), ios(WK_IOS_TBA));
 - (void)_focusTextInputContext:(_WKTextInputContext *)textInputElement completionHandler:(void(^)(BOOL))completionHandler WK_API_AVAILABLE(macos(WK_MAC_TBA), ios(WK_IOS_TBA));
 
+- (void)_takePDFSnapshotWithConfiguration:(WKSnapshotConfiguration *)snapshotConfiguration completionHandler:(void (^)(NSData *pdfSnapshotData, NSError *error))completionHandler WK_API_AVAILABLE(macos(WK_MAC_TBA), ios(WK_IOS_TBA));
 @end
 
 #if TARGET_OS_IPHONE && !TARGET_OS_WATCH
@@ -504,6 +505,8 @@ typedef NS_OPTIONS(NSUInteger, _WKRectEdge) {
 - (void)_accessibilityStoreSelection WK_API_AVAILABLE(ios(11.3));
 - (void)_accessibilityClearSelection WK_API_AVAILABLE(ios(11.3));
 - (UIView *)_fullScreenPlaceholderView WK_API_AVAILABLE(ios(12.0));
+
+- (void)_triggerSystemPreviewActionOnFrame:(uint64_t)frameID page:(uint64_t)pageID WK_API_AVAILABLE(ios(13.0));
 
 @property (nonatomic, readonly) BOOL _contentViewIsFirstResponder WK_API_AVAILABLE(ios(12.2));
 #else

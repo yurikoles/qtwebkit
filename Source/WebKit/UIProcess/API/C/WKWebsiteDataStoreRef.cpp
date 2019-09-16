@@ -60,6 +60,12 @@ WKWebsiteDataStoreRef WKWebsiteDataStoreCreateNonPersistentDataStore()
     return WebKit::toAPI(&API::WebsiteDataStore::createNonPersistentDataStore().leakRef());
 }
 
+WKWebsiteDataStoreRef WKWebsiteDataStoreCreateWithConfiguration(WKWebsiteDataStoreConfigurationRef configuration)
+{
+    auto sessionID = WebKit::toImpl(configuration)->isPersistent() ? PAL::SessionID::generatePersistentSessionID() : PAL::SessionID::generateEphemeralSessionID();
+    return WebKit::toAPI(&API::WebsiteDataStore::create(*WebKit::toImpl(configuration), sessionID).leakRef());
+}
+
 void WKWebsiteDataStoreSetResourceLoadStatisticsEnabled(WKWebsiteDataStoreRef dataStoreRef, bool enable)
 {
     WebKit::toImpl(dataStoreRef)->setResourceLoadStatisticsEnabled(enable);
@@ -73,6 +79,11 @@ bool WKWebsiteDataStoreGetResourceLoadStatisticsEnabled(WKWebsiteDataStoreRef da
 void WKWebsiteDataStoreSetResourceLoadStatisticsDebugMode(WKWebsiteDataStoreRef dataStoreRef, bool enable)
 {
     WebKit::toImpl(dataStoreRef)->setResourceLoadStatisticsDebugMode(enable);
+}
+
+WKHTTPCookieStoreRef WKWebsiteDataStoreGetHTTPCookieStore(WKWebsiteDataStoreRef dataStoreRef)
+{
+    return WebKit::toAPI(&WebKit::toImpl(dataStoreRef)->httpCookieStore());
 }
 
 void WKWebsiteDataStoreSetResourceLoadStatisticsDebugModeWithCompletionHandler(WKWebsiteDataStoreRef dataStoreRef, bool enable, void* context, WKWebsiteDataStoreStatisticsDebugModeFunction completionHandler)

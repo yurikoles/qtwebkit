@@ -476,24 +476,6 @@ webkit.org/b/71298 accessibility/mac/iframe-with-title-correct-hierarchy.html
 ########################################
 ### START OF (5) Features that are not supported when NetworkProcess is enabled (i.e. they only work on Mountain Lion, and not on newer OS versions).
 
-# https://bugs.webkit.org/show_bug.cgi?id=115274
-# PPT: testRunner.setPrivateBrowsingEnabled doesn't work with NetworkProcess
-http/tests/security/appcache-in-private-browsing.html [ Skip ]
-http/tests/security/appcache-switching-private-browsing.html [ Skip ]
-http/tests/security/cookies/first-party-cookie-allow-xslt.xml [ Skip ]
-http/tests/security/cookies/third-party-cookie-blocking-main-frame.html [ Skip ]
-http/tests/security/cookies/third-party-cookie-blocking-user-action.html [ Skip ]
-http/tests/security/cookies/third-party-cookie-blocking-xslt.xml [ Skip ]
-http/tests/security/cookies/third-party-cookie-blocking.html [ Skip ]
-http/tests/security/cross-frame-access-private-browsing.html [ Skip ]
-http/tests/security/cross-origin-plugin-private-browsing-toggled-allowed.html [ Skip ]
-http/tests/security/cross-origin-plugin-private-browsing-toggled.html [ Skip ]
-http/tests/security/storage-blocking-loosened-private-browsing-plugin.html [ Skip ]
-http/tests/security/storage-blocking-strengthened-private-browsing-plugin.html [ Skip ]
-plugins/private-browsing-mode-2.html [ Skip ]
-plugins/private-browsing-mode.html [ Skip ]
-storage/websql/private-browsing-noread-nowrite.html [ Skip ]
-
 # There is no network load scheduling or prioritization with NetworkProcess.
 webkit.org/b/123431 http/tests/css/link-css-disabled-value-with-slow-loading-sheet-in-error.html [ Pass Failure ]
 webkit.org/b/123431 http/tests/css/link-css-disabled-value-with-slow-loading-sheet.html [ Pass Failure ]
@@ -926,8 +908,6 @@ webkit.org/b/194826 http/tests/resourceLoadStatistics/do-not-block-top-level-nav
 
 webkit.org/b/194916 fast/mediastream/MediaStream-video-element.html [ Pass Failure ]
 
-webkit.org/b/196376 storage/domstorage/localstorage/private-browsing-affects-storage.html [ Pass ]
-
 webkit.org/b/196400 fast/mediastream/MediaStreamTrack-getSettings.html [ Pass Failure ]
 
 webkit.org/b/196403 imported/w3c/web-platform-tests/mediacapture-record/MediaRecorder-stop.html [ Pass Failure ]
@@ -972,7 +952,6 @@ webkit.org/b/198921 [ Mojave+ ] webgpu/blend-color-triangle-strip.html [ Pass Im
 
 webkit.org/b/195635 scrollingcoordinator/mac/multiple-fixed.html [ Pass Timeout ]
 
-# <rdar://problem/51524958> REGRESSION: [ Catalina WK2 ] http/wpt/webauthn/public-key-credential-create-success-u2f.https.html is failing
-[ Catalina+ ] http/wpt/webauthn/public-key-credential-create-success-u2f.https.html [ Failure ]
-
 webkit.org/b/199651 [ Mojave Debug ] webgpu/whlsl/builtin-vectors-2.html [ Slow ]
+
+webkit.org/b/199089 [ Mojave+ Debug ] plugins/window-open.html [ Skip ]

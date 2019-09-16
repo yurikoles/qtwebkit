@@ -286,11 +286,7 @@ void WebPreferences::initializeDefaultSettings()
 
     CFDictionaryAddValue(defaults, CFSTR(WebKitUseHighResolutionTimersPreferenceKey), kCFBooleanTrue);
 
-#if USE(CG)
     CFDictionaryAddValue(defaults, CFSTR(WebKitAcceleratedCompositingEnabledPreferenceKey), kCFBooleanTrue);
-#else
-    CFDictionaryAddValue(defaults, CFSTR(WebKitAcceleratedCompositingEnabledPreferenceKey), kCFBooleanFalse);
-#endif
 
     CFDictionaryAddValue(defaults, CFSTR(WebKitShowDebugBordersPreferenceKey), kCFBooleanFalse);
 
@@ -342,8 +338,6 @@ void WebPreferences::initializeDefaultSettings()
     CFDictionaryAddValue(defaults, CFSTR(WebKitResizeObserverEnabledPreferenceKey), kCFBooleanFalse);
 
     CFDictionaryAddValue(defaults, CFSTR(WebKitCoreMathMLEnabledPreferenceKey), kCFBooleanFalse);
-
-    CFDictionaryAddValue(defaults, CFSTR(WebKitLazyImageLoadingEnabledPreferenceKey), kCFBooleanFalse);
 
     defaultSettings = defaults;
 #endif
@@ -1742,12 +1736,10 @@ HRESULT WebPreferences::acceleratedCompositingEnabled(_Out_ BOOL* enabled)
 {
     if (!enabled)
         return E_POINTER;
+    *enabled = boolValueForKey(WebKitAcceleratedCompositingEnabledPreferenceKey);
 #if USE(CA)
-    *enabled = CACFLayerTreeHost::acceleratedCompositingAvailable() && boolValueForKey(WebKitAcceleratedCompositingEnabledPreferenceKey);
-#else
-    *enabled = TRUE;
+    *enabled = *enabled && CACFLayerTreeHost::acceleratedCompositingAvailable();
 #endif
-
     return S_OK;
 }
 
@@ -2360,19 +2352,5 @@ HRESULT WebPreferences::resizeObserverEnabled(_Out_ BOOL* enabled)
 HRESULT WebPreferences::setResizeObserverEnabled(BOOL enabled)
 {
     setBoolValue(WebKitResizeObserverEnabledPreferenceKey, enabled);
-    return S_OK;
-}
-
-HRESULT WebPreferences::lazyImageLoadingEnabled(_Out_ BOOL* enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-    *enabled = boolValueForKey(WebKitLazyImageLoadingEnabledPreferenceKey);
-    return S_OK;
-}
-
-HRESULT WebPreferences::setLazyImageLoadingEnabled(BOOL enabled)
-{
-    setBoolValue(WebKitLazyImageLoadingEnabledPreferenceKey, enabled);
     return S_OK;
 }

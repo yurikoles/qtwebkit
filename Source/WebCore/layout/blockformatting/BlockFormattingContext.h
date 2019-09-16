@@ -47,9 +47,9 @@ class FloatingContext;
 class BlockFormattingContext : public FormattingContext {
     WTF_MAKE_ISO_ALLOCATED(BlockFormattingContext);
 public:
-    BlockFormattingContext(const Box& formattingContextRoot, BlockFormattingState&);
+    BlockFormattingContext(const Container& formattingContextRoot, BlockFormattingState&);
 
-    void layout() override;
+    void layoutInFlowContent() override;
 
 private:
     void layoutFormattingContextRoot(FloatingContext&, const Box&);
@@ -77,7 +77,7 @@ private:
     public:
         Geometry(const BlockFormattingContext&);
 
-        HeightAndMargin inFlowHeightAndMargin(const Box&, UsedVerticalValues);
+        HeightAndMargin inFlowHeightAndMargin(const Box&, UsedHorizontalValues, UsedVerticalValues);
         WidthAndMargin inFlowWidthAndMargin(const Box&, UsedHorizontalValues);
 
         Point staticPosition(const Box&) const;
@@ -126,6 +126,7 @@ private:
         PositiveAndNegativeVerticalMargin::Values positiveNegativeValues(const Box&, MarginType);
         PositiveAndNegativeVerticalMargin::Values positiveNegativeMarginBefore(const Box&, const UsedVerticalMargin::NonCollapsedValues&);
         PositiveAndNegativeVerticalMargin::Values positiveNegativeMarginAfter(const Box&, const UsedVerticalMargin::NonCollapsedValues&);
+        bool hasClearance(const Box&) const;
 
         LayoutState& layoutState() { return m_blockFormattingContext.layoutState(); }
         const LayoutState& layoutState() const { return m_blockFormattingContext.layoutState(); }

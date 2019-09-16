@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2010-2019 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -82,6 +82,7 @@ class WebsiteDataStore;
 enum class WebsiteDataType;
 struct WebNavigationDataStore;
 struct WebPageCreationParameters;
+struct WebPreferencesStore;
 struct WebsiteData;
 
 #if PLATFORM(IOS_FAMILY)
@@ -109,6 +110,8 @@ public:
     enum class ShouldLaunchProcess : bool { No, Yes };
 
     static Ref<WebProcessProxy> create(WebProcessPool&, WebsiteDataStore*, IsPrewarmed, ShouldLaunchProcess = ShouldLaunchProcess::Yes);
+    static Ref<WebProcessProxy> createForServiceWorkers(WebProcessPool&, WebCore::RegistrableDomain&&, WebsiteDataStore&);
+
     ~WebProcessProxy();
 
     static void forWebPagesWithOrigin(PAL::SessionID, const WebCore::SecurityOriginData&, const Function<void(WebPageProxy&)>&);
@@ -128,6 +131,8 @@ public:
 
     WebsiteDataStore& websiteDataStore() const { ASSERT(m_websiteDataStore); return *m_websiteDataStore; }
     void setWebsiteDataStore(WebsiteDataStore&);
+    
+    PAL::SessionID sessionID() const;
 
     static WebProcessProxy* processForIdentifier(WebCore::ProcessIdentifier);
     static WebPageProxy* webPage(WebPageProxyIdentifier);
@@ -149,7 +154,7 @@ public:
 
     void activePagesDomainsForTesting(CompletionHandler<void(Vector<String>&&)>&&); // This is what is reported to ActivityMonitor.
 
-    virtual bool isServiceWorkerProcess() const { return false; }
+    bool isRunningServiceWorkers() const { return !!m_serviceWorkerInformation; }
 
     void didCreateWebPageInProcess(WebCore::PageIdentifier);
 
@@ -309,6 +314,13 @@ public:
     void ref() final { ThreadSafeRefCounted::ref(); }
     void deref() final { ThreadSafeRefCounted::deref(); }
 
+#if ENABLE(SERVICE_WORKER)
+    void establishServiceWorkerContext(const WebPreferencesStore&);
+    void setServiceWorkerUserAgent(const String&);
+    void updateServiceWorkerPreferencesStore(const WebPreferencesStore&);
+    bool hasServiceWorkerPageProxy(WebPageProxyIdentifier pageProxyID) { return m_serviceWorkerInformation && m_serviceWorkerInformation->serviceWorkerPageProxyID == pageProxyID; }
+#endif
+
 protected:
     WebProcessProxy(WebProcessPool&, WebsiteDataStore*, IsPrewarmed);
 
@@ -325,6 +337,7 @@ protected:
     void cacheMediaMIMETypesInternal(const Vector<String>&);
 #endif
 
+    bool shouldConfigureJSCForTesting() const final;
     bool isJITEnabled() const final;
 
     void validateFreezerStatus();
@@ -476,6 +489,12 @@ private:
 #if PLATFORM(COCOA)
     MediaCaptureSandboxExtensions m_mediaCaptureSandboxExtensions { SandboxExtensionType::None };
 #endif
+
+    struct ServiceWorkerInformation {
+        WebPageProxyIdentifier serviceWorkerPageProxyID;
+        WebCore::PageIdentifier serviceWorkerPageID;
+    };
+    Optional<ServiceWorkerInformation> m_serviceWorkerInformation;
 };
 
 } // namespace WebKit

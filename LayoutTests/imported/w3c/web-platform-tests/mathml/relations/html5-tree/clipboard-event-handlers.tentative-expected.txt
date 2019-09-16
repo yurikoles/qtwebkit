@@ -1,0 +1,9 @@
+
+PASS math.addEventListener for copy 
+PASS oncopy: the content attribute must be compiled into a function as the corresponding property 
+PASS math.addEventListener for cut 
+PASS oncut: the content attribute must be compiled into a function as the corresponding property 
+PASS math.addEventListener for paste 
+PASS onpaste: the content attribute must be compiled into a function as the corresponding property 
+E
+

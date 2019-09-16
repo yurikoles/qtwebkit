@@ -25,7 +25,7 @@ messages -> NetworkProcess LegacyReceiver {
     InitializeNetworkProcess(struct WebKit::NetworkProcessCreationParameters processCreationParameters)
 
     # Creates a connection for communication with a WebProcess
-    CreateNetworkConnectionToWebProcess(WebCore::ProcessIdentifier processIdentifier, bool isServiceWorkerProcess, WebCore::RegistrableDomain registrableDomain) -> (Optional<IPC::Attachment> connectionIdentifier) Async
+    CreateNetworkConnectionToWebProcess(WebCore::ProcessIdentifier processIdentifier, PAL::SessionID sessionID) -> (Optional<IPC::Attachment> connectionIdentifier) Async
 
 #if USE(SOUP)
     SetIgnoreTLSErrors(bool ignoreTLSErrors)
@@ -85,8 +85,6 @@ messages -> NetworkProcess LegacyReceiver {
     PrepareToSuspend()
     CancelPrepareToSuspend()
     ProcessDidResume()
-
-    PreconnectTo(URL url, enum:uint8_t WebCore::StoredCredentialsPolicy storedCredentialsPolicy);
 
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
     ClearPrevalentResource(PAL::SessionID sessionID, WebCore::RegistrableDomain resourceDomain) -> () Async
@@ -156,10 +154,7 @@ messages -> NetworkProcess LegacyReceiver {
     SetCacheStorageParameters(PAL::SessionID sessionID, String cacheStorageDirectory, WebKit::SandboxExtension::Handle handle);
 
 #if ENABLE(SERVICE_WORKER)
-    PostMessageToServiceWorkerClient(struct WebCore::ServiceWorkerClientIdentifier destinationIdentifier, struct WebCore::MessageWithMessagePorts message, WebCore::ServiceWorkerIdentifier sourceIdentifier, String sourceOrigin)
-
-    PostMessageToServiceWorker(WebCore::ServiceWorkerIdentifier destination, struct WebCore::MessageWithMessagePorts message, WebCore::ServiceWorkerOrClientIdentifier source, WebCore::SWServerConnectionIdentifier connectionIdentifier)
-
+    PostMessageToServiceWorkerClient(PAL::SessionID sessionID, struct WebCore::ServiceWorkerClientIdentifier destinationIdentifier, struct WebCore::MessageWithMessagePorts message, WebCore::ServiceWorkerIdentifier sourceIdentifier, String sourceOrigin)
     DisableServiceWorkerProcessTerminationDelay()
 #endif
 

@@ -369,6 +369,7 @@ enum CompositingPolicy {
     void setImageFrameDecodingDuration(HTMLImageElement element, unrestricted float duration);
     void resetImageAnimation(HTMLImageElement element);
     boolean isImageAnimating(HTMLImageElement element);
+    unsigned long imagePendingDecodePromisesCountForTesting(HTMLImageElement element);
     void setClearDecoderAfterAsyncFrameRequestForTesting(HTMLImageElement element, boolean enabled);
     unsigned long imageDecodeCount(HTMLImageElement element);
     unsigned long pdfDocumentCachingCount(HTMLImageElement element);
@@ -617,6 +618,7 @@ enum CompositingPolicy {
     [Conditional=WEB_RTC] void stopPeerConnection(RTCPeerConnection connection);
     [Conditional=WEB_RTC] void clearPeerConnectionFactory();
     [Conditional=WEB_RTC] void setEnableWebRTCEncryption(boolean enabled);
+    [Conditional=WEB_RTC] void setUseDTLS10(boolean use);
 
     [Conditional=VIDEO] void simulateSystemSleep();
     [Conditional=VIDEO] void simulateSystemWake();
@@ -714,6 +716,9 @@ enum CompositingPolicy {
 
     unsigned long long documentIdentifier(Document document);
     boolean isDocumentAlive(unsigned long long documentIdentifier);
+
+    unsigned long long frameIdentifier(Document document);
+    unsigned long long pageIdentifier(Document document);
 
     boolean isAnyWorkletGlobalScopeAlive();
 

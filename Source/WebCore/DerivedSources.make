@@ -78,6 +78,7 @@ VPATH = \
     $(WebCore)/html/track \
     $(WebCore)/inspector \
     $(WebCore)/loader/appcache \
+    $(WebCore)/mathml \
     $(WebCore)/page \
     $(WebCore)/platform/network \
     $(WebCore)/plugins \
@@ -378,7 +379,7 @@ JS_BINDING_IDLS = \
     $(WebCore)/Modules/webgpu/GPUCanvasContext.idl \
     $(WebCore)/Modules/webgpu/GPUColor.idl \
     $(WebCore)/Modules/webgpu/GPUColorStateDescriptor.idl \
-    $(WebCore)/Modules/webgpu/GPUColorWriteBits.idl \
+    $(WebCore)/Modules/webgpu/GPUColorWrite.idl \
     $(WebCore)/Modules/webgpu/GPUBindGroupLayoutBinding.idl \
     $(WebCore)/Modules/webgpu/GPUBindGroupLayoutDescriptor.idl \
     $(WebCore)/Modules/webgpu/GPUBlendDescriptor.idl \
@@ -393,11 +394,12 @@ JS_BINDING_IDLS = \
     $(WebCore)/Modules/webgpu/GPUOutOfMemoryError.idl \
     $(WebCore)/Modules/webgpu/GPURequestAdapterOptions.idl \
     $(WebCore)/Modules/webgpu/GPUSamplerDescriptor.idl \
-    $(WebCore)/Modules/webgpu/GPUShaderStageBit.idl \
+    $(WebCore)/Modules/webgpu/GPUShaderStage.idl \
     $(WebCore)/Modules/webgpu/GPUStoreOp.idl \
     $(WebCore)/Modules/webgpu/GPUTextureDescriptor.idl \
     $(WebCore)/Modules/webgpu/GPUTextureFormat.idl \
     $(WebCore)/Modules/webgpu/GPUTextureUsage.idl \
+    $(WebCore)/Modules/webgpu/GPUUncapturedErrorEvent.idl \
     $(WebCore)/Modules/webgpu/GPUValidationError.idl \
     $(WebCore)/Modules/webgpu/GPUVertexAttributeDescriptor.idl \
     $(WebCore)/Modules/webgpu/GPUVertexBufferDescriptor.idl \
@@ -418,11 +420,12 @@ JS_BINDING_IDLS = \
     $(WebCore)/Modules/webgpu/WebGPUComputePipelineDescriptor.idl \
     $(WebCore)/Modules/webgpu/WebGPUDevice.idl \
 	$(WebCore)/Modules/webgpu/WebGPUDeviceErrorScopes.idl \
+    $(WebCore)/Modules/webgpu/WebGPUDeviceEventHandler.idl \
     $(WebCore)/Modules/webgpu/WebGPUQueue.idl \
     $(WebCore)/Modules/webgpu/WebGPUPipelineDescriptorBase.idl \
     $(WebCore)/Modules/webgpu/WebGPUPipelineLayout.idl \
     $(WebCore)/Modules/webgpu/WebGPUPipelineLayoutDescriptor.idl \
-    $(WebCore)/Modules/webgpu/WebGPUPipelineStageDescriptor.idl \
+    $(WebCore)/Modules/webgpu/WebGPUProgrammableStageDescriptor.idl \
     $(WebCore)/Modules/webgpu/WebGPUProgrammablePassEncoder.idl \
     $(WebCore)/Modules/webgpu/WebGPURenderPassDescriptor.idl \
     $(WebCore)/Modules/webgpu/WebGPURenderPassEncoder.idl \
@@ -845,6 +848,8 @@ JS_BINDING_IDLS = \
     $(WebCore)/html/track/VTTRegionList.idl \
     $(WebCore)/html/track/VideoTrack.idl \
     $(WebCore)/html/track/VideoTrackList.idl \
+    $(WebCore)/mathml/MathMLElement.idl \
+    $(WebCore)/mathml/MathMLMathElement.idl \
     $(WebCore)/inspector/CommandLineAPIHost.idl \
     $(WebCore)/inspector/InspectorAuditAccessibilityObject.idl \
     $(WebCore)/inspector/InspectorAuditDOMObject.idl \
@@ -1680,6 +1685,7 @@ IDL_INCLUDES = \
     $(WebCore)/html/track \
     $(WebCore)/inspector \
     $(WebCore)/loader/appcache \
+    $(WebCore)/mathml \
     $(WebCore)/page \
     $(WebCore)/plugins \
     $(WebCore)/storage \

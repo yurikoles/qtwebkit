@@ -1635,7 +1635,6 @@ void GraphicsContext::drawLinesForText(const FloatPoint& point, float thickness,
 
 void GraphicsContext::setURLForRect(const URL& link, const FloatRect& destRect)
 {
-#if !PLATFORM(IOS_FAMILY)
     if (paintingDisabled())
         return;
 
@@ -1655,10 +1654,6 @@ void GraphicsContext::setURLForRect(const URL& link, const FloatRect& destRect)
     rect.intersect(CGContextGetClipBoundingBox(context));
 
     CGPDFContextSetURLForRect(context, urlRef.get(), CGRectApplyAffineTransform(rect, CGContextGetCTM(context)));
-#else
-    UNUSED_PARAM(link);
-    UNUSED_PARAM(destRect);
-#endif
 }
 
 void GraphicsContext::setPlatformImageInterpolationQuality(InterpolationQuality mode)

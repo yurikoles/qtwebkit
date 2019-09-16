@@ -835,7 +835,8 @@ private:
             break;
 
         case StringCharAt:
-        case StringCharCodeAt: {
+        case StringCharCodeAt:
+        case StringCodePointAt: {
             // Currently we have no good way of refining these.
             ASSERT(node->arrayMode() == ArrayMode(Array::String, Array::Read));
             blessArrayOperation(node->child1(), node->child2(), node->child3());
@@ -1484,14 +1485,14 @@ private:
             
         case GetClosureVar:
         case GetFromArguments:
-        case GetPromiseInternalField: {
+        case GetInternalField: {
             fixEdge<KnownCellUse>(node->child1());
             break;
         }
 
         case PutClosureVar:
         case PutToArguments:
-        case PutPromiseInternalField: {
+        case PutInternalField: {
             fixEdge<KnownCellUse>(node->child1());
             speculateForBarrier(node->child2());
             break;
@@ -1746,17 +1747,12 @@ private:
 
         case HasOwnProperty: {
             fixEdge<ObjectUse>(node->child1());
-#if CPU(X86)
-            // We don't have enough registers to do anything interesting on x86 and mips.
-            fixEdge<UntypedUse>(node->child2());
-#else
             if (node->child2()->shouldSpeculateString())
                 fixEdge<StringUse>(node->child2());
             else if (node->child2()->shouldSpeculateSymbol())
                 fixEdge<SymbolUse>(node->child2());
             else
                 fixEdge<UntypedUse>(node->child2());
-#endif
             break;
         }
 

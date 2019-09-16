@@ -29,6 +29,7 @@
 #include "config.h"
 #include "DumpRenderTree.h"
 
+#include "DefaultPolicyDelegate.h"
 #include "EditingDelegate.h"
 #include "FrameLoadDelegate.h"
 #include "GCController.h"
@@ -313,6 +314,8 @@ static const wstring& fontsPath()
 
 static void initialize()
 {
+    JSC::Config::configureForTesting();
+
     if (HMODULE webKitModule = LoadLibrary(WEBKITDLL))
         if (FARPROC dllRegisterServer = GetProcAddress(webKitModule, "DllRegisterServer"))
             dllRegisterServer();
@@ -795,7 +798,6 @@ static void enableExperimentalFeatures(IWebPreferences* preferences)
     prefsPrivate->setResizeObserverEnabled(TRUE);
     prefsPrivate->setWebAnimationsEnabled(TRUE);
     prefsPrivate->setServerTimingEnabled(TRUE);
-    prefsPrivate->setLazyImageLoadingEnabled(TRUE);
     // FIXME: WebGL2
     // FIXME: WebRTC
 }
@@ -909,6 +911,7 @@ static void setWebPreferencesForTestOptions(IWebPreferences* preferences, const 
     prefsPrivate->setModernMediaControlsEnabled(options.enableModernMediaControls);
     prefsPrivate->setIsSecureContextAttributeEnabled(options.enableIsSecureContextAttribute);
     prefsPrivate->setInspectorAdditionsEnabled(options.enableInspectorAdditions);
+    preferences->setPrivateBrowsingEnabled(options.useEphemeralSession);
 }
 
 static String applicationId()
@@ -995,7 +998,7 @@ static void resetWebViewToConsistentStateBeforeTesting(const TestOptions& option
         webViewPrivate->setTabKeyCyclesThroughElements(TRUE);
     }
 
-    webView->setPolicyDelegate(nullptr);
+    webView->setPolicyDelegate(DefaultPolicyDelegate::sharedInstance());
     policyDelegate->setPermissive(false);
     policyDelegate->setControllerToNotifyDone(nullptr);
     sharedFrameLoadDelegate->resetToConsistentState();

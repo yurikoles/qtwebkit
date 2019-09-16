@@ -611,7 +611,6 @@ public:
 
     WEBCORE_EXPORT PAL::SessionID sessionID() const;
     WEBCORE_EXPORT void setSessionID(PAL::SessionID);
-    WEBCORE_EXPORT void enableLegacyPrivateBrowsing(bool privateBrowsingEnabled);
     bool usesEphemeralSession() const { return m_sessionID.isEphemeral(); }
 
     MediaProducer::MediaStateFlags mediaState() const { return m_mediaState; }

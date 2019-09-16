@@ -264,9 +264,12 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
     case WM_SIZE:
         thisWindow->resizeSubViews();
         break;
-    case WM_DPICHANGED:
+    case WM_DPICHANGED: {
         thisWindow->updateDeviceScaleFactor();
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        auto& rect = *reinterpret_cast<RECT*>(lParam);
+        SetWindowPos(hWnd, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER | SWP_NOACTIVATE);
+        break;
+    }
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -338,18 +341,21 @@ bool MainWindow::toggleMenuItem(UINT menuID)
     return true;
 }
 
-LRESULT CALLBACK EditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
+    case WM_SETFOCUS:
+        PostMessage(hWnd, EM_SETSEL, 0, -1);
+        break;
     case WM_CHAR:
         if (wParam == 13) {
             // Enter Key
-            ::PostMessage(GetParent(hDlg), static_cast<UINT>(WM_COMMAND), MAKELPARAM(IDC_URL_BAR, 0), 0);
+            ::PostMessage(GetParent(hWnd), static_cast<UINT>(WM_COMMAND), MAKELPARAM(IDC_URL_BAR, 0), 0);
             return 0;
         }
-    default:
-        return CallWindowProc(DefEditProc, hDlg, message, wParam, lParam);
+        break;
     }
+    return CallWindowProc(DefEditProc, hWnd, message, wParam, lParam);
 }
 
 // Message handler for about box.

@@ -346,18 +346,6 @@ void InjectedBundle::setJavaScriptCanAccessClipboard(WebPageGroupProxy* pageGrou
         (*iter)->settings().setJavaScriptCanAccessClipboard(enabled);
 }
 
-void InjectedBundle::setPrivateBrowsingEnabled(WebPageGroupProxy* pageGroup, bool enabled)
-{
-    ASSERT(!hasProcessPrivilege(ProcessPrivilege::CanAccessRawCookies));
-    if (enabled)
-        WebProcess::singleton().ensureLegacyPrivateBrowsingSessionInNetworkProcess();
-
-    PageGroup::pageGroup(pageGroup->identifier())->enableLegacyPrivateBrowsingForTesting(enabled);
-
-    auto webStorageNameSpaceProvider = WebStorageNamespaceProvider::getOrCreate(*pageGroup);
-    webStorageNameSpaceProvider->enableLegacyPrivateBrowsingForTesting(enabled);
-}
-
 void InjectedBundle::setPopupBlockingEnabled(WebPageGroupProxy* pageGroup, bool enabled)
 {
     const HashSet<Page*>& pages = PageGroup::pageGroup(pageGroup->identifier())->pages();

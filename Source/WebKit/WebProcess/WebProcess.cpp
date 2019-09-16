@@ -67,6 +67,7 @@
 #include "WebProcessMessages.h"
 #include "WebProcessPoolMessages.h"
 #include "WebProcessProxyMessages.h"
+#include "WebResourceLoadObserver.h"
 #include "WebSWContextManagerConnection.h"
 #include "WebSWContextManagerConnectionMessages.h"
 #include "WebServiceWorkerProvider.h"
@@ -110,7 +111,6 @@
 #include <WebCore/PlatformMediaSessionManager.h>
 #include <WebCore/ProcessWarming.h>
 #include <WebCore/RegistrableDomain.h>
-#include <WebCore/ResourceLoadObserver.h>
 #include <WebCore/ResourceLoadStatistics.h>
 #include <WebCore/RuntimeApplicationChecks.h>
 #include <WebCore/RuntimeEnabledFeatures.h>
@@ -217,19 +217,10 @@ WebProcess::WebProcess()
     m_plugInAutoStartOriginHashes.add(PAL::SessionID::defaultSessionID(), HashMap<unsigned, WallTime>());
 
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
-    ResourceLoadObserver::shared().setStatisticsUpdatedCallback([this] (auto&& statistics) {
-        ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::ResourceLoadStatisticsUpdated(WTFMove(statistics)), 0);
-    });
-
-    ResourceLoadObserver::shared().setRequestStorageAccessUnderOpenerCallback([this] (PAL::SessionID sessionID, const RegistrableDomain& domainInNeedOfStorageAccess, PageIdentifier openerPageID, const RegistrableDomain& openerDomain) {
-        ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::RequestStorageAccessUnderOpener(sessionID, domainInNeedOfStorageAccess, openerPageID, openerDomain), 0);
-    });
-    
-    ResourceLoadObserver::shared().setLogUserInteractionNotificationCallback([this] (PAL::SessionID sessionID, const RegistrableDomain& domain) {    ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::LogUserInteraction(sessionID, domain), 0);
-    });
+    ResourceLoadObserver::setShared(*new WebResourceLoadObserver);
 #endif
     
-    Gigacage::disableDisablingPrimitiveGigacageIfShouldBeEnabled();
+    Gigacage::forbidDisablingPrimitiveGigacage();
 }
 
 WebProcess::~WebProcess()
@@ -283,6 +274,9 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
     TraceScope traceScope(InitializeWebProcessStart, InitializeWebProcessEnd);
 
     ASSERT(m_pageMap.isEmpty());
+
+    if (parameters.websiteDataStoreParameters)
+        setWebsiteDataStoreParameters(WTFMove(*parameters.websiteDataStoreParameters));
 
     WebCore::setPresentingApplicationPID(parameters.presentingApplicationPID);
 
@@ -397,8 +391,6 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
 
     setShouldUseFontSmoothing(parameters.shouldUseFontSmoothing);
 
-    ensureNetworkProcessConnection();
-
     setTerminationTimeout(parameters.terminationTimeout);
 
     resetPlugInAutoStartOriginHashes(parameters.plugInAutoStartOriginHashes);
@@ -445,6 +437,9 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
 
 void WebProcess::setWebsiteDataStoreParameters(WebProcessDataStoreParameters&& parameters)
 {
+    ASSERT(!m_sessionID);
+    m_sessionID = parameters.sessionID;
+    
     auto& databaseManager = DatabaseManager::singleton();
     databaseManager.initialize(parameters.webSQLDatabaseDirectory);
 
@@ -465,6 +460,8 @@ void WebProcess::setWebsiteDataStoreParameters(WebProcessDataStoreParameters&& p
         supplement->setWebsiteDataStore(parameters);
 
     platformSetWebsiteDataStoreParameters(WTFMove(parameters));
+    
+    ensureNetworkProcessConnection();
 }
 
 bool WebProcess::hasPageRequiringPageCacheWhileSuspended() const
@@ -608,11 +605,6 @@ void WebProcess::fullKeyboardAccessModeChanged(bool fullKeyboardAccessEnabled)
     m_fullKeyboardAccessEnabled = fullKeyboardAccessEnabled;
 }
 
-void WebProcess::ensureLegacyPrivateBrowsingSessionInNetworkProcess()
-{
-    ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::EnsureLegacyPrivateBrowsingSession(), 0);
-}
-
 #if ENABLE(NETSCAPE_PLUGIN_API)
 PluginProcessConnectionManager& WebProcess::pluginProcessConnectionManager()
 {
@@ -659,6 +651,8 @@ WebPage* WebProcess::webPage(PageIdentifier pageID) const
 
 void WebProcess::createWebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
 {
+    ASSERT(parameters.sessionID == sessionID());
+
     // It is necessary to check for page existence here since during a window.open() (or targeted
     // link) the WebPage gets created both in the synchronous handler and through the normal way. 
     auto result = m_pageMap.add(pageID, nullptr);
@@ -677,6 +671,7 @@ void WebProcess::createWebPage(PageIdentifier pageID, WebPageCreationParameters&
 
 void WebProcess::removeWebPage(PAL::SessionID sessionID, PageIdentifier pageID)
 {
+    ASSERT(sessionID == this->sessionID());
     ASSERT(m_pageMap.contains(pageID));
 
     pageWillLeaveWindow(pageID);
@@ -1198,6 +1193,7 @@ static IPC::Connection::Identifier getNetworkProcessConnection(IPC::Connection& 
 NetworkProcessConnection& WebProcess::ensureNetworkProcessConnection()
 {
     RELEASE_ASSERT(RunLoop::isMain());
+    ASSERT(m_sessionID);
 
     // If we've lost our connection to the network process (e.g. it crashed) try to re-establish it.
     if (!m_networkProcessConnection) {
@@ -1251,8 +1247,8 @@ void WebProcess::networkProcessConnectionClosed(NetworkProcessConnection* connec
         if (!idbConnection)
             continue;
         
-        if (connection->existingIDBConnectionToServerForIdentifier(idbConnection->identifier())) {
-            ASSERT(idbConnection == &connection->existingIDBConnectionToServerForIdentifier(idbConnection->identifier())->coreConnectionToServer());
+        if (connection->existingIDBConnectionToServer(page->corePage()->sessionID())) {
+            ASSERT(idbConnection == &connection->existingIDBConnectionToServer(page->corePage()->sessionID())->coreConnectionToServer());
             page->corePage()->clearIDBConnection();
         }
     }
@@ -1655,7 +1651,9 @@ void WebProcess::setResourceLoadStatisticsEnabled(bool enabled)
 
 void WebProcess::clearResourceLoadStatistics()
 {
+#if ENABLE(RESOURCE_LOAD_STATISTICS)
     ResourceLoadObserver::shared().clearState();
+#endif
 }
 
 RefPtr<API::Object> WebProcess::transformHandlesToObjects(API::Object* object)
@@ -1818,13 +1816,13 @@ LibWebRTCNetwork& WebProcess::libWebRTCNetwork()
 }
 
 #if ENABLE(SERVICE_WORKER)
-void WebProcess::establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebPageProxyIdentifier webPageProxyID, PageIdentifier pageID, const WebPreferencesStore& store, PAL::SessionID initialSessionID)
+void WebProcess::establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebPageProxyIdentifier webPageProxyID, PageIdentifier pageID, const WebPreferencesStore& store, RegistrableDomain&& registrableDomain, PAL::SessionID sessionID)
 {
     // We are in the Service Worker context process and the call below establishes our connection to the Network Process
     // by calling ensureNetworkProcessConnection. SWContextManager needs to use the same underlying IPC::Connection as the
     // NetworkProcessConnection for synchronization purposes.
     auto& ipcConnection = ensureNetworkProcessConnection().connection();
-    SWContextManager::singleton().setConnection(makeUnique<WebSWContextManagerConnection>(ipcConnection, pageGroupID, webPageProxyID, pageID, store));
+    SWContextManager::singleton().setConnection(makeUnique<WebSWContextManagerConnection>(ipcConnection, WTFMove(registrableDomain), sessionID, pageGroupID, webPageProxyID, pageID, store));
 }
 
 void WebProcess::registerServiceWorkerClients()

@@ -1044,17 +1044,7 @@ public:
 #endif
     }
 
-#if CPU(X86)
-    JITCompiler::Call appendCallSetResult(const FunctionPtr<CFunctionPtrTag> function, FPRReg result)
-    {
-        JITCompiler::Call call = appendCall(function);
-        if (result != InvalidFPRReg) {
-            m_jit.assembler().fstpl(0, JITCompiler::stackPointerRegister);
-            m_jit.loadDouble(JITCompiler::stackPointerRegister, result);
-        }
-        return call;
-    }
-#elif CPU(ARM_THUMB2) && !CPU(ARM_HARDFP)
+#if CPU(ARM_THUMB2) && !CPU(ARM_HARDFP)
     JITCompiler::Call appendCallSetResult(const FunctionPtr<CFunctionPtrTag> function, FPRReg result)
     {
         JITCompiler::Call call = appendCall(function);
@@ -1448,8 +1438,8 @@ public:
     void compilePutDynamicVar(Node*);
     void compileGetClosureVar(Node*);
     void compilePutClosureVar(Node*);
-    void compileGetPromiseInternalField(Node*);
-    void compilePutPromiseInternalField(Node*);
+    void compileGetInternalField(Node*);
+    void compilePutInternalField(Node*);
     void compileCompareEqPtr(Node*);
     void compileDefineDataProperty(Node*);
     void compileDefineAccessorProperty(Node*);
@@ -1493,6 +1483,7 @@ public:
     void compileExtractCatchLocal(Node*);
     void compileClearCatchLocals(Node*);
     void compileProfileType(Node*);
+    void compileStringCodePointAt(Node*);
 
     void moveTrueTo(GPRReg);
     void moveFalseTo(GPRReg);

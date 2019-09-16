@@ -1,3 +1,216 @@
+2019-09-13  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Date.prototype.toJSON does not execute steps 1-2
+        https://bugs.webkit.org/show_bug.cgi?id=105282
+
+        Reviewed by Ross Kirsling.
+
+        * test262/expectations.yaml: Mark 2 test cases as passing.
+
+2019-09-12  Mark Lam  <mark.lam@apple.com>
+
+        Harden JSC against the abuse of runtime options.
+        https://bugs.webkit.org/show_bug.cgi?id=201597
+        <rdar://problem/55167068>
+
+        Reviewed by Filip Pizlo.
+
+        Remove the call to forceGCSlowPaths().  This utility function will be removed.
+        The modern way to set the required option is to use //@ requireOptions.
+
+        * stress/ftl-try-catch-oom-error-lazy-slow-path.js:
+
+2019-09-11  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Add StringCodePointAt intrinsic
+        https://bugs.webkit.org/show_bug.cgi?id=201673
+
+        Reviewed by Michael Saboff.
+
+        * stress/string-char-at-constant-index-out-of-range.js: Added.
+        (shouldBe):
+        (test):
+        * stress/string-char-code-at-constant-index-out-of-range.js: Added.
+        (shouldBe):
+        (test):
+        * stress/string-code-point-at--out-of-range.js: Added.
+        (shouldBe):
+        (test):
+        * stress/string-code-point-at-basic.js: Added.
+        (test):
+        * stress/string-code-point-at-constant-index-out-of-range.js: Added.
+        (shouldBe):
+        (test):
+        * stress/string-code-point-at-constant-int32-max-index-out-of-range.js: Added.
+        (shouldBe):
+        (test):
+        * stress/string-code-point-at-constant-surrogate-pair.js: Added.
+        (shouldBe):
+        (test):
+        (breaking):
+        * stress/string-code-point-at-surrogate-pair.js: Added.
+        (shouldBe):
+        * stress/string-code-point-at.js: Added.
+        (shouldBe):
+
+2019-09-10  Michael Saboff  <msaboff@apple.com>
+
+        JSC crashes due to stack overflow while building RegExp
+        https://bugs.webkit.org/show_bug.cgi?id=201649
+
+        Reviewed by Yusuke Suzuki.
+
+        New regression test.
+
+        * stress/regexp-bol-optimize-out-of-stack.js: Added.
+        (test):
+        (catch):
+
+2019-09-10  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [WebAssembly] Use StreamingParser in existing Wasm::BBQPlan
+        https://bugs.webkit.org/show_bug.cgi?id=189043
+
+        Reviewed by Keith Miller.
+
+        The offset performing the validation becomes a bit different.
+        The offset 0 is nice since it is the starting offset of the Module header signature compared to the offset 8.
+
+        * wasm/js-api/version.js:
+
+2019-09-07  Keith Miller  <keith_miller@apple.com>
+
+        OSR entry into wasm misses some contexts
+        https://bugs.webkit.org/show_bug.cgi?id=201569
+
+        Reviewed by Yusuke Suzuki.
+
+        Add a new harness and wast and the generated wasm file for
+        testing. The idea long term is to make it easy to test by creating
+        a C file and converting it to a wast then modify that to produce a
+        test.
+
+        * wasm.yaml:
+        * wasm/wast-tests/harness.js: Added.
+        (async.runWasmFile):
+        * wasm/wast-tests/osr-entry-inner-loop-branch-above-no-consts.wasm: Added.
+        * wasm/wast-tests/osr-entry-inner-loop-branch-above-no-consts.wast: Added.
+        * wasm/wast-tests/osr-entry-inner-loop-branch-above.wasm: Added.
+        * wasm/wast-tests/osr-entry-inner-loop-branch-above.wast: Added.
+        * wasm/wast-tests/osr-entry-inner-loop.wasm: Added.
+        * wasm/wast-tests/osr-entry-inner-loop.wast: Added.
+        * wasm/wast-tests/osr-entry-multiple-enclosed-contexts.wasm: Added.
+        * wasm/wast-tests/osr-entry-multiple-enclosed-contexts.wast: Added.
+
+2019-09-09  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Promise resolve/reject functions should be created more efficiently
+        https://bugs.webkit.org/show_bug.cgi?id=201488
+
+        Reviewed by Mark Lam.
+
+        * microbenchmarks/promise-creation-many.js: Added.
+        (executor):
+
+2019-09-09  Zan Dobersek  <zdobersek@igalia.com>
+
+        Unreviewed JSC test gardening.
+
+        * stress/constructFunctionSkippingEvalEnabledCheck-should-throw-out-of-memory-error.js:
+        This test allocates a 2GB string before it goes out and tests
+        out-of-memory exception when appending other strings to it. As such,
+        skip the test on memory-limited platforms.
+
+2019-09-07  Mark Lam  <mark.lam@apple.com>
+
+        The jsc shell should allow disabling of the Gigacage for testing purposes.
+        https://bugs.webkit.org/show_bug.cgi?id=201579
+
+        Reviewed by Michael Saboff.
+
+        Unskip the tests now.
+
+        * stress/disable-gigacage-arrays.js:
+        * stress/disable-gigacage-strings.js:
+        * stress/disable-gigacage-typed-arrays.js:
+
+2019-09-07  Mark Lam  <mark.lam@apple.com>
+
+        Gardening: temporarily skipping these tests until the fix can be reviewed and landed.
+
+        Not reviewed.
+
+        See https://bugs.webkit.org/show_bug.cgi?id=201579 for the fix.
+
+        * stress/disable-gigacage-arrays.js:
+        * stress/disable-gigacage-strings.js:
+        * stress/disable-gigacage-typed-arrays.js:
+
+2019-09-07  Mark Lam  <mark.lam@apple.com>
+
+        Gardening: speculative test fix to green bots [attempt #2].
+        https://bugs.webkit.org/show_bug.cgi?id=201529
+        <rdar://problem/53935772>
+
+        Not reviewed.
+
+        * stress/test-out-of-memory.js:
+
+2019-09-06  Mark Lam  <mark.lam@apple.com>
+
+        Gardening: speculative test fix to green bots.
+        https://bugs.webkit.org/show_bug.cgi?id=201529
+        <rdar://problem/53935772>
+
+        Not reviewed.
+
+        * stress/test-out-of-memory.js:
+
+2019-09-06  Ross Kirsling  <ross.kirsling@sony.com>
+
+        Math.round() produces wrong result for value prior to 0.5
+        https://bugs.webkit.org/show_bug.cgi?id=185115
+
+        Reviewed by Saam Barati.
+
+        * stress/math-round-basics.js:
+        Add positive/negative test cases.
+
+        * test262/expectations.yaml:
+        Mark test passing.
+
+2019-09-06  Mark Lam  <mark.lam@apple.com>
+
+        Move web-assembly-constructors-should-not-override-global-object-property.js below JSTests/wasm/stress.
+        https://bugs.webkit.org/show_bug.cgi?id=201551
+
+        Reviewed by Tadeu Zagallo.
+
+        Ports that don't support WASM will always fail this test if it stays in JSTests/stress.
+
+        * stress/web-assembly-constructors-should-not-override-global-object-property.js: Removed.
+        * wasm/stress/web-assembly-constructors-should-not-override-global-object-property.js: Copied from JSTests/stress/web-assembly-constructors-should-not-override-global-object-property.js.
+
+2019-09-06  Mark Lam  <mark.lam@apple.com>
+
+        Fix bmalloc::Allocator:tryAllocate() to return null on failure to allocate.
+        https://bugs.webkit.org/show_bug.cgi?id=201529
+        <rdar://problem/53935772>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/test-out-of-memory.js: Added.
+
+2019-09-05  Tadeu Zagallo  <tzagallo@apple.com>
+
+        LazyClassStructure::setConstructor should not store the constructor to the global object
+        https://bugs.webkit.org/show_bug.cgi?id=201484
+        <rdar://problem/50400451>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/web-assembly-constructors-should-not-override-global-object-property.js: Added.
+
 2019-09-05  Yusuke Suzuki  <ysuzuki@apple.com>
 
         [JSC] Do not use FTLOutput::weakPointer directly

@@ -161,6 +161,8 @@ public:
     WebPage* focusedWebPage() const;
 
     InjectedBundle* injectedBundle() const { return m_injectedBundle.get(); }
+    
+    PAL::SessionID sessionID() const { ASSERT(m_sessionID); return *m_sessionID; }
 
 #if PLATFORM(COCOA)
     const WTF::MachSendRight& compositingRenderServerPort() const { return m_compositingRenderServerPort; }
@@ -206,8 +208,6 @@ public:
     LibWebRTCNetwork& libWebRTCNetwork();
 
     void setCacheModel(CacheModel);
-
-    void ensureLegacyPrivateBrowsingSessionInNetworkProcess();
 
     void pageDidEnterWindow(WebCore::PageIdentifier);
     void pageWillLeaveWindow(WebCore::PageIdentifier);
@@ -365,7 +365,7 @@ private:
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    void establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebPageProxyIdentifier, WebCore::PageIdentifier, const WebPreferencesStore&, PAL::SessionID);
+    void establishWorkerContextConnectionToNetworkProcess(uint64_t pageGroupID, WebPageProxyIdentifier, WebCore::PageIdentifier, const WebPreferencesStore&, WebCore::RegistrableDomain&&, PAL::SessionID);
     void registerServiceWorkerClients();
 #endif
 
@@ -572,6 +572,10 @@ private:
 #endif
 
     HashMap<StorageAreaIdentifier, StorageAreaMap*> m_storageAreaMaps;
+    
+    // Prewarmed WebProcesses do not have an associated sessionID yet, which is why this is an optional.
+    // By the time the WebProcess gets a WebPage, it is guaranteed to have a sessionID.
+    Optional<PAL::SessionID> m_sessionID;
 };
 
 } // namespace WebKit

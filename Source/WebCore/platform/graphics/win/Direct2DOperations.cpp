@@ -38,7 +38,6 @@
 #include "Direct2DUtilities.h"
 #include "FloatConversion.h"
 #include "FloatRect.h"
-#include "GraphicsContext.h"
 #include "GraphicsContextPlatformPrivateDirect2D.h"
 #include "Image.h"
 #include "ImageBuffer.h"
@@ -405,7 +404,7 @@ void fillRect(PlatformContextDirect2D& platformContext, const FloatRect& rect, c
 {
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, rect, &fillSource](ID2D1RenderTarget* renderTarget) {
         const D2D1_RECT_F d2dRect = rect;
         renderTarget->FillRectangle(&d2dRect, fillSource.brush.get());
@@ -421,7 +420,7 @@ void fillRect(PlatformContextDirect2D& platformContext, const FloatRect& rect, c
 {
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, color, rect](ID2D1RenderTarget* renderTarget) {
         const D2D1_RECT_F d2dRect = rect;
         renderTarget->FillRectangle(&d2dRect, platformContext.brushWithColor(color).get());
@@ -436,7 +435,8 @@ void fillRect(PlatformContextDirect2D& platformContext, const FloatRect& rect, c
 void fillRoundedRect(PlatformContextDirect2D& platformContext, const FloatRoundedRect& rect, const Color& color, const ShadowState& shadowState)
 {
     auto context = platformContext.renderTarget();
-    context->SetTags(1, __LINE__);
+
+    platformContext.setTags(1, __LINE__);
 
     const FloatRect& r = rect.rect();
     const FloatRoundedRect::Radii& radii = rect.radii();
@@ -464,7 +464,7 @@ void fillRectWithRoundedHole(PlatformContextDirect2D& platformContext, const Flo
 {
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     Path path;
     path.addRect(rect);
@@ -484,7 +484,7 @@ void fillRectWithGradient(PlatformContextDirect2D& platformContext, const FloatR
 {
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, rect, &gradient](ID2D1RenderTarget* renderTarget) {
         const D2D1_RECT_F d2dRect = rect;
         renderTarget->FillRectangle(&d2dRect, gradient);
@@ -495,21 +495,16 @@ void fillRectWithGradient(PlatformContextDirect2D& platformContext, const FloatR
 
 void fillPath(PlatformContextDirect2D& platformContext, const Path& path, const FillSource& fillSource, const ShadowState& shadowState)
 {
-    if (path.activePath()) {
-        // Make sure it's closed. This might fail if the path was already closed, so
-        // ignore the return value.
-        path.activePath()->Close();
-    }
+    path.closeAnyOpenGeometries(D2D1_FIGURE_END_OPEN);
 
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     COMPtr<ID2D1GeometryGroup> pathToFill;
     path.createGeometryWithFillMode(fillSource.fillRule, pathToFill);
 
-    context->SetTags(1, __LINE__);
-
+    platformContext.setTags(1, __LINE__);
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, &pathToFill, &fillSource](ID2D1RenderTarget* renderTarget) {
         renderTarget->FillGeometry(pathToFill.get(), fillSource.brush.get());
     };
@@ -527,12 +522,12 @@ void fillPath(PlatformContextDirect2D& platformContext, const Path& path, const 
 {
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     COMPtr<ID2D1GeometryGroup> pathToFill;
     path.createGeometryWithFillMode(WindRule::EvenOdd, pathToFill);
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, &pathToFill, color](ID2D1RenderTarget* renderTarget) {
         renderTarget->FillGeometry(pathToFill.get(), platformContext.brushWithColor(color).get());
@@ -550,7 +545,7 @@ void fillPath(PlatformContextDirect2D& platformContext, const Path& path, const 
 void strokeRect(PlatformContextDirect2D& platformContext, const FloatRect& rect, float lineWidth, const StrokeSource& strokeSource, const ShadowState& shadowState)
 {
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, &strokeSource, rect, lineWidth](ID2D1RenderTarget* renderTarget) {
-        renderTarget->SetTags(1, __LINE__);
+        platformContext.setTags(1, __LINE__);
         const D2D1_RECT_F d2dRect = rect;
         renderTarget->DrawRectangle(&d2dRect, strokeSource.brush.get(), lineWidth, platformContext.strokeStyle());
     };
@@ -565,7 +560,7 @@ void strokePath(PlatformContextDirect2D& platformContext, const Path& path, cons
 {
     auto context = platformContext.renderTarget();
     
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     auto boundingRect = path.fastBoundingRect();
     Function<void(ID2D1RenderTarget*)> drawFunction = [&platformContext, &path, &strokeSource](ID2D1RenderTarget* renderTarget) {
@@ -582,10 +577,9 @@ void drawPath(PlatformContextDirect2D& platformContext, const Path& path, const 
 {
     auto context = platformContext.renderTarget();
 
-    if (path.activePath())
-        path.activePath()->Close();
+    path.closeAnyOpenGeometries(D2D1_FIGURE_END_OPEN);
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     auto rect = path.fastBoundingRect();
     drawWithoutShadow(platformContext, rect, [&platformContext, &strokeSource, &path](ID2D1RenderTarget* renderTarget) {
@@ -631,6 +625,8 @@ void drawWithShadowHelper(ID2D1RenderTarget* context, ID2D1Bitmap* bitmap, const
 
 void drawWithShadow(PlatformContextDirect2D& platformContext, const FloatRect& boundingRect, const ShadowState& shadowState, const WTF::Function<void(ID2D1RenderTarget*)>& drawCommands)
 {
+    platformContext.notifyPreDrawObserver();
+
     auto context = platformContext.renderTarget();
 
     // Render the current geometry to a bitmap context
@@ -646,11 +642,14 @@ void drawWithShadow(PlatformContextDirect2D& platformContext, const FloatRect& b
     RELEASE_ASSERT(SUCCEEDED(hr));
 
     drawWithShadowHelper(context, bitmap.get(), shadowState.color, shadowState.offset, shadowState.blur);
+    platformContext.notifyPostDrawObserver();
 }
 
 void drawWithoutShadow(PlatformContextDirect2D& platformContext, const FloatRect& /*boundingRect*/, const WTF::Function<void(ID2D1RenderTarget*)>& drawCommands)
 {
+    platformContext.notifyPreDrawObserver();
     drawCommands(platformContext.renderTarget());
+    platformContext.notifyPostDrawObserver();
 }
 
 void clearRect(PlatformContextDirect2D& platformContext, const FloatRect& rect)
@@ -660,7 +659,7 @@ void clearRect(PlatformContextDirect2D& platformContext, const FloatRect& rect)
         FloatRect rectToClear(rect);
 
         if (rectToClear.contains(renderTargetRect)) {
-            renderTarget->SetTags(1, __LINE__);
+            platformContext.setTags(1, __LINE__);
             renderTarget->Clear(D2D1::ColorF(0, 0, 0, 0));
             return;
         }
@@ -668,7 +667,7 @@ void clearRect(PlatformContextDirect2D& platformContext, const FloatRect& rect)
         if (!rectToClear.intersects(renderTargetRect))
             return;
 
-        renderTarget->SetTags(1, __LINE__);
+        platformContext.setTags(1, __LINE__);
         rectToClear.intersect(renderTargetRect);
         renderTarget->FillRectangle(rectToClear, platformContext.brushWithColor(Color(D2D1::ColorF(0, 0, 0, 0))).get());
     });
@@ -739,6 +738,7 @@ void drawGlyphs(PlatformContextDirect2D& platformContext, const FillSource& fill
     //     graphicsContext.setShadow(shadowOffset, shadowBlur, shadowColor);
 
     platformContext.restore();
+    platformContext.notifyPostDrawObserver();
 }
 
 
@@ -802,8 +802,7 @@ void drawNativeImage(PlatformContextDirect2D& platformContext, ID2D1Bitmap* imag
         }
     }
 
-    context->SetTags(1, __LINE__);
-
+    platformContext.setTags(1, __LINE__);
     Function<void(ID2D1RenderTarget*)> drawFunction = [image, adjustedDestRect, globalAlpha, srcRect](ID2D1RenderTarget* renderTarget) {
         renderTarget->DrawBitmap(image, adjustedDestRect, globalAlpha, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, srcRect);
     };
@@ -874,8 +873,7 @@ void drawRect(PlatformContextDirect2D& platformContext, const FloatRect& rect, f
 
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
-
+    platformContext.setTags(1, __LINE__);
     drawWithoutShadow(platformContext, rect, [&platformContext, rect, fillColor, strokeColor, strokeStyle](ID2D1RenderTarget* renderTarget) {
         const D2D1_RECT_F d2dRect = rect;
         auto fillBrush = platformContext.brushWithColor(fillColor);
@@ -926,7 +924,7 @@ void drawLine(PlatformContextDirect2D& platformContext, const FloatPoint& point1
     auto p1 = centeredPoints[0];
     auto p2 = centeredPoints[1];
 
-    context->SetTags(1, __LINE__);
+    platformContext.setTags(1, __LINE__);
 
     FloatRect boundingRect(p1, p2);
 
@@ -951,8 +949,7 @@ void fillEllipse(PlatformContextDirect2D& platformContext, const FloatRect& rect
 
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
-
+    platformContext.setTags(1, __LINE__);
     drawWithoutShadow(platformContext, rect, [&platformContext, ellipse, fillColor, strokeStyle, strokeColor, strokeThickness](ID2D1RenderTarget* renderTarget) {
         auto fillBrush = platformContext.brushWithColor(fillColor);
         renderTarget->FillEllipse(&ellipse, fillBrush.get());
@@ -972,8 +969,7 @@ void drawEllipse(PlatformContextDirect2D& platformContext, const FloatRect& rect
 
     auto context = platformContext.renderTarget();
 
-    context->SetTags(1, __LINE__);
-
+    platformContext.setTags(1, __LINE__);
     drawWithoutShadow(platformContext, rect, [&platformContext, ellipse, strokeColor, strokeThickness](ID2D1RenderTarget* renderTarget) {
         auto strokeBrush = platformContext.brushWithColor(strokeColor);
         renderTarget->DrawEllipse(&ellipse, strokeBrush.get(), strokeThickness, platformContext.strokeStyle());
@@ -995,6 +991,7 @@ void flush(PlatformContextDirect2D& platformContext)
     ASSERT(platformContext.renderTarget());
     D2D1_TAG first, second;
     HRESULT hr = platformContext.renderTarget()->Flush(&first, &second);
+    platformContext.notifyPostDrawObserver();
 
     RELEASE_ASSERT(SUCCEEDED(hr));
 }

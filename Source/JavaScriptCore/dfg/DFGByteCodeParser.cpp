@@ -2282,13 +2282,6 @@ bool ByteCodeParser::handleIntrinsicCall(Node* callee, VirtualRegister result, I
         }
             
         case ArrayPushIntrinsic: {
-#if USE(JSVALUE32_64)
-            if (isX86()) {
-                if (argumentCountIncludingThis > 2)
-                    return false;
-            }
-#endif
-
             if (static_cast<unsigned>(argumentCountIncludingThis) >= MIN_SPARSE_ARRAY_INDEX)
                 return false;
             
@@ -2316,12 +2309,6 @@ bool ByteCodeParser::handleIntrinsicCall(Node* callee, VirtualRegister result, I
         }
 
         case ArraySliceIntrinsic: {
-#if USE(JSVALUE32_64)
-            if (isX86()) {
-                // There aren't enough registers for this to be done easily.
-                return false;
-            }
-#endif
             if (argumentCountIncludingThis < 1)
                 return false;
 
@@ -2610,6 +2597,9 @@ bool ByteCodeParser::handleIntrinsicCall(Node* callee, VirtualRegister result, I
             if (argumentCountIncludingThis != 2)
                 return false;
 
+            if (m_inlineStackTop->m_exitProfile.hasExitSite(m_currentIndex, Uncountable))
+                return false;
+
             insertChecks();
             VirtualRegister thisOperand = virtualRegisterForArgument(0, registerOffset);
             VirtualRegister indexOperand = virtualRegisterForArgument(1, registerOffset);
@@ -2619,9 +2609,32 @@ bool ByteCodeParser::handleIntrinsicCall(Node* callee, VirtualRegister result, I
             return true;
         }
 
+        case StringPrototypeCodePointAtIntrinsic: {
+            if (!is64Bit())
+                return false;
+
+            if (argumentCountIncludingThis != 2)
+                return false;
+
+            if (m_inlineStackTop->m_exitProfile.hasExitSite(m_currentIndex, Uncountable))
+                return false;
+
+            insertChecks();
+            VirtualRegister thisOperand = virtualRegisterForArgument(0, registerOffset);
+            VirtualRegister indexOperand = virtualRegisterForArgument(1, registerOffset);
+            Node* result = addToGraph(StringCodePointAt, OpInfo(ArrayMode(Array::String, Array::Read).asWord()), get(thisOperand), get(indexOperand));
+
+            setResult(result);
+            return true;
+        }
+
         case CharAtIntrinsic: {
             if (argumentCountIncludingThis != 2)
                 return false;
+
+            // FIXME: String#charAt returns empty string when index is out-of-bounds, and this does not break the AI's claim.
+            // Only FTL supports out-of-bounds version now. We should support out-of-bounds version even in DFG.
+            // https://bugs.webkit.org/show_bug.cgi?id=201678
 
             insertChecks();
             VirtualRegister thisOperand = virtualRegisterForArgument(0, registerOffset);
@@ -5400,14 +5413,7 @@ void ByteCodeParser::parseBlock(unsigned limit)
             auto bytecode = currentInstruction->as<OpStrcat>();
             int startOperand = bytecode.m_src.offset();
             int numOperands = bytecode.m_count;
-#if CPU(X86)
-            // X86 doesn't have enough registers to compile MakeRope with three arguments. The
-            // StrCat we emit here may be turned into a MakeRope. Rather than try to be clever,
-            // we just make StrCat dumber on this processor.
-            const unsigned maxArguments = 2;
-#else
             const unsigned maxArguments = 3;
-#endif
             Node* operands[AdjacencyList::Size];
             unsigned indexInOperands = 0;
             for (unsigned i = 0; i < AdjacencyList::Size; ++i)
@@ -7049,16 +7055,16 @@ void ByteCodeParser::parseBlock(unsigned limit)
             NEXT_OPCODE(op_to_index_string);
         }
 
-        case op_get_promise_internal_field: {
-            auto bytecode = currentInstruction->as<OpGetPromiseInternalField>();
-            set(bytecode.m_dst, addToGraph(GetPromiseInternalField, OpInfo(bytecode.m_index), OpInfo(getPrediction()), get(bytecode.m_base)));
-            NEXT_OPCODE(op_get_promise_internal_field);
+        case op_get_internal_field: {
+            auto bytecode = currentInstruction->as<OpGetInternalField>();
+            set(bytecode.m_dst, addToGraph(GetInternalField, OpInfo(bytecode.m_index), OpInfo(getPrediction()), get(bytecode.m_base)));
+            NEXT_OPCODE(op_get_internal_field);
         }
 
-        case op_put_promise_internal_field: {
-            auto bytecode = currentInstruction->as<OpPutPromiseInternalField>();
-            addToGraph(PutPromiseInternalField, OpInfo(bytecode.m_index), get(bytecode.m_base), get(bytecode.m_value));
-            NEXT_OPCODE(op_put_promise_internal_field);
+        case op_put_internal_field: {
+            auto bytecode = currentInstruction->as<OpPutInternalField>();
+            addToGraph(PutInternalField, OpInfo(bytecode.m_index), get(bytecode.m_base), get(bytecode.m_value));
+            NEXT_OPCODE(op_put_internal_field);
         }
             
         case op_log_shadow_chicken_prologue: {

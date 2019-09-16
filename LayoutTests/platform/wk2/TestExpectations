@@ -88,6 +88,18 @@ platform/mac/fast/text/attributed-substring-from-range-in-textfield.html
 platform/mac/fast/text/attributed-substring-from-range.html
 platform/mac/fast/text/justified-text-rect.html
 
+# https://bugs.webkit.org/show_bug.cgi?id=115274
+# testRunner.setPrivateBrowsingEnabled_DEPRECATED() doesn't work with NetworkProcess and is WebKitLegacy only.
+http/tests/security/appcache-switching-private-browsing.html [ Skip ]
+http/tests/security/cookies/first-party-cookie-allow-xslt.xml [ Skip ]
+http/tests/security/cookies/third-party-cookie-blocking-xslt.xml [ Skip ]
+http/tests/security/cross-origin-plugin-private-browsing-toggled-allowed.html [ Skip ]
+http/tests/security/cross-origin-plugin-private-browsing-toggled.html [ Skip ]
+http/tests/security/storage-blocking-loosened-private-browsing-plugin.html [ Skip ]
+http/tests/security/storage-blocking-strengthened-private-browsing-plugin.html [ Skip ]
+plugins/private-browsing-mode-2.html [ Skip ]
+storage/websql/private-browsing-noread-nowrite.html [ Skip ]
+
 # [WebKit2] WebKitTestRunner doesn't support emulating pressing a tab key during IME composition
 webkit.org/b/188428 editing/input/press-tab-during-ime-composition.html
 
@@ -678,13 +690,11 @@ fast/events/drag-display-none-element.html
 # Skip tests in fast/text/shaping
 fast/text/shaping
 
-# WebKitTestRunner testRunner.setPrivateBrowsingEnabled doesn't work with NetworkProcess.
+# WebKitTestRunner testRunner.setPrivateBrowsingEnabled_DEPRECATED() doesn't work with NetworkProcess.
 # We explicitly Skip the following tests instead of marking them as Failure because some of these tests will naturally pass
-# as a consequence of testRunner.setPrivateBrowsingEnabled() effectively being a no-op as of the time of writing (07/08/2015).
-webkit.org/b/115274 http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-enabled.php [ Skip ]
+# as a consequence of testRunner.setPrivateBrowsingEnabled_DEPRECATED() effectively being a no-op as of the time of writing (07/08/2015).
 webkit.org/b/115274 http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-toggled.php [ Skip ]
 webkit.org/b/115274 http/tests/security/contentSecurityPolicy/report-same-origin-no-cookies-when-private-browsing-toggled.php [ Skip ]
-webkit.org/b/115274 http/tests/security/contentSecurityPolicy/report-same-origin-with-cookies-when-private-browsing-enabled.php [ Skip ]
 
 ### END OF (4) Features that are not supported in WebKit2 and likely never will be
 ########################################

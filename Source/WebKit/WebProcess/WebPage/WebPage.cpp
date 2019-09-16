@@ -1432,7 +1432,7 @@ void WebPage::close()
         return;
 
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
-    WebProcess::singleton().ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::ClearPageSpecificDataForResourceLoadStatistics(sessionID(), m_identifier), 0);
+    WebProcess::singleton().ensureNetworkProcessConnection().connection().send(Messages::NetworkConnectionToWebProcess::ClearPageSpecificDataForResourceLoadStatistics(m_identifier), 0);
 #endif
 
     m_isClosed = true;
@@ -1645,6 +1645,12 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
 
     ASSERT(!m_pendingNavigationID);
     ASSERT(!m_pendingWebsitePolicies);
+}
+
+// LoadRequestWaitingForPID should never be sent to the WebProcess. It must always be converted to a LoadRequest message.
+NO_RETURN void WebPage::loadRequestWaitingForPID(LoadParameters&&, const String&)
+{
+    RELEASE_ASSERT_NOT_REACHED();
 }
 
 void WebPage::loadDataImpl(uint64_t navigationID, bool shouldTreatAsContinuingLoad, Optional<WebsitePoliciesData>&& websitePolicies, Ref<SharedBuffer>&& sharedBuffer, const String& MIMEType, const String& encodingName, const URL& baseURL, const URL& unreachableURL, const UserData& userData, ShouldOpenExternalURLsPolicy shouldOpenExternalURLsPolicy)
@@ -2400,7 +2406,7 @@ RefPtr<WebImage> WebPage::scaledSnapshotWithOptions(const IntRect& rect, double 
     return snapshotAtSize(rect, bitmapSize, options);
 }
 
-static void paintSnapshotAtSize(const IntRect& rect, const IntSize& bitmapSize, SnapshotOptions options, Frame& frame, FrameView& frameView, GraphicsContext& graphicsContext)
+void WebPage::paintSnapshotAtSize(const IntRect& rect, const IntSize& bitmapSize, SnapshotOptions options, Frame& frame, FrameView& frameView, GraphicsContext& graphicsContext)
 {
     IntRect snapshotRect = rect;
     float horizontalScaleFactor = static_cast<float>(bitmapSize.width()) / rect.width();
@@ -2473,39 +2479,6 @@ RefPtr<WebImage> WebPage::snapshotAtSize(const IntRect& rect, const IntSize& bit
 
     return snapshot;
 }
-
-#if USE(CF)
-RetainPtr<CFDataRef> WebPage::pdfSnapshotAtSize(const IntRect& rect, const IntSize& bitmapSize, SnapshotOptions options)
-{
-    Frame* coreFrame = m_mainFrame->coreFrame();
-    if (!coreFrame)
-        return nullptr;
-
-    FrameView* frameView = coreFrame->view();
-    if (!frameView)
-        return nullptr;
-
-    auto data = adoptCF(CFDataCreateMutable(kCFAllocatorDefault, 0));
-
-#if USE(CG)
-    auto dataConsumer = adoptCF(CGDataConsumerCreateWithCFData(data.get()));
-    auto mediaBox = CGRectMake(0, 0, bitmapSize.width(), bitmapSize.height());
-    auto pdfContext = adoptCF(CGPDFContextCreate(dataConsumer.get(), &mediaBox, nullptr));
-
-    CGPDFContextBeginPage(pdfContext.get(), nullptr);
-
-    GraphicsContext graphicsContext { pdfContext.get() };
-    graphicsContext.scale({ 1, -1 });
-    graphicsContext.translate(0, -bitmapSize.height());
-    paintSnapshotAtSize(rect, bitmapSize, options, *coreFrame, *frameView, graphicsContext);
-
-    CGPDFContextEndPage(pdfContext.get());
-    CGPDFContextClose(pdfContext.get());
-#endif
-
-    return data;
-}
-#endif
 
 RefPtr<WebImage> WebPage::snapshotNode(WebCore::Node& node, SnapshotOptions options, unsigned maximumPixelCount)
 {
@@ -4901,6 +4874,34 @@ void WebPage::computePagesForPrintingImpl(FrameIdentifier frameID, const PrintIn
 }
 
 #if PLATFORM(COCOA)
+void WebPage::drawToPDF(FrameIdentifier frameID, const Optional<FloatRect>& rect, CallbackID callbackID)
+{
+    auto& frameView = *m_page->mainFrame().view();
+    IntSize snapshotSize;
+    if (rect)
+        snapshotSize = IntSize(rect->size());
+    else
+        snapshotSize = { frameView.contentsSize() };
+
+    IntRect snapshotRect;
+    if (rect)
+        snapshotRect = { {(int)rect->x(), (int)rect->y()}, snapshotSize };
+    else
+        snapshotRect = { {0, 0}, snapshotSize };
+
+    auto originalLayoutViewportOverrideRect = frameView.layoutViewportOverrideRect();
+    frameView.setLayoutViewportOverrideRect(LayoutRect(snapshotRect));
+    auto originalPaintBehavior = frameView.paintBehavior();
+    frameView.setPaintBehavior(originalPaintBehavior | PaintBehavior::AnnotateLinks);
+
+    auto pdfData = pdfSnapshotAtSize(snapshotRect, snapshotSize, 0);
+
+    frameView.setLayoutViewportOverrideRect(originalLayoutViewportOverrideRect);
+    frameView.setPaintBehavior(originalPaintBehavior);
+
+    send(Messages::WebPageProxy::DrawToPDFCallback(IPC::DataReference(CFDataGetBytePtr(pdfData.get()), CFDataGetLength(pdfData.get())), callbackID));
+}
+
 void WebPage::drawRectToImage(FrameIdentifier frameID, const PrintInfo& printInfo, const IntRect& rect, const WebCore::IntSize& imageSize, CallbackID callbackID)
 {
     WebFrame* frame = WebProcess::singleton().webFrame(frameID);
@@ -5881,7 +5882,8 @@ void WebPage::didReplaceMultipartContent(const WebFrame& frame)
 void WebPage::didCommitLoad(WebFrame* frame)
 {
 #if PLATFORM(IOS_FAMILY)
-    frame->setFirstLayerTreeTransactionIDAfterDidCommitLoad(downcast<RemoteLayerTreeDrawingArea>(*m_drawingArea).nextTransactionID());
+    auto firstTransactionIDAfterDidCommitLoad = downcast<RemoteLayerTreeDrawingArea>(*m_drawingArea).nextTransactionID();
+    frame->setFirstLayerTreeTransactionIDAfterDidCommitLoad(firstTransactionIDAfterDidCommitLoad);
     cancelPotentialTapInFrame(*frame);
 #endif
     resetFocusedElementForFrame(frame);
@@ -5915,6 +5917,7 @@ void WebPage::didCommitLoad(WebFrame* frame)
 #if PLATFORM(IOS_FAMILY)
     m_hasReceivedVisibleContentRectsAfterDidCommitLoad = false;
     m_hasRestoredExposedContentRectAfterDidCommitLoad = false;
+    m_lastTransactionIDWithScaleChange = firstTransactionIDAfterDidCommitLoad;
     m_scaleWasSetByUIProcess = false;
     m_userHasChangedPageScaleFactor = false;
     m_estimatedLatency = Seconds(1.0 / 60);
@@ -6684,12 +6687,16 @@ void WebPage::frameBecameRemote(FrameIdentifier frameID, GlobalFrameIdentifier&&
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
 void WebPage::hasStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, WebFrame& frame, CompletionHandler<void(bool)>&& completionHandler)
 {
-    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::HasStorageAccess(sessionID(), WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier), WTFMove(completionHandler));
+    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::HasStorageAccess(WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier), WTFMove(completionHandler));
 }
 
 void WebPage::requestStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, WebFrame& frame, CompletionHandler<void(WebCore::StorageAccessWasGranted, WebCore::StorageAccessPromptWasShown)>&& completionHandler)
 {
-    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::RequestStorageAccess(sessionID(), WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier, m_webPageProxyIdentifier), WTFMove(completionHandler));
+    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::RequestStorageAccess(WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier, m_webPageProxyIdentifier), [completionHandler = WTFMove(completionHandler), frame = makeRef(frame), sessionID = sessionID(), pageID = m_identifier, frameID = frame.frameID()](StorageAccessWasGranted wasGranted, WebCore::StorageAccessPromptWasShown promptWasShown) mutable {
+        if (wasGranted == StorageAccessWasGranted::Yes)
+            frame->frameLoaderClient()->setHasFrameSpecificStorageAccess({ sessionID, frameID, pageID });
+        completionHandler(wasGranted, promptWasShown);
+    });
 }
 
 void WebPage::wasLoadedWithDataTransferFromPrevalentResource()
@@ -6756,6 +6763,25 @@ void WebPage::simulateDeviceOrientationChange(double alpha, double beta, double 
     frame->document()->simulateDeviceOrientationChange(alpha, beta, gamma);
 #endif
 }
+
+#if USE(SYSTEM_PREVIEW)
+void WebPage::systemPreviewActionTriggered(WebCore::SystemPreviewInfo previewInfo, const String& message)
+{
+    WebFrame* frame = WebProcess::singleton().webFrame(previewInfo.globalFrameID.frameID);
+    if (!frame)
+        return;
+
+    auto* document = frame->coreFrame()->document();
+    if (!document)
+        return;
+
+    auto pageID = document->pageID();
+    if (!pageID || previewInfo.globalFrameID.pageID != pageID.value())
+        return;
+
+    document->dispatchSystemPreviewActionEvent(message);
+}
+#endif
 
 #if ENABLE(SPEECH_SYNTHESIS)
 void WebPage::speakingErrorOccurred()

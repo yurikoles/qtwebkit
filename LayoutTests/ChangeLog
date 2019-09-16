@@ -1,3 +1,1854 @@
+2019-09-16  Andres Gonzalez  <andresg_22@apple.com>
+
+        Expose misspelling ranges for editable content to accessibility clients.
+        https://bugs.webkit.org/show_bug.cgi?id=201752
+        <rdar://problem/49556828>
+
+        Reviewed by Chris Fleizach.
+
+        * accessibility/misspelling-range-expected.txt: Added.
+        * accessibility/misspelling-range.html: Added.
+        * platform/ios-simulator/TestExpectations:
+
+2019-09-15  Chris Dumez  <cdumez@apple.com>
+
+        Re-sync HTML web-platform-tests from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201753
+
+        Reviewed by Youenn Fablet.
+
+        * TestExpectations:
+        * platform/gtk/TestExpectations:
+        * platform/ios-wk1/TestExpectations:
+        * platform/ios/TestExpectations:
+        * platform/mac-wk2/imported/w3c/web-platform-tests/html/semantics/forms/the-input-element/type-change-state-expected.txt:
+        * platform/mac/TestExpectations:
+        * platform/mac/imported/w3c/web-platform-tests/html/browsers/history/the-location-interface/location_hash-expected.txt:
+        * platform/win/TestExpectations:
+        * tests-options.json:
+
+2019-09-14  Antti Koivisto  <antti@apple.com>
+
+        ASSERTION FAILED: !renderer() in  WebCore::Text::~Text
+        https://bugs.webkit.org/show_bug.cgi?id=172514
+        <rdar://problem/32470509>
+
+        Unreviewed, this assert should be fixed now.
+
+        * TestExpectations:
+
+        Unskipping imported/w3c/web-platform-tests/innerText/getter.html on debug
+
+2019-09-13  Youenn Fablet  <youenn@apple.com>
+
+        WPT importer should check META global tag in .any.js files to generate the valid .html stub files
+        https://bugs.webkit.org/show_bug.cgi?id=201718
+
+        Reviewed by Chris Dumez.
+
+        * platform/mac-wk1/TestExpectations:
+        Skipping service worker tests.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: HTML Formatter - XML mode
+        https://bugs.webkit.org/show_bug.cgi?id=201758
+
+        Reviewed by Devin Rousso.
+
+        * inspector/formatting/formatting-xml-expected.txt: Added.
+        * inspector/formatting/formatting-xml.html: Added.
+        * inspector/formatting/resources/formatting-utilities.js:
+        (TestPage.registerInitializer.async.runFormattingTest):
+        * inspector/formatting/resources/xml-tests/atom-expected.xml: Added.
+        * inspector/formatting/resources/xml-tests/atom.xml: Added.
+        * inspector/formatting/resources/xml-tests/basic-expected.xml: Added.
+        * inspector/formatting/resources/xml-tests/basic.xml: Added.
+        * inspector/formatting/resources/xml-tests/rss-expected.xml: Added.
+        * inspector/formatting/resources/xml-tests/rss.xml: Added.
+        * inspector/formatting/resources/xml-tests/valid-html-invalid-xml-expected.xml: Added.
+        * inspector/formatting/resources/xml-tests/valid-html-invalid-xml.xml: Added.
+        * inspector/formatting/resources/xml-tests/xslt-expected.xml: Added.
+        * inspector/formatting/resources/xml-tests/xslt.xml: Added.
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: HTML Formatting: Handle infinite loop for incomplete script data
+        https://bugs.webkit.org/show_bug.cgi?id=201769
+
+        Reviewed by Devin Rousso.
+
+        * inspector/formatting/formatting-html-expected.txt:
+        * inspector/formatting/formatting-html.html:
+        * inspector/formatting/resources/html-tests/eof-7-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-7.html: Added.
+        * inspector/formatting/resources/html-tests/eof-8-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-8.html: Added.
+        * inspector/formatting/resources/html-tests/eof-9-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-9.html: Added.
+
+2019-09-13  Russell Epstein  <repstein@apple.com>
+
+        Layout Test webgl/2.0.0/conformance/glsl/misc/shaders-with-invariance.html is failing on iOS.
+        https://bugs.webkit.org/show_bug.cgi?id=201784
+
+        Unreviewed Test Gardening.
+
+        * platform/ios/TestExpectations: Marked Test as Failing.
+
+2019-09-13  Ali Juma  <ajuma@chromium.org>
+
+        IntersectionObserverEntry#intersectionRatio can be larger than 1
+        https://bugs.webkit.org/show_bug.cgi?id=200776
+
+        Reviewed by Simon Fraser.
+
+        * intersection-observer/intersection-clipped-to-target-expected.txt: Added.
+        * intersection-observer/intersection-clipped-to-target.html: Added.
+
+2019-09-13  Russell Epstein  <repstein@apple.com>
+
+        Layout Test http/tests/appcache/remove-cache.html is a flaky failure.
+        https://bugs.webkit.org/show_bug.cgi?id=199124
+
+        Unreviewed Test Gardening..
+
+        * platform/mac/TestExpectations: Marked Test as Flaky.
+
+2019-09-13  Nikolas Zimmermann  <zimmermann@kde.org>
+
+        SMIL animations of SVG <view> element have no effect
+        https://bugs.webkit.org/show_bug.cgi?id=94469
+
+        Reviewed by Said Abou-Hallawa.
+
+        Add new layout tests to verify that dynamic modifications of the <view> element cause
+        visual updates. Previously SVGSVGElement was never notified about changes of the
+        SVGViewElement and thus did not update the stored viewBox.
+
+        * svg/custom/animation-on-view-element-expected.html: Added.
+        * svg/custom/animation-on-view-element.html: Added. This is a new reftest
+        demonstrating that animations of SVG <view> elements now behave as expected.
+        * svg/custom/multiple-view-elements-expected.html: Added.
+        * svg/custom/multiple-view-elements.html: Added.
+        * svg/dom/SVGViewSpec-multiple-views-expected.txt:
+        * svg/dom/SVGViewSpec-multiple-views.html: Extend to cover dynamic modifications.
+
+2019-09-13  Russell Epstein  <repstein@apple.com>
+
+        Unreviewed, rolling out r249709.
+
+        Layout test added in this patch has been consistently failing
+        since it landed.
+
+        Reverted changeset:
+
+        "Option + arrow moves caret past whitespace on iOS"
+        https://bugs.webkit.org/show_bug.cgi?id=201575
+        https://trac.webkit.org/changeset/249709
+
+2019-09-13  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/security/appcache-in-private-browsing.html
+        https://bugs.webkit.org/show_bug.cgi?id=201704
+
+        Reviewed by Youenn Fablet.
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/security/appcache-in-private-browsing.html
+        and use the new useEphemeralSession WKTR / DRT flag instead.
+
+        * http/tests/security/appcache-in-private-browsing-expected.txt:
+        * http/tests/security/appcache-in-private-browsing.html:
+        * http/tests/security/resources/frame-for-appcache-in-private-browsing.html:
+        * platform/mac-wk2/TestExpectations:
+
+2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Formatter: Pretty Print HTML resources (including inline <script>/<style>)
+        https://bugs.webkit.org/show_bug.cgi?id=201535
+        <rdar://problem/29119232>
+
+        Reviewed by Devin Rousso.
+
+        * TestExpectations:
+        Mark slow test.
+
+        * inspector/formatting/formatting-css.html:
+        * inspector/formatting/formatting-html-expected.txt: Added.
+        * inspector/formatting/formatting-html.html: Added.
+        * inspector/formatting/formatting-javascript-expected.txt:
+        * inspector/formatting/formatting-javascript.html:
+        * inspector/formatting/formatting-json-expected.txt:
+        * inspector/formatting/formatting-json.html:
+        * inspector/formatting/resources/formatting-utilities.js: Renamed from LayoutTests/inspector/formatting/resources/utilities.js.
+        Update formatting tests to use new path to utilities.
+
+        * inspector/formatting/resources/css-tests/basic-expected.css:
+        * inspector/formatting/resources/css-tests/gradient-expected.css:
+        * inspector/formatting/resources/css-tests/keyframes-expected.css:
+        * inspector/formatting/resources/css-tests/media-query-expected.css:
+        * inspector/formatting/resources/css-tests/selectors-expected.css:
+        * inspector/formatting/resources/css-tests/wrapping-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/basic-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/calc-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/gradient-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/keyframes-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/media-query-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/selectors-expected.css:
+        * inspector/codemirror/resources/prettyprinting/css-tests/wrapping-expected.css:
+        Eliminate an extra trailing newline in CSS formatted results.
+
+        * inspector/formatting/resources/html-tests/attributes-expected.html: Added.
+        * inspector/formatting/resources/html-tests/attributes.html: Added.
+        * inspector/formatting/resources/html-tests/auto-close-expected.html: Added.
+        * inspector/formatting/resources/html-tests/auto-close.html: Added.
+        * inspector/formatting/resources/html-tests/basic-1-expected.html: Added.
+        * inspector/formatting/resources/html-tests/basic-1.html: Added.
+        * inspector/formatting/resources/html-tests/basic-2-expected.html: Added.
+        * inspector/formatting/resources/html-tests/basic-2.html: Added.
+        * inspector/formatting/resources/html-tests/comments-expected.html: Added.
+        * inspector/formatting/resources/html-tests/comments.html: Added.
+        * inspector/formatting/resources/html-tests/eof-1-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-1.html: Added.
+        * inspector/formatting/resources/html-tests/eof-2-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-2.html: Added.
+        * inspector/formatting/resources/html-tests/eof-3-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-3.html: Added.
+        * inspector/formatting/resources/html-tests/eof-4-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-4.html: Added.
+        * inspector/formatting/resources/html-tests/eof-5-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-5.html: Added.
+        * inspector/formatting/resources/html-tests/eof-6-expected.html: Added.
+        * inspector/formatting/resources/html-tests/eof-6.html: Added.
+        * inspector/formatting/resources/html-tests/inline-script-expected.html: Added.
+        * inspector/formatting/resources/html-tests/inline-script.html: Added.
+        * inspector/formatting/resources/html-tests/inline-style-expected.html: Added.
+        * inspector/formatting/resources/html-tests/inline-style.html: Added.
+        * inspector/formatting/resources/html-tests/list-expected.html: Added.
+        * inspector/formatting/resources/html-tests/list.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-1-expected.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-1.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-2-expected.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-2.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-3-expected.html: Added.
+        * inspector/formatting/resources/html-tests/not-well-formed-3.html: Added.
+        * inspector/formatting/resources/html-tests/self-closing-expected.html: Added.
+        * inspector/formatting/resources/html-tests/self-closing.html: Added.
+        HTMLFormatter tests.
+
+        * inspector/formatting/resources/html-source-map-tests/1.html: Added.
+        * inspector/formatting/resources/html-source-map-tests/2.html: Added.
+        * inspector/formatting/resources/css-source-map-tests/1.css: Added.
+        * inspector/formatting/resources/javascript-source-map-tests/1.js: Added.
+        * inspector/formatting/source-map-css-1-expected.txt: Added.
+        * inspector/formatting/source-map-css-1.html: Added.
+        * inspector/formatting/source-map-html-1-expected.txt: Added.
+        * inspector/formatting/source-map-html-1.html: Added.
+        * inspector/formatting/source-map-html-2-expected.txt: Added.
+        * inspector/formatting/source-map-html-2.html: Added.
+        * inspector/formatting/source-map-javascript-1-expected.txt: Added.
+        * inspector/formatting/source-map-javascript-1.html: Added.
+        * inspector/formatting/resources/source-map-utilities.js: Added.
+        (TestPage.registerInitializer.logLocationWithContext):
+        (TestPage.registerInitializer.async.runSourceMapTest):
+        (TestPage.registerInitializer.):
+        (TestPage.registerInitializer.async.loadFormattedContentAndSourceMap):
+        (TestPage.registerInitializer.async.loadSourceMapTestResource):
+        (TestPage.registerInitializer.window.addSourceMapTest):
+        (TestPage.registerInitializer):
+        New formatter source map tests to ensure we can go back and forth reasonably
+        between formatted content and original content.
+
+        * inspector/debugger/breakpoints/resolved-dump-all-inline-script-pause-locations-expected.txt: Added.
+        * inspector/debugger/breakpoints/resolved-dump-all-inline-script-pause-locations.html: Added.
+        * inspector/debugger/breakpoints/resources/dump-inline-scripts.html: Added.
+        * inspector/debugger/breakpoints/resources/dump.js:
+        (TestPage.registerInitializer.window.addDumpAllPauseLocationsTestCase):
+        (TestPage.registerInitializer.addDumpAllPauseLocationsTestCaseForScript):
+        (TestPage.registerInitializer):
+        * inspector/debugger/resources/log-pause-location.js:
+        (TestPage.registerInitializer.window.findScript):
+        (TestPage.registerInitializer.window.findResource):
+        Test for resolving breakpoints at column locations in <script> which was
+        not previously possible and would not have worked previously.
+
+2019-09-12  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed test gardening, rebaseline inspector/model/remote-object.html for WK1 after r249808.
+
+        * platform/mac-wk1/inspector/model/remote-object-expected.txt: Added.
+
+2019-09-12  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed test gardening, rebaseline inspector/model/remote-object.html after r249808.
+
+        * inspector/model/remote-object-expected.txt:
+
+2019-09-12  Wenson Hsieh  <wenson_hsieh@apple.com>
+
+        [Cocoa] Text indicator for an image link on the front page of apple.com looks wrong
+        https://bugs.webkit.org/show_bug.cgi?id=201724
+        <rdar://problem/54622894>
+
+        Reviewed by Tim Horton.
+
+        Add a new layout test to exercise this scenario.
+
+        * fast/text-indicator/text-indicator-empty-link-expected.txt: Added.
+        * fast/text-indicator/text-indicator-empty-link.html: Added.
+
+2019-09-12  Chris Dumez  <cdumez@apple.com>
+
+        Re-sync dom web-platform-tests from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201697
+
+        Reviewed by Youenn Fablet.
+
+        * TestExpectations:
+        * platform/mac-wk2/imported/w3c/web-platform-tests/dom/nodes/Node-cloneNode-expected.txt:
+        * tests-options.json:
+
+2019-09-12  Devin Rousso  <drousso@apple.com>
+
+        REGRESSION? (r249786): inspector/canvas/context-attributes.html is failing on macOS WK1
+        https://bugs.webkit.org/show_bug.cgi?id=201714
+        <rdar://problem/55290473>
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/canvas/context-attributes.html:
+        * inspector/canvas/context-attributes-expected.txt:
+
+2019-09-12  Russell Epstein  <repstein@apple.com>
+
+        Layout Test http/tests/xmlhttprequest/xmlhttprequest-overridemimetype-invalidstaterror.html is flaky.
+        https://bugs.webkit.org/show_bug.cgi?id=199075
+
+        Reviewed by Youenn Fablet.
+
+        Currently, this test includes js-test.js twice, which is causing the test to be flaky.
+
+        * http/tests/xmlhttprequest/xmlhttprequest-overridemimetype-invalidstaterror.html: Removed second instance.
+
+2019-09-11  Youenn Fablet  <youenn@apple.com>
+
+        Disable DTLS10
+        https://bugs.webkit.org/show_bug.cgi?id=201679
+
+        Reviewed by Alex Christensen.
+
+        * webrtc/datachannel/dtls10-expected.txt: Added.
+        * webrtc/datachannel/dtls10.html: Added.
+
+2019-09-11  Saam Barati  <sbarati@apple.com>
+
+        [WHLSL] Ensure structs/arrays with pointers as fields are disallowed
+        https://bugs.webkit.org/show_bug.cgi?id=201525
+
+        Reviewed by Robin Morisset.
+
+        This patch fixes a bug in our test harness where we forgot to wait for the gpu
+        device to load before running test harness tests. This patch fixes this oversight
+        and asserts that we have always finished loading before running a test.
+
+        * webgpu/whlsl/array-spec-tests.html:
+        * webgpu/whlsl/ensure-proper-pointer-usage-expected.txt: Added.
+        * webgpu/whlsl/ensure-proper-pointer-usage.html: Added.
+        * webgpu/whlsl/js/test-harness.js:
+        (Harness):
+        (Harness.prototype.async.requestDevice):
+        (Harness.prototype.async.callTypedFunction):
+        (Harness.prototype.async.checkCompileFail):
+        * webgpu/whlsl/pointer-spec-tests.html:
+        * webgpu/whlsl/test-harness-test.html:
+
+2019-09-11  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: instrument WebGPUDevice instead of GPUCanvasContext
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/canvas/create-context-webgpu.html:
+        * inspector/canvas/create-context-webgpu-expected.txt:
+        * inspector/canvas/resources/create-context-utilities.js:
+        (createDetachedCanvas):
+        (createCSSCanvas):
+        (destroyCanvases):
+
+        * inspector/canvas/requestClientNodes.html: Added.
+        * inspector/canvas/requestClientNodes-expected.txt: Added.
+        * inspector/canvas/requestClientNodes-css.html: Renamed from LayoutTests/inspector/canvas/css-canvas-clients.html.
+        * inspector/canvas/requestClientNodes-css-expected.txt: Renamed from LayoutTests/inspector/canvas/css-canvas-clients-expected.txt.
+        * inspector/canvas/requestClientNodes-webgpu.html: Added.
+        * inspector/canvas/requestClientNodes-webgpu-expected.txt: Added.
+
+        * inspector/canvas/resolveContext-2d.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-2d.html.
+        * inspector/canvas/resolveContext-2d-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-2d-expected.txt.
+        * inspector/canvas/resolveContext-bitmaprenderer.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-bitmaprenderer.html.
+        * inspector/canvas/resolveContext-bitmaprenderer-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-bitmaprenderer-expected.txt.
+        * inspector/canvas/resolveContext-webgl.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl.html.
+        * inspector/canvas/resolveContext-webgl-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl-expected.txt.
+        * inspector/canvas/resolveContext-webgl2.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl2.html.
+        * inspector/canvas/resolveContext-webgl2-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl2-expected.txt.
+        * inspector/canvas/resolveContext-webgpu.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgpu.html.
+        * inspector/canvas/resolveContext-webgpu-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgpu-expected.txt.
+
+        * inspector/canvas/context-attributes-expected.txt:
+
+        * platform/gtk/TestExpectations:
+        * platform/ios/TestExpectations:
+        * platform/mac-wk1/TestExpectations:
+        * platform/mac/TestExpectations:
+        * platform/win/TestExpectations:
+        * platform/wincairo/TestExpectations:
+        * platform/wpe/TestExpectations:
+
+2019-09-11  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/cache-storage/cache-persistency.https.html
+        https://bugs.webkit.org/show_bug.cgi?id=201691
+
+        Reviewed by Alex Christensen.
+
+        Split cache-persistency.https.html into 2 tests (one for private session and one for
+        regular session) to avoid relying on legacy testRunner.setPrivateBrowsingEnabled_DEPRECATED().
+
+        * http/tests/cache-storage/cache-persistency-private-expected.txt: Added.
+        * http/tests/cache-storage/cache-persistency-private.html: Added.
+        * http/tests/cache-storage/cache-persistency.https-expected.txt:
+        * http/tests/cache-storage/cache-persistency.https.html:
+
+2019-09-11  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed, rolling out r249768.
+
+        Caused 4 API tests to assert, perf test failures, and layout
+        test crashes under ASan
+
+        Reverted changeset:
+
+        "Remove unnecessary abstractions around WebsiteDataStore"
+        https://bugs.webkit.org/show_bug.cgi?id=201655
+        https://trac.webkit.org/changeset/249768
+
+2019-09-11  Truitt Savell  <tsavell@apple.com>
+
+        Unreviewed, rolling out r249753.
+
+        caused inspector/canvas/shaderProgram-add-remove-webgl.html to
+        crash on all Mac platforms.
+
+        Reverted changeset:
+
+        "Web Inspector: Canvas: instrument WebGPUDevice instead of
+        GPUCanvasContext"
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+        https://trac.webkit.org/changeset/249753
+
+2019-09-11  Alex Christensen  <achristensen@webkit.org>
+
+        Remove unnecessary abstractions around WebsiteDataStore
+        https://bugs.webkit.org/show_bug.cgi?id=201655
+
+        Reviewed by Chris Dumez.
+
+        * platform/mac-wk2/TestExpectations:
+
+2019-09-11  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed, rolling out r249758.
+
+        Breaks the watchOS build.
+
+        Reverted changeset:
+
+        "[WHLSL] Ensure structs/arrays with pointers as fields are
+        disallowed"
+        https://bugs.webkit.org/show_bug.cgi?id=201525
+        https://trac.webkit.org/changeset/249758
+
+2019-09-11  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, re-skip service worker test that was unskipped in r249716
+
+        This test is still a flaky timeout.
+
+        * TestExpectations:
+
+2019-09-11  Frederic Wang  <fwang@igalia.com>
+
+        Bug 201603 - Synchronize MathML WPT tests against upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201603
+
+        Reviewed by Rob Buis.
+
+        * TestExpectations:
+        * platform/gtk/TestExpectations:
+        * platform/gtk/imported/w3c/web-platform-tests/mathml/relations/css-styling/lengths-2-expected.txt: Added.
+        * platform/gtk/imported/w3c/web-platform-tests/mathml/relations/css-styling/not-participating-to-parent-layout-expected.txt: Added.
+        * platform/gtk/imported/w3c/web-platform-tests/mathml/relations/css-styling/padding-border-margin/border-002-expected.txt: Added.
+        * platform/gtk/imported/w3c/web-platform-tests/mathml/relations/css-styling/padding-border-margin/padding-002-expected.txt: Added.
+        * platform/mac-wk1/TestExpectations:
+
+2019-09-11  Saam Barati  <sbarati@apple.com>
+
+        [WHLSL] Ensure structs/arrays with pointers as fields are disallowed
+        https://bugs.webkit.org/show_bug.cgi?id=201525
+
+        Reviewed by Robin Morisset.
+
+        This patch fixes a bug in our test harness where we forgot to wait for the gpu
+        device to load before running test harness tests. This patch fixes this oversight
+        and asserts that we have always finished loading before running a test.
+
+        * webgpu/whlsl/array-spec-tests.html:
+        * webgpu/whlsl/ensure-proper-pointer-usage-expected.txt: Added.
+        * webgpu/whlsl/ensure-proper-pointer-usage.html: Added.
+        * webgpu/whlsl/js/test-harness.js:
+        (Harness):
+        (Harness.prototype.async.requestDevice):
+        (Harness.prototype.async.callTypedFunction):
+        (Harness.prototype.async.checkCompileFail):
+        * webgpu/whlsl/pointer-spec-tests.html:
+        * webgpu/whlsl/test-harness-test.html:
+
+2019-09-10  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: instrument WebGPUDevice instead of GPUCanvasContext
+        https://bugs.webkit.org/show_bug.cgi?id=201650
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/canvas/create-context-webgpu.html:
+        * inspector/canvas/create-context-webgpu-expected.txt:
+        * inspector/canvas/resources/create-context-utilities.js:
+        (createDetachedCanvas):
+        (createCSSCanvas):
+        (destroyCanvases):
+
+        * inspector/canvas/requestClientNodes.html: Added.
+        * inspector/canvas/requestClientNodes-expected.txt: Added.
+        * inspector/canvas/requestClientNodes-css.html: Renamed from LayoutTests/inspector/canvas/css-canvas-clients.html.
+        * inspector/canvas/requestClientNodes-css-expected.txt: Renamed from LayoutTests/inspector/canvas/css-canvas-clients-expected.txt.
+        * inspector/canvas/requestClientNodes-webgpu.html: Added.
+        * inspector/canvas/requestClientNodes-webgpu-expected.txt: Added.
+
+        * inspector/canvas/resolveContext-2d.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-2d.html.
+        * inspector/canvas/resolveContext-2d-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-2d-expected.txt.
+        * inspector/canvas/resolveContext-bitmaprenderer.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-bitmaprenderer.html.
+        * inspector/canvas/resolveContext-bitmaprenderer-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-bitmaprenderer-expected.txt.
+        * inspector/canvas/resolveContext-webgl.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl.html.
+        * inspector/canvas/resolveContext-webgl-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl-expected.txt.
+        * inspector/canvas/resolveContext-webgl2.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl2.html.
+        * inspector/canvas/resolveContext-webgl2-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgl2-expected.txt.
+        * inspector/canvas/resolveContext-webgpu.html: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgpu.html.
+        * inspector/canvas/resolveContext-webgpu-expected.txt: Renamed from LayoutTests/inspector/canvas/resolveCanvasContext-webgpu-expected.txt.
+
+        * inspector/canvas/context-attributes-expected.txt:
+
+        * platform/gtk/TestExpectations:
+        * platform/ios/TestExpectations:
+        * platform/mac-wk1/TestExpectations:
+        * platform/mac/TestExpectations:
+        * platform/win/TestExpectations:
+        * platform/wincairo/TestExpectations:
+        * platform/wpe/TestExpectations:
+
+2019-09-10  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Remove legacy CodeMirror based pretty printers
+        https://bugs.webkit.org/show_bug.cgi?id=201624
+
+        Reviewed by Devin Rousso.
+
+        * inspector/codemirror/prettyprinting-css-expected.txt: Removed.
+        * inspector/codemirror/prettyprinting-css.html: Removed.
+        * inspector/codemirror/prettyprinting-javascript-expected.txt: Removed.
+        * inspector/codemirror/prettyprinting-javascript.html: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/basic-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/basic.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/calc-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/calc.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/gradient-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/gradient.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/keyframes-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/keyframes.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/media-query-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/media-query.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/selectors-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/selectors.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/wrapping-expected.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/css-tests/wrapping.css: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/block-comment-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/block-comment.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/do-while-loop-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/do-while-loop.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/do-while-within-if-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/do-while-within-if.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/if-followed-by-while-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/if-followed-by-while.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/if-while-within-do-while-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/if-while-within-do-while.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/single-statement-blocks-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/single-statement-blocks.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/switch-case-default-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/switch-case-default.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/unary-binary-operators-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/unary-binary-operators.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/while-within-do-while-expected.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/javascript-tests/while-within-do-while.js: Removed.
+        * inspector/codemirror/resources/prettyprinting/utilities.js: Removed.
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/cookies/private-cookie-storage.html
+        https://bugs.webkit.org/show_bug.cgi?id=201648
+
+        Reviewed by Alex Christensen.
+
+        Use testRunner.setShouldSwapToEphemeralSessionOnNextNavigation() / setShouldSwapToDefaultSessionOnNextNavigation() to
+        truly switch session on WebKit2 instead of using the testRunner.setPrivateBrowsingEnabled_DEPRECATED() hack.
+
+        * http/tests/cookies/private-cookie-storage-expected.txt:
+        * http/tests/cookies/private-cookie-storage.html:
+        * http/tests/cookies/resources/cookies-test-pre.js:
+        (testCookies):
+
+2019-09-10  Ryan Haddad  <ryanhaddad@apple.com>
+
+        [iOS] Layout Test imported/w3c/web-platform-tests/service-workers/service-worker/registration-mime-types.https.html is flaky
+        https://bugs.webkit.org/show_bug.cgi?id=201190
+
+        Unreviewed test gardening.
+
+        * platform/ios/TestExpectations:
+
+2019-09-10  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Layout Test imported/w3c/web-platform-tests/service-workers/service-worker/fetch-canvas-tainting-video.https.html is a flaky timeout
+        https://bugs.webkit.org/show_bug.cgi?id=201665
+
+        Unreviewed test gardening.
+
+        This test was unskipped as part of r249716, but it is still frequently failing.
+
+        * TestExpectations: Skip the test again.
+
+2019-09-10  Jiewen Tan  <jiewen_tan@apple.com>
+
+        REGRESSION: [ Catalina WK2 ] http/wpt/webauthn/public-key-credential-create-success-u2f.https.html is failing
+        https://bugs.webkit.org/show_bug.cgi?id=201620
+        <rdar://problem/51524958>
+
+        Reviewed by Alex Christensen.
+
+        * http/wpt/webauthn/public-key-credential-create-success-u2f.https.html:
+        Remove the timeout value given those tests should never time out.
+        * platform/mac-wk2/TestExpectations:
+        Change the test expectation to Pass.
+
+2019-09-10  Said Abou-Hallawa  <sabouhallawa@apple.com>
+
+        REGRESSION (r249460): LayoutTests/webgpu/viewport-scissor-rect-triangle-strip.html is Failing
+        https://bugs.webkit.org/show_bug.cgi?id=201478
+
+        Reviewed by Simon Fraser.
+
+        -- Revert r249460 which changed drawGreenAndBlueCheckerboardInSoftware().
+        -- Remove the orientation bit from webgpu/resources/blue-checkered.png
+           so drawing it is not affected by r249364.
+
+        * webgpu/js/webgpu-functions.js:
+        (drawGreenAndBlueCheckerboardInSoftware):
+        * webgpu/resources/blue-checkered.png:
+
+2019-09-10  Nikolas Zimmermann  <zimmermann@kde.org>
+
+        Test SVGViewSpec behavior across page-loads with different anchors
+        https://bugs.webkit.org/show_bug.cgi?id=201536
+
+        Reviewed by Rob Buis.
+
+        Added a new layout test to verify that navigating to different anchors within the same
+        external SVG does not cause reloads. Instead scrollToAnchor() is used which causes an
+        in-place navigation in the same document. The new test verifies that the SVGSVGElement
+        is preserved when navigating between anchors, which indicates that no new document was
+        created. Verify that the SVGViewSpec API works as intended, across navigations.
+
+        * svg/dom/SVGViewSpec-multiple-views-expected.txt: Added.
+        * svg/dom/SVGViewSpec-multiple-views.html: Added.
+        * svg/dom/resources/multiple-view-elements.svg: Added.
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, re-skip service worker test that was unskipped in r249716.
+
+        This test is still flaky.
+
+        * TestExpectations:
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, rolling out r249724.
+
+        Patch included a lot more changes than intended
+
+        Reverted changeset:
+
+        "Unreviewed, re-skip service worker test that was unskipped in
+        r249716."
+        https://trac.webkit.org/changeset/249724
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, re-skip service worker test that was unskipped in r249716.
+
+        This test is still flaky.
+
+        * TestExpectations:
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Re-sync workers web platform tests from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201629
+
+        Reviewed by Alex Christensen.
+
+        * TestExpectations:
+        * tests-options.json:
+
+2019-09-10  Youenn Fablet  <youenn@apple.com>
+
+        Remove MediaStreamPrivate::scheduleDeferredTask
+        https://bugs.webkit.org/show_bug.cgi?id=200975
+        <rdar://problem/55113418>
+
+        Reviewed by Eric Carlson.
+
+        * fast/mediastream/media-stream-track-source-failure.html:
+        page mediaState may be updated synchronously.
+        Get it just before failing a capture track to verify that the state is being updated after the track is stopped.
+
+2019-09-10  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, unskip / rebaseline a few service worker tests
+        https://bugs.webkit.org/show_bug.cgi?id=201626
+
+        * TestExpectations:
+
+2019-09-10  Frederic Wang  <fwang@igalia.com>
+
+        Ensure tests for legacy features are in LayoutTests/mathml
+        https://bugs.webkit.org/show_bug.cgi?id=201604
+
+        Reviewed by Rob Buis.
+
+        This patch copies MathML WPT tests verifying legacy support for features removed from MathML
+        Core. These tests will be overriden or removed in a future WPT synchronization, so we need
+        to keep local copies to check these legacy features when the "MathML Core" option is
+        disabled.
+
+        * TestExpectations: Copy expectation.
+        * mathml/non-core/frac-linethickness-001-expected.html: Added.
+        * mathml/non-core/frac-linethickness-001.html: Added.
+        * mathml/non-core/frac-linethickness-002-expected.html: Added.
+        * mathml/non-core/frac-linethickness-002.html: Added.
+        * mathml/non-core/frac-numalign-denomalign-001-expected.html: Added.
+        * mathml/non-core/frac-numalign-denomalign-001.html: Added.
+        * mathml/non-core/lengths-1-expected.html: Added.
+        * mathml/non-core/lengths-1.html: Added.
+        * mathml/non-core/lengths-2-expected.html: Added.
+        * mathml/non-core/lengths-2.html: Added.
+        * mathml/non-core/lengths-3-expected.txt: Added.
+        * mathml/non-core/lengths-3.html: Added.
+        * platform/gtk/TestExpectations: Copy expectation.
+        * platform/win/TestExpectations: Add failure expectations.
+
+2019-09-10  Ryosuke Niwa  <rniwa@webkit.org>
+
+        Option + arrow moves caret past whitespace on iOS
+        https://bugs.webkit.org/show_bug.cgi?id=201575
+
+        Reviewed by Wenson Hsieh.
+
+        Added a new test for moving caret by word granularity on iOS.
+
+        * editing/selection/ios/move-by-word-with-keyboard-expected.txt: Added.
+        * editing/selection/ios/move-by-word-with-keyboard.html: Added.
+        * editing/selection/ios/select-non-editable-text-using-keyboard-expected.txt: Rebaselined.
+        * editing/selection/ios/select-non-editable-text-using-keyboard.html: Updated the expected
+        selection string due to the behavior change. Also fixed a bug that some test cases were
+        not waiting for a secondary selectionchange event that happens after an extra selection
+        update with character granularity introduced in r247524.
+
+2019-09-09  Chris Dumez  <cdumez@apple.com>
+
+        REGRESSION: http/tests/resourceLoadStatistics/do-not-capture-statistics-for-simple-top-navigations.html is frequently timing out on iOS EWS bots
+        https://bugs.webkit.org/show_bug.cgi?id=201550
+
+        Reviewed by Alex Christensen.
+
+        Update test to do checks on a timer if its call to testRunner.statisticsNotifyObserver() is a no-op
+        due to having no statistics to send to the network process.
+
+        * http/tests/resourceLoadStatistics/do-not-capture-statistics-for-simple-top-navigations.html:
+
+2019-09-09  Joonghun Park  <pjh0718@gmail.com>
+
+        getComputedStyle for line-height: normal should return the keyword instead of a length
+        https://bugs.webkit.org/show_bug.cgi?id=201296
+
+        Reviewed by Ryosuke Niwa.
+
+        Per https://github.com/w3c/csswg-drafts/issues/3749,
+        Gecko and Blink has this behavior already.
+
+        This patch makes WebKit has the same behavior with them.
+
+        * css3/calc/line-height-expected.txt:
+        * fast/css/font-calculated-value-expected.txt:
+        * fast/css/font-calculated-value.html:
+        * fast/css/font-shorthand-from-longhands-expected.txt:
+        * fast/css/font-shorthand-from-longhands.html:
+        * fast/css/font-shorthand-line-height-expected.txt:
+        * fast/css/font-shorthand-line-height.html:
+        * fast/css/getComputedStyle/computed-style-expected.txt:
+        * fast/css/getComputedStyle/computed-style-font-expected.txt:
+        * fast/css/getComputedStyle/computed-style-font.html:
+        * fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * fast/ruby/ruby-line-height-expected.txt:
+        * fast/ruby/ruby-line-height.html:
+        * fast/text-autosizing/ios/idempotentmode/line-height-boosting-expected.txt:
+        * fast/text-autosizing/ios/idempotentmode/line-height-boosting.html:
+        * fast/text-autosizing/ios/line-height-text-autosizing-expected.txt:
+        * fast/text-autosizing/ios/line-height-text-autosizing.html:
+        * media/track/track-cue-rendering-on-resize-expected.txt:
+        * media/track/track-cue-rendering-on-resize.html:
+        * platform/gtk/fast/css/css2-system-fonts-expected.txt:
+        * platform/gtk/fast/css/getComputedStyle/computed-style-expected.txt:
+        * platform/gtk/fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * platform/gtk/svg/css/getComputedStyle-basic-expected.txt:
+        * platform/ios/TestExpectations:
+        * platform/ios/css3/calc/line-height-expected.txt:
+        * platform/ios/fast/css/css2-system-fonts-expected.txt:
+        * platform/ios/fast/css/getComputedStyle/computed-style-expected.txt:
+        * platform/ios/fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * platform/ios/svg/css/getComputedStyle-basic-expected.txt:
+        * platform/mac-sierra/fast/css/getComputedStyle/computed-style-expected.txt:
+        * platform/mac-sierra/fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * platform/mac-sierra/svg/css/getComputedStyle-basic-expected.txt:
+        * platform/mac/fast/css/css2-system-fonts-expected.txt:
+        * platform/mac/fast/css/getComputedStyle/computed-style-expected.txt:
+        * platform/mac/fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * platform/mac/fast/text-autosizing/ios/line-height-text-autosizing-expected.txt:
+        * platform/mac/svg/css/getComputedStyle-basic-expected.txt:
+        * platform/wincairo/css3/calc/line-height-expected.txt:
+        * platform/wincairo/fast/css/css2-system-fonts-expected.txt:
+        * platform/wpe/fast/css/css2-system-fonts-expected.txt:
+        * platform/wpe/fast/css/getComputedStyle/computed-style-expected.txt:
+        * platform/wpe/fast/css/getComputedStyle/computed-style-without-renderer-expected.txt:
+        * platform/wpe/svg/css/getComputedStyle-basic-expected.txt:
+        * svg/css/getComputedStyle-basic-expected.txt:
+
+2019-09-09  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed test gardening, update test expectations for rdar://problem/51229282.
+
+        * platform/mac-wk1/TestExpectations:
+
+2019-09-09  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed test gardening, update test expectations for rdar://problem/51766135.
+
+        * platform/ios/TestExpectations:
+
+2019-09-09  Ryan Haddad  <ryanhaddad@apple.com>
+
+        REGRESSION(r236540-r236595): ASSERTION FAILED: !frameView || !frameView->isPainting() on plugins/window-open.html
+        https://bugs.webkit.org/show_bug.cgi?id=199089
+
+        Unreviewed test gardening.
+
+        * platform/mac-wk2/TestExpectations: Skip the test.
+
+2019-09-09  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/adClickAttribution/conversion-disabled-in-ephemeral-session.html
+        https://bugs.webkit.org/show_bug.cgi?id=201596
+
+        Reviewed by Alex Christensen.
+
+        Update layout test to use testRunner.setShouldSwapToEphemeralSessionOnNextNavigation() &
+        testRunner.setShouldSwapToDefaultSessionOnNextNavigation() instead of the legacy
+        testRunner.setPrivateBrowsingEnabled_DEPRECATED(). The test needed some extra steps to
+        navigate whenever we switch session but it is a lot more realistic and is really switching
+        session on WebKit2. The testRunner.setPrivateBrowsingEnabled_DEPRECATED() was not truly
+        switching session, just making the document think it did.
+
+        * http/tests/adClickAttribution/conversion-disabled-in-ephemeral-session.html:
+
+2019-09-09  Chris Dumez  <cdumez@apple.com>
+
+        Resync service workers WPT tests from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201589
+
+        Reviewed by Youenn Fablet.
+
+        * TestExpectations:
+
+2019-09-10  Simon Fraser  <simon.fraser@apple.com>
+
+        Attempt to make this test not flakey.
+        https://bugs.webkit.org/show_bug.cgi?id=201482
+
+        * legacy-animation-engine/compositing/transitions/add-remove-transition.html:
+
+2019-09-09  Jiewen Tan  <jiewen_tan@apple.com>
+
+        Layout Test http/wpt/webauthn/public-key-credential-create-failure-u2f-silent.https.html is flaky
+        https://bugs.webkit.org/show_bug.cgi?id=198810
+
+        Reviewed by Dewei Zhu.
+
+        * http/wpt/webauthn/public-key-credential-create-failure-u2f-silent.https.html:
+        Removed the timeout value given these tests should report the exception immediately.
+
+2019-09-09  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/workers/service/basic-register.html
+        https://bugs.webkit.org/show_bug.cgi?id=201590
+
+        Reviewed by Youenn Fablet.
+
+        Split the layout test in 2 to test both the default and the ephemeral session without relying on the
+        testRunner.setPrivateBrowsingEnabled_DEPRECATED() hack.
+
+        * http/tests/workers/service/basic-register-expected.txt:
+        * http/tests/workers/service/basic-register-private-expected.txt: Copied from LayoutTests/http/tests/workers/service/basic-register-expected.txt.
+        * http/tests/workers/service/basic-register-private.html: Added.
+        * http/tests/workers/service/resources/basic-register.js:
+        (async.test):
+
+2019-09-09  Rob Buis  <rbuis@igalia.com>
+
+        [GTK][WPE] Remove attributes deprecated from MathML3
+        https://bugs.webkit.org/show_bug.cgi?id=197492
+
+        Reviewed by Frédéric Wang.
+
+        Disable the MathML Core flag for tests assuming MathML3 behavior.
+
+        * mathml/presentation/attributes-background-color-expected.html:
+        * mathml/presentation/attributes-background-color.html:
+        * mathml/presentation/attributes-mathvariant.html:
+        * mathml/presentation/direction-overall.html:
+        * mathml/presentation/mstyle-css-attributes.html:
+
+2019-09-08  Saam Barati  <sbarati@apple.com>
+
+        [WHLSL] Add back a version of the property resolver
+        https://bugs.webkit.org/show_bug.cgi?id=201251
+
+        Reviewed by Robin Morisset.
+
+        * webgpu/whlsl/property-evaluation-order-expected.txt: Added.
+        * webgpu/whlsl/property-evaluation-order.html: Added.
+
+2019-09-07  Chris Dumez  <cdumez@apple.com>
+
+        Add support for postMessage buffering between the service worker and window
+        https://bugs.webkit.org/show_bug.cgi?id=201169
+
+        Reviewed by Youenn Fablet.
+
+        * TestExpectations:
+        Unskip test that is no longer timing out.
+
+        * resources/testharnessreport.js:
+        (self.testRunner.add_completion_callback):
+        Use testRunner.forceImmediateCompletion() instead of notifyDone() for WPT tests.
+        testRunner.notifyDone() does not work in case of load error or when the load
+        does not finish. The WPT test was timing out because the load does not finish for
+        testing purposes.
+
+2019-09-07  Chris Dumez  <cdumez@apple.com>
+
+        Rewrite http/tests/workers/service/serviceworker-private-browsing.https.html as an API test
+        https://bugs.webkit.org/show_bug.cgi?id=201574
+
+        Reviewed by Alex Christensen.
+
+        Drop legacy test which was replaced by an API test.
+
+        * http/tests/workers/service/serviceworker-private-browsing-worker.js: Removed.
+        * http/tests/workers/service/serviceworker-private-browsing.https-expected.txt: Removed.
+        * http/tests/workers/service/serviceworker-private-browsing.https.html: Removed.
+
+2019-09-07  Chris Dumez  <cdumez@apple.com>
+
+        Rewrite storage/domstorage/localstorage/private-browsing-affects-storage.html as an API test
+        https://bugs.webkit.org/show_bug.cgi?id=201547
+
+        Reviewed by Alex Christensen.
+
+        Drop outdated test.
+
+        * storage/domstorage/localstorage/private-browsing-affects-storage.html: Removed.
+        * storage/domstorage/localstorage/resources/private-browsing-1.html: Removed.
+        * storage/domstorage/localstorage/resources/private-browsing-2.html: Removed.
+
+2019-09-07  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed, rolling out r249353.
+
+        The test for this change is a flaky failure.
+
+        Reverted changeset:
+
+        "Add support for postMessage buffering between the service
+        worker and window"
+        https://bugs.webkit.org/show_bug.cgi?id=201169
+        https://trac.webkit.org/changeset/249353
+
+2019-09-07  Alex Christensen  <achristensen@webkit.org>
+
+        Deprecate WKContextGetWebsiteDataStore
+        https://bugs.webkit.org/show_bug.cgi?id=200050
+
+        Reviewed by Geoff Garen.
+
+        Rebase some accessibility tests that were printing the SessionID since we're using SessionID 2 for testing now.
+
+        * accessibility/mac/document-attributes-expected.txt:
+        * platform/mac/accessibility/parent-delete-expected.txt:
+
+2019-09-06  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: CSS Formatter: the closing } of nested @media aren't indented
+        https://bugs.webkit.org/show_bug.cgi?id=201560
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/formatting/resources/css-tests/media-query.css:
+        * inspector/formatting/resources/css-tests/media-query-expected.css:
+
+2019-09-06  Wenson Hsieh  <wenson_hsieh@apple.com>
+
+        Incorrect selection rect revealed after pasting images in a contenteditable element
+        https://bugs.webkit.org/show_bug.cgi?id=201549
+        <rdar://problem/50956429>
+
+        Reviewed by Simon Fraser.
+
+        Add a couple of new layout tests.
+
+        * editing/pasteboard/do-not-reveal-selection-after-programmatic-scroll-expected.txt: Added.
+        * editing/pasteboard/do-not-reveal-selection-after-programmatic-scroll.html: Added.
+
+        This test verifies that we don't try to scroll to reveal the caret after pasting, if the scroll position was
+        changed before the images finished loading.
+
+        * editing/pasteboard/reveal-selection-after-pasting-images-expected.txt: Added.
+        * editing/pasteboard/reveal-selection-after-pasting-images.html: Added.
+        * platform/ios/editing/pasteboard/reveal-selection-after-pasting-images-expected.txt: Added.
+
+        This test verifies that we reveal the caret after loading multiple pasted images in a selection, and dispatch a
+        scroll event in the process.
+
+2019-09-06  Justin Fan  <justin_fan@apple.com>
+
+        [WebGPU] Update several interface and enum names to match spec
+        https://bugs.webkit.org/show_bug.cgi?id=201564
+
+        Reviewed by Dean Jackson.
+
+        Rename GPUShaderStageBit -> GPUShaderStage.
+        Rename GPUColorWriteBits -> GPUColorWrite.
+        Rename TRANSFER_SRC/DST -> COPY_SRC/DST.
+
+        * webgpu/bind-groups.html:
+        * webgpu/blend-color-triangle-strip.html:
+        * webgpu/blit-commands.html:
+        * webgpu/buffer-errors.html:
+        * webgpu/color-write-mask-triangle-strip.html:
+        * webgpu/pipeline-layouts.html:
+        * webgpu/render-pipelines.html:
+        * webgpu/texture-triangle-strip.html:
+        * webgpu/textures-textureviews.html:
+        * webgpu/whlsl/arbitrary-vertex-attribute-locations.html:
+        * webgpu/whlsl/buffer-fragment.html:
+        * webgpu/whlsl/buffer-length.html:
+        * webgpu/whlsl/buffer-vertex.html:
+        * webgpu/whlsl/checker-should-set-type-of-read-modify-write-variables.html:
+        * webgpu/whlsl/compute.html:
+        * webgpu/whlsl/dereference-pointer-should-type-check.html:
+        * webgpu/whlsl/device-proper-type-checker.html:
+        * webgpu/whlsl/do-while-loop-break.html:
+        * webgpu/whlsl/do-while-loop-continue.html:
+        * webgpu/whlsl/do-while-loop.html:
+        * webgpu/whlsl/dont-crash-parsing-enum.html:
+        * webgpu/whlsl/dot-expressions.html:
+        * webgpu/whlsl/duplicate-types-should-not-produce-duplicate-ctors.html:
+        * webgpu/whlsl/ensure-proper-variable-lifetime-2.html:
+        * webgpu/whlsl/ensure-proper-variable-lifetime-3.html:
+        * webgpu/whlsl/ensure-proper-variable-lifetime.html:
+        * webgpu/whlsl/huge-array.html:
+        * webgpu/whlsl/js/test-harness.js:
+        (Harness.prototype.async.callTypedFunction):
+        (Harness.prototype._clearResults):
+        (Harness.prototype._setUpArguments):
+        * webgpu/whlsl/loops-break.html:
+        * webgpu/whlsl/loops-continue.html:
+        * webgpu/whlsl/loops.html:
+        * webgpu/whlsl/make-array-reference.html:
+        * webgpu/whlsl/matrix-2.html:
+        * webgpu/whlsl/matrix-alignment.html:
+        * webgpu/whlsl/matrix-memory-layout.html:
+        * webgpu/whlsl/matrix.html:
+        * webgpu/whlsl/nested-dot-expression-rvalue.html:
+        * webgpu/whlsl/nested-loop.html:
+        * webgpu/whlsl/oob-access.html:
+        * webgpu/whlsl/read-modify-write-high-zombies.html:
+        * webgpu/whlsl/return-local-variable.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-10.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-11.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-12.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-13.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-14.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-15.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-16.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-17.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-18.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-19.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-2.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-20.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-21.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-22.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-23.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-24.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-25.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-26.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-27.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-3.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-4.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-5.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-6.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-7.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-8.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules-9.html:
+        * webgpu/whlsl/separate-shader-modules/separate-shader-modules.html:
+        * webgpu/whlsl/simple-arrays.html:
+        * webgpu/whlsl/store-to-property-updates-properly.html:
+        * webgpu/whlsl/textures-load.html:
+        * webgpu/whlsl/textures-sample-bias.html:
+        * webgpu/whlsl/textures-sample-grad.html:
+        * webgpu/whlsl/textures-sample-level.html:
+        * webgpu/whlsl/textures-sample.html:
+        * webgpu/whlsl/two-dimensional-array.html:
+        * webgpu/whlsl/while-loop-break.html:
+        * webgpu/whlsl/while-loop-continue.html:
+        * webgpu/whlsl/whlsl.html:
+        * webgpu/whlsl/zero-initialize-values-2.html:
+        * webgpu/whlsl/zero-initialize-values.html:
+
+2019-09-06  Ryan Haddad  <ryanhaddad@apple.com>
+
+        REGRESSION: http/tests/resourceLoadStatistics/do-not-capture-statistics-for-simple-top-navigations.html is frequently timing out on iOS EWS bots
+        https://bugs.webkit.org/show_bug.cgi?id=201550
+
+        Unreviewed test gardening.
+
+        * platform/ios-wk2/TestExpectations: Mark the test as flaky to speed up EWS while we investigate the root cause.
+
+2019-09-06  Said Abou-Hallawa  <sabouhallawa@apple.com>
+
+        REGRESSION (r249367): m_decodingPromises grows indefinitely until ImageLoader destruction
+        https://bugs.webkit.org/show_bug.cgi?id=201402
+
+        Reviewed by Youenn Fablet and Daniel Bates.
+
+        * fast/images/decode-resolve-reject-no-leak-expected.txt: Added.
+        * fast/images/decode-resolve-reject-no-leak.html: Added.
+
+2019-09-06  Said Abou-Hallawa  <sabouhallawa@apple.com>
+
+        Prefer null namespace 'href' over 'xlink:href' on SVG elements
+        https://bugs.webkit.org/show_bug.cgi?id=195802
+
+        Reviewed by Youenn Fablet.
+
+        * svg/custom/href-xlink-href-gradient-element-expected.svg: Added.
+        * svg/custom/href-xlink-href-gradient-element.svg: Added.
+        * svg/custom/href-xlink-href-use-element-expected.svg: Added.
+        * svg/custom/href-xlink-href-use-element.svg: Added.
+
+2019-09-05  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Tail Deleted Frames shown in Web Inspector are sometimes incorrect (Shadow Chicken)
+        https://bugs.webkit.org/show_bug.cgi?id=201366
+
+        Reviewed by Saam Barati.
+
+        * inspector/debugger/tail-deleted-frames-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-from-vm-entry-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-from-vm-entry.html: Removed.
+        * inspector/debugger/tail-deleted-frames-this-value-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-this-value.html: Removed.
+        * inspector/debugger/tail-deleted-frames.html: Removed.
+        Remove legacy tests that are difficult to read.
+
+        * inspector/debugger/tail-deleted-frames/resources/stack-trace-utilities.js: Added.
+        (TestPage.registerInitializer.window.getAsyncStackTrace):
+        (TestPage.registerInitializer.async.logThisObject):
+        (TestPage.registerInitializer.async.logScope):
+        (TestPage.registerInitializer.async.logCallFrame):
+        (TestPage.registerInitializer):
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-frames.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-native-tail-deleted-calls.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-tail-deleted-frames.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-scopes.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-this-value.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-vm-entry.js: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-frames-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-frames.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-tail-deleted-frames-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-tail-deleted-frames.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-scopes-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-scopes.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-this-value-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-this-value.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-vm-entry-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-vm-entry.html: Added.
+        Include modern tests that are easier to read.
+
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-native-tail-deleted-calls-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-native-tail-deleted-calls.html: Added.
+        Include a test that is known to produce bad output, since we have reproductive steps.
+
+        * platform/mac/TestExpectations:
+        Updated pathes.
+
+2019-09-06  Darryl Pogue  <darryl@dpogue.ca>
+
+        REGRESSION(iOS 12): Keyboard dismissal leaves WKWebView viewport-fit=cover content offscreen
+        https://bugs.webkit.org/show_bug.cgi?id=192564
+
+        Reviewed by Tim Horton.
+
+        Added tests to verify scrolling properly adapts to the keyboard insets on iOS.
+
+        * fast/scrolling/ios/scrollview-adjusts-to-keyboard-insets-expected.txt: Added.
+        * fast/scrolling/ios/scrollview-adjusts-to-keyboard-insets.html: Added.
+
+2019-09-06  Said Abou-Hallawa  <sabouhallawa@apple.com>
+
+        Unreviewed, fix typo in r249216
+
+        Also change the <desc> element to be <text> element so the purpose of 
+        the test is visible once it is opened.
+
+        * svg/custom/href-svg-namespace-animate-target-expected.svg:
+        * svg/custom/href-svg-namespace-animate-target.svg:
+
+2019-09-06  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Unreviewed, rolling out r249566.
+
+        Causes inspector layout test crashes under GuardMalloc
+
+        Reverted changeset:
+
+        "Tail Deleted Frames shown in Web Inspector are sometimes
+        incorrect (Shadow Chicken)"
+        https://bugs.webkit.org/show_bug.cgi?id=201366
+        https://trac.webkit.org/changeset/249566
+
+2019-09-06  Rob Buis  <rbuis@igalia.com>
+
+        Implement MathML DOM
+        https://bugs.webkit.org/show_bug.cgi?id=200470
+
+        Reviewed by Ryosuke Niwa.
+
+        Extend existing tests to also test focus for MathML. Add a standalone test for MathML
+        based on svg/custom/tabindex-order.html. Add a test for mouse clicks and focus handling
+        based on svg/custom/focus-event-handling.xhtml.
+
+        * fast/dom/tabindex-defaults-expected.txt:
+        * fast/dom/tabindex-defaults.html:
+        * mathml/focus-event-handling-expected.txt: Added.
+        * mathml/focus-event-handling.html: Added.
+        * mathml/tabindex-order-expected.txt: Added.
+        * mathml/tabindex-order.html: Added.
+        * platform/ios-wk2/TestExpectations:
+
+2019-09-05  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Crashes when intercept response is a 404
+        https://bugs.webkit.org/show_bug.cgi?id=201514
+
+        Reviewed by Alex Christensen.
+
+        * http/tests/inspector/network/local-resource-override-basic-expected.txt:
+        * http/tests/inspector/network/local-resource-override-basic.html:
+        Add a test for a 404 response override.
+
+2019-09-05  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Tail Deleted Frames shown in Web Inspector are sometimes incorrect (Shadow Chicken)
+        https://bugs.webkit.org/show_bug.cgi?id=201366
+
+        Reviewed by Saam Barati.
+
+        * inspector/debugger/tail-deleted-frames-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-from-vm-entry-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-from-vm-entry.html: Removed.
+        * inspector/debugger/tail-deleted-frames-this-value-expected.txt: Removed.
+        * inspector/debugger/tail-deleted-frames-this-value.html: Removed.
+        * inspector/debugger/tail-deleted-frames.html: Removed.
+        Remove legacy tests that are difficult to read.
+
+        * inspector/debugger/tail-deleted-frames/resources/stack-trace-utilities.js: Added.
+        (TestPage.registerInitializer.window.getAsyncStackTrace):
+        (TestPage.registerInitializer.async.logThisObject):
+        (TestPage.registerInitializer.async.logScope):
+        (TestPage.registerInitializer.async.logCallFrame):
+        (TestPage.registerInitializer):
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-frames.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-native-tail-deleted-calls.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-intermediate-tail-deleted-frames.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-scopes.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-this-value.js: Added.
+        * inspector/debugger/tail-deleted-frames/resources/tail-deleted-frames-vm-entry.js: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-frames-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-frames.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-tail-deleted-frames-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-tail-deleted-frames.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-scopes-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-scopes.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-this-value-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-this-value.html: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-vm-entry-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-vm-entry.html: Added.
+        Include modern tests that are easier to read.
+
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-native-tail-deleted-calls-expected.txt: Added.
+        * inspector/debugger/tail-deleted-frames/tail-deleted-frames-intermediate-native-tail-deleted-calls.html: Added.
+        Include a test that is known to produce bad output, since we have reproductive steps.
+
+        * platform/mac/TestExpectations:
+        Updated pathes.
+
+2019-09-06  Andres Gonzalez  <andresg_22@apple.com>
+
+        AccessibilityRenderObject::setSelectedTextRange fails to set the selection passed an empty line.
+        https://bugs.webkit.org/show_bug.cgi?id=201518
+        <rdar://problem/54835122>
+
+        Reviewed by Ryosuke Niwa.
+
+        Extended this test to set the selection range passed an empty line.
+        * accessibility/set-selected-text-range-after-newline-expected.txt:
+        * accessibility/set-selected-text-range-after-newline.html:
+
+2019-09-05  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in js-test.js
+        https://bugs.webkit.org/show_bug.cgi?id=201522
+
+        Reviewed by Alex Christensen.
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in js-test.js.
+        Instead, use the new useEphemeralSession WKTR flag added in r249542.
+
+        * resources/js-test.js:
+        * storage/indexeddb/aborted-versionchange-closes-private.html:
+        * storage/indexeddb/basics-private.html:
+        * storage/indexeddb/clone-exception-private.html:
+        * storage/indexeddb/closed-cursor-private.html:
+        * storage/indexeddb/connection-leak-private.html:
+        * storage/indexeddb/create-and-remove-object-store-private.html:
+        * storage/indexeddb/create-object-store-options-private.html:
+        * storage/indexeddb/createIndex-after-failure-private.html:
+        * storage/indexeddb/createObjectStore-name-argument-required-private.html:
+        * storage/indexeddb/createObjectStore-null-name-private.html:
+        * storage/indexeddb/cursor-added-bug-private.html:
+        * storage/indexeddb/cursor-advance-private.html:
+        * storage/indexeddb/cursor-basics-private.html:
+        * storage/indexeddb/cursor-cast-private.html:
+        * storage/indexeddb/cursor-continue-dir-private.html:
+        * storage/indexeddb/cursor-continue-private.html:
+        * storage/indexeddb/cursor-continue-validity-private.html:
+        * storage/indexeddb/cursor-delete-private.html:
+        * storage/indexeddb/cursor-finished-private.html:
+        * storage/indexeddb/cursor-inconsistency-private.html:
+        * storage/indexeddb/cursor-index-delete-private.html:
+        * storage/indexeddb/cursor-key-order-private.html:
+        * storage/indexeddb/cursor-leak-private.html:
+        * storage/indexeddb/cursor-overloads-private.html:
+        * storage/indexeddb/cursor-prev-no-duplicate-private.html:
+        * storage/indexeddb/cursor-primary-key-order-private.html:
+        * storage/indexeddb/cursor-properties-private.html:
+        * storage/indexeddb/cursor-request-cycle-private.html:
+        * storage/indexeddb/cursor-reverse-bug-private.html:
+        * storage/indexeddb/cursor-skip-deleted-private.html:
+        * storage/indexeddb/cursor-update-private.html:
+        * storage/indexeddb/cursor-update-value-argument-required-private.html:
+        * storage/indexeddb/cursor-value-private.html:
+        * storage/indexeddb/database-basics-private.html:
+        * storage/indexeddb/database-close-private.html:
+        * storage/indexeddb/database-closepending-flag-private.html:
+        * storage/indexeddb/database-deletepending-flag-private.html:
+        * storage/indexeddb/database-name-undefined-private.html:
+        * storage/indexeddb/database-odd-names-private.html:
+        * storage/indexeddb/database-quota-private.html:
+        * storage/indexeddb/database-wrapper-private.html:
+        * storage/indexeddb/delete-closed-database-object-private.html:
+        * storage/indexeddb/delete-in-upgradeneeded-close-in-open-success-private.html:
+        * storage/indexeddb/delete-in-upgradeneeded-close-in-versionchange-private.html:
+        * storage/indexeddb/delete-range-private.html:
+        * storage/indexeddb/deleteIndex-bug110792-private.html:
+        * storage/indexeddb/deleteIndex-private.html:
+        * storage/indexeddb/deleteObjectStore-name-argument-required-private.html:
+        * storage/indexeddb/deleteObjectStore-null-name-private.html:
+        * storage/indexeddb/deleted-objects-private.html:
+        * storage/indexeddb/deletedatabase-blocked-private.html:
+        * storage/indexeddb/deletedatabase-delayed-by-open-and-versionchange-private.html:
+        * storage/indexeddb/deletedatabase-not-blocked-private.html:
+        * storage/indexeddb/deletedatabase-transaction-private.html:
+        * storage/indexeddb/dont-commit-on-blocked-private.html:
+        * storage/indexeddb/dont-wedge-private.html:
+        * storage/indexeddb/duplicates-private.html:
+        * storage/indexeddb/error-causes-abort-by-default-private.html:
+        * storage/indexeddb/events-private.html:
+        * storage/indexeddb/exception-in-event-aborts-private.html:
+        * storage/indexeddb/exceptions-private.html:
+        * storage/indexeddb/factory-cmp-private.html:
+        * storage/indexeddb/factory-deletedatabase-private.html:
+        * storage/indexeddb/get-keyrange-private.html:
+        * storage/indexeddb/index-basics-private.html:
+        * storage/indexeddb/index-count-private.html:
+        * storage/indexeddb/index-cursor-private.html:
+        * storage/indexeddb/index-duplicate-keypaths-private.html:
+        * storage/indexeddb/index-get-key-argument-required-private.html:
+        * storage/indexeddb/index-multientry-private.html:
+        * storage/indexeddb/index-population-private.html:
+        * storage/indexeddb/index-unique-private.html:
+        * storage/indexeddb/interfaces-private.html:
+        * storage/indexeddb/intversion-abort-in-initial-upgradeneeded-private.html:
+        * storage/indexeddb/intversion-bad-parameters-private.html:
+        * storage/indexeddb/intversion-blocked-private.html:
+        * storage/indexeddb/intversion-close-between-events-private.html:
+        * storage/indexeddb/intversion-close-in-oncomplete-private.html:
+        * storage/indexeddb/intversion-close-in-upgradeneeded-private.html:
+        * storage/indexeddb/intversion-encoding-private.html:
+        * storage/indexeddb/intversion-gated-on-delete-private.html:
+        * storage/indexeddb/intversion-long-queue-private.html:
+        * storage/indexeddb/intversion-omit-parameter-private.html:
+        * storage/indexeddb/intversion-open-in-upgradeneeded-private.html:
+        * storage/indexeddb/intversion-open-with-version-private.html:
+        * storage/indexeddb/intversion-pending-version-changes-ascending-private.html:
+        * storage/indexeddb/intversion-pending-version-changes-descending-private.html:
+        * storage/indexeddb/intversion-pending-version-changes-same-private.html:
+        * storage/indexeddb/intversion-persistence-private.html:
+        * storage/indexeddb/intversion-revert-on-abort-private.html:
+        * storage/indexeddb/intversion-two-opens-no-versions-private.html:
+        * storage/indexeddb/intversion-upgrades-private.html:
+        * storage/indexeddb/invalid-keys-private.html:
+        * storage/indexeddb/key-generator-private.html:
+        * storage/indexeddb/key-sort-order-across-types-private.html:
+        * storage/indexeddb/key-sort-order-date-private.html:
+        * storage/indexeddb/key-type-array-private.html:
+        * storage/indexeddb/key-type-binary-private.html:
+        * storage/indexeddb/key-type-infinity-private.html:
+        * storage/indexeddb/keypath-arrays-private.html:
+        * storage/indexeddb/keypath-basics-private.html:
+        * storage/indexeddb/keypath-edges-private.html:
+        * storage/indexeddb/keypath-fetch-key-private.html:
+        * storage/indexeddb/keypath-intrinsic-properties-private.html:
+        * storage/indexeddb/keyrange-private.html:
+        * storage/indexeddb/keyrange-required-arguments-private.html:
+        * storage/indexeddb/lazy-index-population-private.html:
+        * storage/indexeddb/lazy-index-types-private.html:
+        * storage/indexeddb/legacy-constants-private.html:
+        * storage/indexeddb/list-ordering-private.html:
+        * storage/indexeddb/metadata-private.html:
+        * storage/indexeddb/metadata-race-private.html:
+        * storage/indexeddb/modern/abort-objectstore-info-private.html:
+        * storage/indexeddb/modern/abort-requests-cancelled-private.html:
+        * storage/indexeddb/modern/aborted-put-private.html:
+        * storage/indexeddb/modern/autoincrement-abort-private.html:
+        * storage/indexeddb/modern/basic-add-private.html:
+        * storage/indexeddb/modern/basic-put-private.html:
+        * storage/indexeddb/modern/binary-keys-1-private.html:
+        * storage/indexeddb/modern/blocked-open-db-requests-private.html:
+        * storage/indexeddb/modern/create-index-failures-private.html:
+        * storage/indexeddb/modern/createobjectstore-basic-private.html:
+        * storage/indexeddb/modern/createobjectstore-failures-private.html:
+        * storage/indexeddb/modern/cursor-1-private.html:
+        * storage/indexeddb/modern/cursor-2-private.html:
+        * storage/indexeddb/modern/cursor-3-private.html:
+        * storage/indexeddb/modern/cursor-4-private.html:
+        * storage/indexeddb/modern/cursor-5-private.html:
+        * storage/indexeddb/modern/cursor-6-private.html:
+        * storage/indexeddb/modern/cursor-7-private.html:
+        * storage/indexeddb/modern/cursor-8-private.html:
+        * storage/indexeddb/modern/date-basic-private.html:
+        * storage/indexeddb/modern/deletedatabase-1-private.html:
+        * storage/indexeddb/modern/deletedatabase-2-private.html:
+        * storage/indexeddb/modern/deletedatabase-null-name-exception-private.html:
+        * storage/indexeddb/modern/deletedatabase-request-event-private.html:
+        * storage/indexeddb/modern/deletedatabase-request-private.html:
+        * storage/indexeddb/modern/deleteindex-1-private.html:
+        * storage/indexeddb/modern/deleteindex-2-private.html:
+        * storage/indexeddb/modern/deleteindex-3-private.html:
+        * storage/indexeddb/modern/deleteindex-4-private.html:
+        * storage/indexeddb/modern/deleteobjectstore-1-private.html:
+        * storage/indexeddb/modern/double-abort-private.html:
+        * storage/indexeddb/modern/double-open-private.html:
+        * storage/indexeddb/modern/gc-closes-database-private.html:
+        * storage/indexeddb/modern/get-index-failures-private.html:
+        * storage/indexeddb/modern/get-keyrange-private.html:
+        * storage/indexeddb/modern/idbcursor-continue-primary-key-1-private.html:
+        * storage/indexeddb/modern/idbdatabase-deleteobjectstore-failures-private.html:
+        * storage/indexeddb/modern/idbdatabase-transaction-failures-private.html:
+        * storage/indexeddb/modern/idbindex-getall-1-private.html:
+        * storage/indexeddb/modern/idbindex-getallkeys-1-private.html:
+        * storage/indexeddb/modern/idbindex-properties-basic-private.html:
+        * storage/indexeddb/modern/idbkey-array-equality-private.html:
+        * storage/indexeddb/modern/idbobjectstore-clear-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-clear-2-private.html:
+        * storage/indexeddb/modern/idbobjectstore-count-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-count-failures-private.html:
+        * storage/indexeddb/modern/idbobjectstore-delete-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-delete-2-private.html:
+        * storage/indexeddb/modern/idbobjectstore-delete-failures-private.html:
+        * storage/indexeddb/modern/idbobjectstore-get-failures-private.html:
+        * storage/indexeddb/modern/idbobjectstore-getall-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-getallkeys-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-getkey-1-private.html:
+        * storage/indexeddb/modern/idbobjectstore-put-and-clear-failures-private.html:
+        * storage/indexeddb/modern/idbtransaction-objectstore-failures-private.html:
+        * storage/indexeddb/modern/idbtransaction-objectstores-1-private.html:
+        * storage/indexeddb/modern/index-1-private.html:
+        * storage/indexeddb/modern/index-2-private.html:
+        * storage/indexeddb/modern/index-3-private.html:
+        * storage/indexeddb/modern/index-4-private.html:
+        * storage/indexeddb/modern/index-5-private.html:
+        * storage/indexeddb/modern/index-cursor-1-private.html:
+        * storage/indexeddb/modern/index-cursor-2-private.html:
+        * storage/indexeddb/modern/index-cursor-3-private.html:
+        * storage/indexeddb/modern/index-get-count-basic-private.html:
+        * storage/indexeddb/modern/index-get-count-failures-private.html:
+        * storage/indexeddb/modern/index-rename-1-private.html:
+        * storage/indexeddb/modern/keypath-basic-private.html:
+        * storage/indexeddb/modern/memory-index-not-deleted-with-objectstore-private.html:
+        * storage/indexeddb/modern/multiple-objectstore-index-cursor-collision-private.html:
+        * storage/indexeddb/modern/objectstore-attributes-private.html:
+        * storage/indexeddb/modern/objectstore-cursor-advance-failures-private.html:
+        * storage/indexeddb/modern/objectstore-cursor-continue-failures-private.html:
+        * storage/indexeddb/modern/objectstore-rename-1-private.html:
+        * storage/indexeddb/modern/opencursor-failures-private.html:
+        * storage/indexeddb/modern/opendatabase-request-event-private.html:
+        * storage/indexeddb/modern/opendatabase-request-private.html:
+        * storage/indexeddb/modern/opendatabase-success-after-versionchange-private.html:
+        * storage/indexeddb/modern/opendatabase-versions-private.html:
+        * storage/indexeddb/modern/request-readystate-private.html:
+        * storage/indexeddb/modern/single-entry-index-invalid-key-crash-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-1-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-2-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-3-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-4-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-5-private.html:
+        * storage/indexeddb/modern/transaction-scheduler-6-private.html:
+        * storage/indexeddb/modern/transactions-stop-on-navigation-private.html:
+        * storage/indexeddb/modern/versionchange-abort-then-reopen-private.html:
+        * storage/indexeddb/modern/versionchange-event-private.html:
+        * storage/indexeddb/mozilla/add-twice-failure-private.html:
+        * storage/indexeddb/mozilla/autoincrement-indexes-private.html:
+        * storage/indexeddb/mozilla/bad-keypath-private.html:
+        * storage/indexeddb/mozilla/clear-private.html:
+        * storage/indexeddb/mozilla/create-index-unique-private.html:
+        * storage/indexeddb/mozilla/create-index-with-integer-keys-private.html:
+        * storage/indexeddb/mozilla/create-objectstore-basics-private.html:
+        * storage/indexeddb/mozilla/create-objectstore-null-name-private.html:
+        * storage/indexeddb/mozilla/cursor-mutation-objectstore-only-private.html:
+        * storage/indexeddb/mozilla/cursor-mutation-private.html:
+        * storage/indexeddb/mozilla/cursor-update-updates-indexes-private.html:
+        * storage/indexeddb/mozilla/cursors-private.html:
+        * storage/indexeddb/mozilla/delete-result-private.html:
+        * storage/indexeddb/mozilla/event-source-private.html:
+        * storage/indexeddb/mozilla/global-data-private.html:
+        * storage/indexeddb/mozilla/index-prev-no-duplicate-private.html:
+        * storage/indexeddb/mozilla/indexes-private.html:
+        * storage/indexeddb/mozilla/key-requirements-delete-null-key-private.html:
+        * storage/indexeddb/mozilla/key-requirements-inline-and-passed-private.html:
+        * storage/indexeddb/mozilla/key-requirements-private.html:
+        * storage/indexeddb/mozilla/key-requirements-put-no-key-private.html:
+        * storage/indexeddb/mozilla/key-requirements-put-null-key-private.html:
+        * storage/indexeddb/mozilla/object-cursors-private.html:
+        * storage/indexeddb/mozilla/object-identity-private.html:
+        * storage/indexeddb/mozilla/object-store-inline-autoincrement-key-added-on-put-private.html:
+        * storage/indexeddb/mozilla/object-store-remove-values-private.html:
+        * storage/indexeddb/mozilla/objectstorenames-private.html:
+        * storage/indexeddb/mozilla/odd-result-order-private.html:
+        * storage/indexeddb/mozilla/open-database-null-name-private.html:
+        * storage/indexeddb/mozilla/put-get-values-private.html:
+        * storage/indexeddb/mozilla/readonly-transactions-private.html:
+        * storage/indexeddb/mozilla/readwrite-transactions-private.html:
+        * storage/indexeddb/mozilla/readyState-private.html:
+        * storage/indexeddb/mozilla/remove-index-private.html:
+        * storage/indexeddb/mozilla/remove-objectstore-private.html:
+        * storage/indexeddb/mozilla/versionchange-abort-private.html:
+        * storage/indexeddb/mutating-cursor-private.html:
+        * storage/indexeddb/object-lookups-in-versionchange-private.html:
+        * storage/indexeddb/objectStore-required-arguments-private.html:
+        * storage/indexeddb/objectstore-autoincrement-private.html:
+        * storage/indexeddb/objectstore-basics-private.html:
+        * storage/indexeddb/objectstore-clear-private.html:
+        * storage/indexeddb/objectstore-count-private.html:
+        * storage/indexeddb/objectstore-cursor-private.html:
+        * storage/indexeddb/objectstore-removeobjectstore-private.html:
+        * storage/indexeddb/odd-strings-private.html:
+        * storage/indexeddb/open-bad-versions-private.html:
+        * storage/indexeddb/open-cursor-private.html:
+        * storage/indexeddb/open-during-transaction-private.html:
+        * storage/indexeddb/open-ordering-private.html:
+        * storage/indexeddb/opencursor-key-private.html:
+        * storage/indexeddb/optional-arguments-private.html:
+        * storage/indexeddb/pending-activity-private.html:
+        * storage/indexeddb/pending-version-change-on-exit-private.html:
+        * storage/indexeddb/pending-version-change-stuck-private.html:
+        * storage/indexeddb/pending-version-change-stuck-works-with-terminate-private.html:
+        * storage/indexeddb/persistence-private.html:
+        * storage/indexeddb/prefetch-bugfix-108071-private.html:
+        * storage/indexeddb/prefetch-invalidation-private.html:
+        * storage/indexeddb/prefetch-race-private.html:
+        * storage/indexeddb/primary-key-unique-to-objectstore-private.html:
+        * storage/indexeddb/queued-commands-private.html:
+        * storage/indexeddb/readonly-private.html:
+        * storage/indexeddb/readonly-properties-private.html:
+        * storage/indexeddb/removed-private.html:
+        * storage/indexeddb/request-continue-abort-private.html:
+        * storage/indexeddb/request-event-propagation-private.html:
+        * storage/indexeddb/request-leak-private.html:
+        * storage/indexeddb/request-result-cache-private.html:
+        * storage/indexeddb/set_version_blocked-private.html:
+        * storage/indexeddb/setversion-blocked-by-versionchange-close-private.html:
+        * storage/indexeddb/setversion-not-blocked-private.html:
+        * storage/indexeddb/structured-clone-private.html:
+        * storage/indexeddb/transaction-abort-private.html:
+        * storage/indexeddb/transaction-active-flag-private.html:
+        * storage/indexeddb/transaction-after-close-private.html:
+        * storage/indexeddb/transaction-and-objectstore-calls-private.html:
+        * storage/indexeddb/transaction-basics-private.html:
+        * storage/indexeddb/transaction-complete-with-js-recursion-cross-frame-private.html:
+        * storage/indexeddb/transaction-complete-with-js-recursion-private.html:
+        * storage/indexeddb/transaction-complete-workers-private.html:
+        * storage/indexeddb/transaction-coordination-across-databases-private.html:
+        * storage/indexeddb/transaction-coordination-within-database-private.html:
+        * storage/indexeddb/transaction-crash-in-tasks-private.html:
+        * storage/indexeddb/transaction-crash-on-abort-private.html:
+        * storage/indexeddb/transaction-error-private.html:
+        * storage/indexeddb/transaction-event-propagation-private.html:
+        * storage/indexeddb/transaction-ordering-private.html:
+        * storage/indexeddb/transaction-overlapping-private.html:
+        * storage/indexeddb/transaction-read-only-private.html:
+        * storage/indexeddb/transaction-readwrite-exclusive-private.html:
+        * storage/indexeddb/transaction-rollback-private.html:
+        * storage/indexeddb/transaction-scope-sequencing-private.html:
+        * storage/indexeddb/transaction-storeNames-required-private.html:
+        * storage/indexeddb/unblocked-version-changes-private.html:
+        * storage/indexeddb/unprefix-private.html:
+        * storage/indexeddb/value-undefined-private.html:
+        * storage/indexeddb/values-odd-types-private.html:
+        * storage/indexeddb/version-change-abort-private.html:
+        * storage/indexeddb/version-change-event-basic-private.html:
+        * storage/indexeddb/version-change-event-private.html:
+        * storage/indexeddb/version-change-exclusive-private.html:
+        * storage/indexeddb/versionchangerequest-activedomobject-private.html:
+
+2019-09-05  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in http/tests/cache/disk-cache/disk-cache-vary-cookie.html
+        https://bugs.webkit.org/show_bug.cgi?id=201524
+
+        Reviewed by Alex Christensen.
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() as it does not do the right thing for WebKit2.
+        Instead, use the new useEphemeralSession WKTR flag added in r249542.
+
+        * http/tests/cache/disk-cache/disk-cache-vary-cookie-expected.txt:
+        * http/tests/cache/disk-cache/disk-cache-vary-cookie-private-expected.txt: Added.
+        * http/tests/cache/disk-cache/disk-cache-vary-cookie-private.html: Copied from LayoutTests/http/tests/cache/disk-cache/disk-cache-vary-cookie.html.
+        * http/tests/cache/disk-cache/disk-cache-vary-cookie.html:
+
+2019-09-05  Chris Dumez  <cdumez@apple.com>
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in plugins/private-browsing-mode.html
+        https://bugs.webkit.org/show_bug.cgi?id=201523
+
+        Reviewed by Alex Christensen.
+
+        Stop using testRunner.setPrivateBrowsingEnabled_DEPRECATED() in plugins/private-browsing-mode.html
+        since it does not do the right thing for WebKit2. Instead, use the new useEphemeralSession
+        WKTR flag.
+
+        * platform/mac-wk2/TestExpectations:
+        * platform/mac/TestExpectations:
+        * plugins/non-private-browsing-mode-expected.txt: Added.
+        * plugins/non-private-browsing-mode.html: Added.
+        * plugins/private-browsing-mode-expected.txt:
+        * plugins/private-browsing-mode.html:
+
+2019-09-05  Justin Fan  <justin_fan@apple.com>
+
+        [WebGPU] Fix new test results after adding console warnings
+        https://bugs.webkit.org/show_bug.cgi?id=201526
+
+        Unreviewed test expectation updates.
+
+        * webgpu/buffer-errors-expected.txt:
+        * webgpu/map-read-buffers-expected.txt:
+        * webgpu/map-write-buffers-expected.txt:
+        * webgpu/render-pipelines.html: Fix WHLSL compile error.
+        * webgpu/uncaptured-errors-expected.txt: Added.
+        * webgpu/whlsl/use-undefined-variable-2-expected.txt:
+        * webgpu/whlsl/use-undefined-variable-expected.txt:
+
+2019-09-05  Ryan Haddad  <ryanhaddad@apple.com>
+
+        Layout Test imported/w3c/web-platform-tests/service-workers/service-worker/ready.https.html is a flaky failure
+        https://bugs.webkit.org/show_bug.cgi?id=181837
+
+        Unreviewed test gardening.
+
+        * platform/ios/TestExpectations: Mark test as flaky.
+        * platform/mac/TestExpectations: Ditto.
+
+2019-09-05  Russell Epstein  <repstein@apple.com>
+
+        Layout Test media/audio-concurrent-supported.html is a flaky failure.
+        rdar://55081191
+
+        Unreviewed Test Gardening.
+
+        * platform/ios/TestExpectations:
+        * platform/mac/TestExpectations:
+
+2019-09-05  Chris Dumez  <cdumez@apple.com>
+
+        [WK2] Add proper layout test support for ephemeral sessions
+        https://bugs.webkit.org/show_bug.cgi?id=201475
+
+        Reviewed by Antti Koivisto.
+
+        Update existing layout tests to either switch to the new mechanism when trivial or to rename
+        setPrivateBrowsingEnabled() to setPrivateBrowsingEnabled_DEPRECATED() when it is not.
+
+        * crypto/subtle/rsa-indexeddb-non-exportable-private.html:
+        * crypto/subtle/rsa-indexeddb-private.html:
+        * http/tests/adClickAttribution/conversion-disabled-in-ephemeral-session.html:
+        * http/tests/adClickAttribution/resources/util.js:
+        (tearDownAndFinish):
+        * http/tests/adClickAttribution/store-disabled-in-ephemeral-session.html:
+        * http/tests/cache-storage/cache-persistency.https.html:
+        * http/tests/cache-storage/cache-representation.https.html:
+        * http/tests/cache/disk-cache/disk-cache-vary-cookie.html:
+        * http/tests/cookies/private-cookie-storage.html:
+        * http/tests/media/now-playing-info-private-browsing.html:
+        * http/tests/security/appcache-in-private-browsing.html:
+        * http/tests/security/appcache-switching-private-browsing.html:
+        * http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-enabled-expected.txt:
+        * http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-enabled.php:
+        * http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-toggled.php:
+        * http/tests/security/contentSecurityPolicy/report-same-origin-no-cookies-when-private-browsing-toggled.php:
+        * http/tests/security/contentSecurityPolicy/report-same-origin-with-cookies-when-private-browsing-enabled-expected.txt:
+        * http/tests/security/contentSecurityPolicy/report-same-origin-with-cookies-when-private-browsing-enabled.php:
+        * http/tests/security/cookies/resources/first-party-cookie-allow.xsl:
+        * http/tests/security/cookies/resources/third-party-cookie-blocking.xsl:
+        * http/tests/security/cookies/third-party-cookie-blocking-main-frame.html:
+        * http/tests/security/cookies/third-party-cookie-blocking-redirect.html:
+        * http/tests/security/cookies/third-party-cookie-blocking-user-action.html:
+        * http/tests/security/cookies/third-party-cookie-blocking.html:
+        * http/tests/security/cross-frame-access-private-browsing.html:
+        * http/tests/security/cross-origin-plugin-private-browsing-toggled-allowed.html:
+        * http/tests/security/cross-origin-plugin-private-browsing-toggled.html:
+        * http/tests/security/private-browsing-http-auth.html:
+        * http/tests/security/storage-blocking-loosened-private-browsing-plugin.html:
+        * http/tests/security/storage-blocking-strengthened-private-browsing-plugin.html:
+        * http/tests/security/strip-referrer-to-origin-for-third-party-redirects-in-private-mode.html:
+        * http/tests/security/strip-referrer-to-origin-for-third-party-requests-in-private-mode.html:
+        * http/tests/storageAccess/has-storage-access-true-if-feature-off.html:
+        * http/tests/workers/service/resources/basic-register.js:
+        (async.test):
+        * http/tests/workers/service/serviceworker-private-browsing.https.html:
+        * http/wpt/fetch/dnt-header-after-redirection.html:
+        * platform/wk2/TestExpectations:
+        * plugins/private-browsing-mode-2.html:
+        * plugins/private-browsing-mode.html:
+        * resources/js-test.js:
+        * storage/domstorage/localstorage/private-browsing-affects-storage.html:
+        * storage/domstorage/localstorage/resources/private-browsing-1.html:
+        * storage/domstorage/localstorage/resources/private-browsing-2.html:
+        * storage/indexeddb/open-db-private-browsing.html:
+        * storage/indexeddb/resources/open-db-private-browsing.js:
+        * storage/websql/private-browsing-noread-nowrite.html:
+        * storage/websql/private-browsing-open-disabled.html:
+
+2019-09-05  Justin Fan  <justin_fan@apple.com>
+
+        [WebGPU] Implement GPUUncapturedErrorEvent
+        https://bugs.webkit.org/show_bug.cgi?id=199676
+
+        Reviewed by Dean Jackson.
+
+        Add a test to ensure GPUUncapturedErrorEvents work.
+
+        * webgpu/uncaptured-errors.html: Added.
+
+2019-09-05  Ryan Haddad  <ryanhaddad@apple.com>
+
+        [iOS] Layout Test imported/w3c/web-platform-tests/html/semantics/embedded-content/the-video-element/video_timeupdate_on_seek.html is failing
+        https://bugs.webkit.org/show_bug.cgi?id=201509
+
+        Unreviewed test gardening.
+
+        * platform/ios-simulator/TestExpectations: Mark test as failing.
+
+2019-09-05  Antti Koivisto  <antti@apple.com>
+
+        Generate event region for both the main graphics layer and the scrolled contents layer
+        https://bugs.webkit.org/show_bug.cgi?id=201487
+
+        Reviewed by Simon Fraser.
+
+        * pointerevents/ios/touch-action-region-backing-sharing-expected.txt:
+        * pointerevents/ios/touch-action-region-overflow-expected.txt:
+
+2019-09-05  Ryosuke Niwa  <rniwa@webkit.org>
+
+        REGRESSION (iOS 13): Bulleted list copied from Notes to Mail results in Times New Roman
+        https://bugs.webkit.org/show_bug.cgi?id=201490
+
+        Reviewed by Daniel Bates.
+
+        Added a test to make sure -webkit-standard font family name isn't stripped away when sanitization is not in effect.
+
+        * editing/pasteboard/paste-cocoa-writer-markup-with-webkit-standard-font-family-expected.txt: Added.
+        * editing/pasteboard/paste-cocoa-writer-markup-with-webkit-standard-font-family.html: Added.
+
+2019-09-05  Chris Fleizach  <cfleizach@apple.com>
+
+        AX: children cache are not re-computed if tab index is removed
+        https://bugs.webkit.org/show_bug.cgi?id=201502
+
+        Reviewed by Zalan Bujtas.
+
+        * accessibility/tabindex-removed-expected.txt: Added.
+        * accessibility/tabindex-removed.html: Added.
+
 2019-09-04  Fujii Hironori  <Hironori.Fujii@sony.com>
 
         [AppleWin] fast/block/float/float-with-anonymous-previous-sibling.html is failing as flaky ImageOnlyFailure
@@ -21,6 +1872,17 @@
         * platform/ios-12/TestExpectations:
         * platform/ios/TestExpectations:
         * platform/mac/TestExpectations:
+
+2019-09-06  Simon Fraser  <simon.fraser@apple.com>
+
+        REGRESSION (iOS 13): If an overflow:hidden with a non-zero scroll position is toggled to overflow:scroll, some other scroll causes its scroll position to get reset
+        https://bugs.webkit.org/show_bug.cgi?id=201528
+        rdar://problem/55044885
+
+        Reviewed by Frédéric Wang.
+
+        * scrollingcoordinator/ios/scroller-initial-scroll-position-expected.html: Added.
+        * scrollingcoordinator/ios/scroller-initial-scroll-position.html: Added.
 
 2019-09-04  Yusuke Suzuki  <ysuzuki@apple.com>
 

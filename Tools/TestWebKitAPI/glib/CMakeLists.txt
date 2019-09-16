@@ -1,14 +1,11 @@
 set(WebKitGLibAPITests_SOURCES
     ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib/LoadTrackingTest.cpp
-    ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib/WebKitTestBus.cpp
     ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib/WebKitTestServer.cpp
     ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib/TestMain.cpp
     ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib/WebViewTest.cpp
 )
 
 set(WebKitGLibAPITests_INCLUDE_DIRECTORIES
-    ${CMAKE_SOURCE_DIR}/Source
-    ${CMAKE_SOURCE_DIR}/Source/WTF
     ${FORWARDING_HEADERS_DIR}
     ${TOOLS_DIR}/TestWebKitAPI/Tests/WebKitGLib
     ${TOOLS_DIR}/TestWebKitAPI/glib/WebKitGLib

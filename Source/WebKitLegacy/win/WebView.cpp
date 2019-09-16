@@ -1268,9 +1268,9 @@ void WebView::paintWithDirect2D()
             gc.scale(FloatSize(scaleFactor, scaleFactor));
             gc.clip(logicalDirtyRect);
             frameView->paint(gc, logicalDirtyRect);
-            gc.restore();
             if (m_shouldInvertColors)
                 gc.fillRect(logicalDirtyRect, Color::white, CompositeDifference);
+            gc.restore();
         }
     }
 
@@ -1284,12 +1284,12 @@ void WebView::paint(HDC dc, LPARAM options)
 {
     LOCAL_GDI_COUNTER(0, __FUNCTION__);
 
+    m_page->updateRendering();
+
     if (paintCompositedContentToHDC(dc)) {
         ::ValidateRect(m_viewWindow, nullptr);
         return;
     }
-
-    m_page->updateRendering();
 
     Frame* coreFrame = core(m_mainFrame);
     if (!coreFrame)
@@ -1420,9 +1420,9 @@ void WebView::paintIntoBackingStore(FrameView* frameView, HDC bitmapDC, const In
         gc.scale(FloatSize(scaleFactor, scaleFactor));
         gc.clip(logicalDirtyRect);
         frameView->paint(gc, logicalDirtyRect);
-        gc.restore();
         if (m_shouldInvertColors)
             gc.fillRect(logicalDirtyRect, Color::white, CompositeDifference);
+        gc.restore();
     }
     gc.restore();
 }
@@ -5307,7 +5307,7 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
     else
         WebFrameNetworkingContext::destroyPrivateBrowsingSession();
 #endif
-    m_page->enableLegacyPrivateBrowsing(!!enabled);
+    m_page->setSessionID(!!enabled ? PAL::SessionID::legacyPrivateSessionID() : PAL::SessionID::defaultSessionID());
 
     hr = preferences->sansSerifFontFamily(&str);
     if (FAILED(hr))
@@ -5607,11 +5607,6 @@ HRESULT WebView::notifyPreferencesChanged(IWebNotification* notification)
     if (FAILED(hr))
         return hr;
     settings.setCoreMathMLEnabled(!!enabled);
-
-    hr = prefsPrivate->lazyImageLoadingEnabled(&enabled);
-    if (FAILED(hr))
-        return hr;
-    RuntimeEnabledFeatures::sharedFeatures().setLazyImageLoadingEnabled(!!enabled);
 
     return S_OK;
 }

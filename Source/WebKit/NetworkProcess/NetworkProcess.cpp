@@ -130,6 +130,19 @@ static void callExitSoon(IPC::Connection*)
     });
 }
 
+static inline MessagePortChannelRegistry createMessagePortChannelRegistry(NetworkProcess& networkProcess)
+{
+    return MessagePortChannelRegistry { [&networkProcess](auto& messagePortIdentifier, auto processIdentifier, auto&& completionHandler) {
+        auto* connection = networkProcess.webProcessConnection(processIdentifier);
+        if (!connection) {
+            completionHandler(MessagePortChannelProvider::HasActivity::No);
+            return;
+        }
+
+        connection->checkProcessLocalPortForActivity(messagePortIdentifier, WTFMove(completionHandler));
+    } };
+}
+
 NetworkProcess::NetworkProcess(AuxiliaryProcessInitializationParameters&& parameters)
     : m_downloadManager(*this)
     , m_storageManagerSet(StorageManagerSet::create())
@@ -139,7 +152,7 @@ NetworkProcess::NetworkProcess(AuxiliaryProcessInitializationParameters&& parame
 #if PLATFORM(IOS_FAMILY)
     , m_webSQLiteDatabaseTracker([this](bool isHoldingLockedFiles) { parentProcessConnection()->send(Messages::NetworkProcessProxy::SetIsHoldingLockedFiles(isHoldingLockedFiles), 0); })
 #endif
-    , m_messagePortChannelProvider(*this)
+    , m_messagePortChannelRegistry(createMessagePortChannelRegistry(*this))
 {
     NetworkProcessPlatformStrategies::initialize();
 
@@ -215,17 +228,6 @@ void NetworkProcess::didReceiveMessage(IPC::Connection& connection, IPC::Decoder
     }
 #endif
 
-#if ENABLE(SERVICE_WORKER)
-    if (decoder.messageReceiverName() == Messages::WebSWServerToContextConnection::messageReceiverName()) {
-        ASSERT(parentProcessHasServiceWorkerEntitlement());
-        if (!parentProcessHasServiceWorkerEntitlement())
-            return;
-        if (auto* webSWConnection = connectionToContextProcessFromIPCConnection(connection)) {
-            webSWConnection->didReceiveMessage(connection, decoder);
-            return;
-        }
-    }
-#endif
     didReceiveNetworkProcessMessage(connection, decoder);
 }
 
@@ -307,8 +309,10 @@ void NetworkProcess::initializeNetworkProcess(NetworkProcessCreationParameters&&
 
     setCanHandleHTTPSServerTrustEvaluation(parameters.canHandleHTTPSServerTrustEvaluation);
 
-    if (parameters.shouldUseTestingNetworkSession)
-        switchToNewTestingSession();
+    if (parameters.shouldUseTestingNetworkSession) {
+        m_shouldUseTestingNetworkStorageSession = true;
+        m_defaultNetworkStorageSession = newTestingSession(PAL::SessionID::defaultSessionID());
+    }
 
     WebCore::RuntimeEnabledFeatures::sharedFeatures().setIsITPDatabaseEnabled(parameters.shouldEnableITPDatabase);
 
@@ -414,7 +418,7 @@ static inline Optional<std::pair<IPC::Connection::Identifier, IPC::Attachment>> 
 #endif
 }
 
-void NetworkProcess::createNetworkConnectionToWebProcess(ProcessIdentifier identifier, bool isServiceWorkerProcess, WebCore::RegistrableDomain&& registrableDomain, CompletionHandler<void(Optional<IPC::Attachment>&&)>&& completionHandler)
+void NetworkProcess::createNetworkConnectionToWebProcess(ProcessIdentifier identifier, PAL::SessionID sessionID, CompletionHandler<void(Optional<IPC::Attachment>&&)>&& completionHandler)
 {
     auto ipcConnection = createIPCConnectionToWebProcess();
     if (!ipcConnection) {
@@ -422,7 +426,7 @@ void NetworkProcess::createNetworkConnectionToWebProcess(ProcessIdentifier ident
         return;
     }
 
-    auto newConnection = NetworkConnectionToWebProcess::create(*this, identifier, ipcConnection->first);
+    auto newConnection = NetworkConnectionToWebProcess::create(*this, identifier, sessionID, ipcConnection->first);
     auto& connection = newConnection.get();
 
     ASSERT(!m_webProcessConnections.contains(identifier));
@@ -431,24 +435,6 @@ void NetworkProcess::createNetworkConnectionToWebProcess(ProcessIdentifier ident
     completionHandler(WTFMove(ipcConnection->second));
 
     connection.setOnLineState(NetworkStateNotifier::singleton().onLine());
-    
-#if ENABLE(SERVICE_WORKER)
-    if (isServiceWorkerProcess) {
-        ASSERT(parentProcessHasServiceWorkerEntitlement());
-        ASSERT(m_waitingForServerToContextProcessConnection);
-        auto contextConnection = WebSWServerToContextConnection::create(*this, registrableDomain, connection.connection());
-        auto addResult = m_serverToContextConnections.add(WTFMove(registrableDomain), contextConnection.copyRef());
-        ASSERT_UNUSED(addResult, addResult.isNewEntry);
-
-        m_waitingForServerToContextProcessConnection = false;
-
-        for (auto* server : SWServer::allServers())
-            server->serverToContextConnectionCreated(contextConnection);
-    }
-#else
-    UNUSED_PARAM(isServiceWorkerProcess);
-    UNUSED_PARAM(registrableDomain);
-#endif
 
     m_storageManagerSet->addConnection(connection.connection());
 }
@@ -460,6 +446,12 @@ void NetworkProcess::clearCachedCredentials()
         networkSession->clearCredentials();
     else
         ASSERT_NOT_REACHED();
+
+    forEachNetworkSession([] (auto& networkSession) {
+        if (auto storageSession = networkSession.networkStorageSession())
+            storageSession->credentialStorage().clearCredentials();
+        networkSession.clearCredentials();
+    });
 }
 
 void NetworkProcess::addWebsiteDataStore(WebsiteDataStoreParameters&& parameters)
@@ -494,7 +486,7 @@ void NetworkProcess::forEachNetworkSession(const Function<void(NetworkSession&)>
         functor(*session);
 }
 
-void NetworkProcess::switchToNewTestingSession()
+std::unique_ptr<WebCore::NetworkStorageSession> NetworkProcess::newTestingSession(const PAL::SessionID& sessionID)
 {
 #if PLATFORM(COCOA)
     // Session name should be short enough for shared memory region name to be under the limit, otherwise sandbox rules won't work (see <rdar://problem/13642852>).
@@ -509,9 +501,9 @@ void NetworkProcess::switchToNewTestingSession()
             cookieStorage = adoptCF(_CFURLStorageSessionCopyCookieStorage(kCFAllocatorDefault, session.get()));
     }
 
-    m_defaultNetworkStorageSession = makeUnique<WebCore::NetworkStorageSession>(PAL::SessionID::defaultSessionID(), WTFMove(session), WTFMove(cookieStorage));
+    return makeUnique<WebCore::NetworkStorageSession>(sessionID, WTFMove(session), WTFMove(cookieStorage));
 #elif USE(CURL) || USE(SOUP)
-    m_defaultNetworkStorageSession = makeUnique<WebCore::NetworkStorageSession>(PAL::SessionID::defaultSessionID());
+    return makeUnique<WebCore::NetworkStorageSession>(sessionID);
 #endif
 }
 
@@ -527,6 +519,11 @@ void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, const String
     if (!addResult.isNewEntry)
         return;
 
+    if (m_shouldUseTestingNetworkStorageSession) {
+        addResult.iterator->value = newTestingSession(sessionID);
+        return;
+    }
+    
 #if PLATFORM(COCOA)
     RetainPtr<CFURLStorageSessionRef> storageSession;
     RetainPtr<CFStringRef> cfIdentifier = String(identifierBase + ".PrivateBrowsing").createCFString();
@@ -2203,21 +2200,6 @@ void NetworkProcess::setCacheStorageParameters(PAL::SessionID sessionID, String&
         callback(String { cacheStorageDirectory });
 }
 
-void NetworkProcess::preconnectTo(const URL& url, WebCore::StoredCredentialsPolicy storedCredentialsPolicy)
-{
-#if ENABLE(SERVER_PRECONNECT)
-    NetworkLoadParameters parameters { PAL::SessionID::defaultSessionID() };
-    parameters.request = ResourceRequest { url };
-    parameters.storedCredentialsPolicy = storedCredentialsPolicy;
-    parameters.shouldPreconnectOnly = PreconnectOnly::Yes;
-
-    new PreconnectTask(*this, WTFMove(parameters));
-#else
-    UNUSED_PARAM(url);
-    UNUSED_PARAM(storedCredentialsPolicy);
-#endif
-}
-
 void NetworkProcess::registerURLSchemeAsSecure(const String& scheme) const
 {
     SchemeRegistry::registerURLSchemeAsSecure(scheme);
@@ -2396,36 +2378,10 @@ void NetworkProcess::getSandboxExtensionsForBlobFiles(const Vector<String>& file
 #endif // ENABLE(SANDBOX_EXTENSIONS)
 
 #if ENABLE(SERVICE_WORKER)
-WebSWServerToContextConnection* NetworkProcess::connectionToContextProcessFromIPCConnection(IPC::Connection& connection)
+void NetworkProcess::forEachSWServer(const Function<void(SWServer&)>& callback)
 {
-    for (auto& serverToContextConnection : m_serverToContextConnections.values()) {
-        if (serverToContextConnection->ipcConnection() == &connection)
-            return serverToContextConnection.get();
-    }
-    return nullptr;
-}
-
-void NetworkProcess::connectionToContextProcessWasClosed(Ref<WebSWServerToContextConnection>&& serverToContextConnection)
-{
-    auto& registrableDomain = serverToContextConnection->registrableDomain();
-    
-    serverToContextConnection->connectionClosed();
-    m_serverToContextConnections.remove(registrableDomain);
-    
-    for (auto& swServer : m_swServers.values())
-        swServer->markAllWorkersForRegistrableDomainAsTerminated(registrableDomain);
-    
-    if (needsServerToContextConnectionForRegistrableDomain(registrableDomain)) {
-        RELEASE_LOG(ServiceWorker, "Connection to service worker process was closed but is still needed, relaunching it");
-        createServerToContextConnection(registrableDomain, WTF::nullopt);
-    }
-}
-
-bool NetworkProcess::needsServerToContextConnectionForRegistrableDomain(const RegistrableDomain& registrableDomain) const
-{
-    return WTF::anyOf(m_swServers.values(), [&](auto& swServer) {
-        return swServer->needsServerToContextConnectionForRegistrableDomain(registrableDomain);
-    });
+    for (auto& server : m_swServers.values())
+        callback(*server);
 }
 
 SWServer& NetworkProcess::swServerForSession(PAL::SessionID sessionID)
@@ -2436,7 +2392,9 @@ SWServer& NetworkProcess::swServerForSession(PAL::SessionID sessionID)
         // If there's not, then where did this PAL::SessionID come from?
         ASSERT(sessionID.isEphemeral() || !path.isEmpty());
         
-        auto value = makeUnique<SWServer>(makeUniqueRef<WebSWOriginStore>(), WTFMove(path), sessionID);
+        auto value = makeUnique<SWServer>(makeUniqueRef<WebSWOriginStore>(), WTFMove(path), sessionID, [this, sessionID](auto& registrableDomain) {
+            parentProcessConnection()->send(Messages::NetworkProcessProxy::EstablishWorkerContextConnectionToNetworkProcess { registrableDomain, sessionID }, 0);
+        });
         if (m_shouldDisableServiceWorkerProcessTerminationDelay)
             value->disableServiceWorkerProcessTerminationDelay();
         return value;
@@ -2453,40 +2411,15 @@ WebSWOriginStore* NetworkProcess::existingSWOriginStoreForSession(PAL::SessionID
     return &static_cast<WebSWOriginStore&>(swServer->originStore());
 }
 
-WebSWServerToContextConnection* NetworkProcess::serverToContextConnectionForRegistrableDomain(const RegistrableDomain& registrableDomain)
+void NetworkProcess::postMessageToServiceWorkerClient(PAL::SessionID sessionID, const ServiceWorkerClientIdentifier& destinationIdentifier, MessageWithMessagePorts&& message, ServiceWorkerIdentifier sourceIdentifier, const String& sourceOrigin)
 {
-    return m_serverToContextConnections.get(registrableDomain);
-}
-
-void NetworkProcess::createServerToContextConnection(const RegistrableDomain& registrableDomain, Optional<PAL::SessionID> sessionID)
-{
-    if (m_waitingForServerToContextProcessConnection)
-        return;
-    
-    m_waitingForServerToContextProcessConnection = true;
-    if (sessionID)
-        parentProcessConnection()->send(Messages::NetworkProcessProxy::EstablishWorkerContextConnectionToNetworkProcessForExplicitSession(registrableDomain, *sessionID), 0);
-    else
-        parentProcessConnection()->send(Messages::NetworkProcessProxy::EstablishWorkerContextConnectionToNetworkProcess(registrableDomain), 0);
-}
-
-void NetworkProcess::postMessageToServiceWorkerClient(const ServiceWorkerClientIdentifier& destinationIdentifier, MessageWithMessagePorts&& message, ServiceWorkerIdentifier sourceIdentifier, const String& sourceOrigin)
-{
-    if (auto connection = m_swServerConnections.get(destinationIdentifier.serverConnectionIdentifier))
+    if (auto* connection = swServerForSession(sessionID).connection(destinationIdentifier.serverConnectionIdentifier))
         connection->postMessageToServiceWorkerClient(destinationIdentifier.contextIdentifier, WTFMove(message), sourceIdentifier, sourceOrigin);
-}
-
-void NetworkProcess::postMessageToServiceWorker(WebCore::ServiceWorkerIdentifier destination, WebCore::MessageWithMessagePorts&& message, const WebCore::ServiceWorkerOrClientIdentifier& source, SWServerConnectionIdentifier connectionIdentifier)
-{
-    if (auto connection = m_swServerConnections.get(connectionIdentifier))
-        connection->postMessageToServiceWorker(destination, WTFMove(message), source);
 }
 
 void NetworkProcess::registerSWServerConnection(WebSWServerConnection& connection)
 {
     ASSERT(parentProcessHasServiceWorkerEntitlement());
-    ASSERT(!m_swServerConnections.contains(connection.identifier()));
-    m_swServerConnections.add(connection.identifier(), makeWeakPtr(connection));
     auto* store = existingSWOriginStoreForSession(connection.sessionID());
     ASSERT(store);
     if (store)
@@ -2495,26 +2428,8 @@ void NetworkProcess::registerSWServerConnection(WebSWServerConnection& connectio
 
 void NetworkProcess::unregisterSWServerConnection(WebSWServerConnection& connection)
 {
-    ASSERT(m_swServerConnections.get(connection.identifier()).get() == &connection);
-    m_swServerConnections.remove(connection.identifier());
     if (auto* store = existingSWOriginStoreForSession(connection.sessionID()))
         store->unregisterSWServerConnection(connection);
-}
-
-void NetworkProcess::swContextConnectionMayNoLongerBeNeeded(WebSWServerToContextConnection& serverToContextConnection)
-{
-    auto& registrableDomain = serverToContextConnection.registrableDomain();
-    if (needsServerToContextConnectionForRegistrableDomain(registrableDomain))
-        return;
-    
-    RELEASE_LOG(ServiceWorker, "Service worker process is no longer needed, terminating it");
-    serverToContextConnection.terminate();
-    
-    for (auto& swServer : m_swServers.values())
-        swServer->markAllWorkersForRegistrableDomainAsTerminated(registrableDomain);
-    
-    serverToContextConnection.connectionClosed();
-    m_serverToContextConnections.remove(registrableDomain);
 }
 
 void NetworkProcess::disableServiceWorkerProcessTerminationDelay()

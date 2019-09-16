@@ -272,6 +272,10 @@ static bool outputMismatchingBlockBoxInformationIfNeeded(TextStream& stream, con
 
 static bool verifyAndOutputSubtree(TextStream& stream, const LayoutState& context, const RenderBox& renderer, const Box& layoutBox)
 {
+    // Rendering code does not have the concept of table wrapper box. Skip it by verifying the first child(table box) instead. 
+    if (layoutBox.isTableWrapperBox())
+        return verifyAndOutputSubtree(stream, context, renderer, *downcast<Container>(layoutBox).firstChild()); 
+
     auto mismtachingGeometry = outputMismatchingBlockBoxInformationIfNeeded(stream, context, renderer, layoutBox);
 
     if (!is<Container>(layoutBox))
@@ -314,15 +318,15 @@ static bool verifyAndOutputSubtree(TextStream& stream, const LayoutState& contex
     return mismtachingGeometry;
 }
 
-void LayoutState::verifyAndOutputMismatchingLayoutTree(const RenderView& renderView) const
+void LayoutState::verifyAndOutputMismatchingLayoutTree(const RenderView& renderView, const Container& initialContainingBlock) const
 {
     TextStream stream;
-    auto mismatchingGeometry = verifyAndOutputSubtree(stream, *this, renderView, initialContainingBlock());
+    auto mismatchingGeometry = verifyAndOutputSubtree(stream, *this, renderView, initialContainingBlock);
     if (!mismatchingGeometry)
         return;
 #if ENABLE(TREE_DEBUGGING)
     showRenderTree(&renderView);
-    showLayoutTree(initialContainingBlock(), this);
+    showLayoutTree(initialContainingBlock, this);
 #endif
     WTFLogAlways("%s", stream.release().utf8().data());
     ASSERT_NOT_REACHED();

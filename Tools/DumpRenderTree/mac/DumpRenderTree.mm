@@ -57,6 +57,7 @@
 #import "WorkQueue.h"
 #import "WorkQueueItem.h"
 #import <CoreFoundation/CoreFoundation.h>
+#import <JavaScriptCore/JSCConfig.h>
 #import <JavaScriptCore/Options.h>
 #import <JavaScriptCore/TestRunnerUtils.h>
 #import <WebCore/LogInitialization.h>
@@ -879,7 +880,6 @@ static void enableExperimentalFeatures(WebPreferences* preferences)
     [preferences setMediaRecorderEnabled:YES];
     [preferences setReferrerPolicyAttributeEnabled:YES];
     [preferences setLinkPreloadResponsiveImagesEnabled:YES];
-    [preferences setLazyImageLoadingEnabled:YES];
 }
 
 // Called before each test.
@@ -1027,7 +1027,7 @@ static void setWebPreferencesForTestOptions(const TestOptions& options)
     preferences.adClickAttributionEnabled = options.adClickAttributionEnabled;
     preferences.resizeObserverEnabled = options.enableResizeObserver;
     preferences.coreMathMLEnabled = options.enableCoreMathML;
-    preferences.lazyImageLoadingEnabled = options.enableLazyImageLoading;
+    preferences.privateBrowsingEnabled = options.useEphemeralSession;
 }
 
 // Called once on DumpRenderTree startup.
@@ -1284,6 +1284,8 @@ void writeCrashedMessageOnFatalError(int signalCode)
 
 void dumpRenderTree(int argc, const char *argv[])
 {
+    JSC::Config::configureForTesting();
+
 #if PLATFORM(IOS_FAMILY)
     setUpIOSLayoutTestCommunication();
     [UIApplication sharedApplication].idleTimerDisabled = YES;
@@ -1833,6 +1835,11 @@ static bool shouldMakeViewportFlexible(const char* pathOrURL)
 }
 #endif
 
+static bool shouldUseEphemeralSession(const char* pathOrURL)
+{
+    return strstr(pathOrURL, "w3c/IndexedDB-private-browsing");
+}
+
 static void setJSCOptions(const TestOptions& options)
 {
     static WTF::StringBuilder savedOptions;
@@ -2063,6 +2070,9 @@ static void runTest(const string& inputLine)
     if (shouldMakeViewportFlexible(pathOrURL.c_str()))
         adjustWebDocumentForFlexibleViewport(gWebBrowserView, gWebScrollView);
 #endif
+
+    if (shouldUseEphemeralSession(pathOrURL.c_str()))
+        [[[mainFrame webView] preferences] setPrivateBrowsingEnabled:YES];
 
     if ([WebHistory optionalSharedHistory])
         [WebHistory setOptionalSharedHistory:nil];

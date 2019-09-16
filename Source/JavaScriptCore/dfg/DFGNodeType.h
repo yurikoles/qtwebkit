@@ -303,6 +303,7 @@ namespace JSC { namespace DFG {
     \
     /* Optimizations for string access */ \
     macro(StringCharCodeAt, NodeResultInt32) \
+    macro(StringCodePointAt, NodeResultInt32) \
     macro(StringCharAt, NodeResultJS) \
     macro(StringFromCharCode, NodeResultJS | NodeMustGenerate) \
     \
@@ -401,8 +402,8 @@ namespace JSC { namespace DFG {
     macro(SetFunctionName, NodeMustGenerate) \
     macro(HasOwnProperty, NodeResultBoolean) \
     \
-    macro(GetPromiseInternalField, NodeResultJS) \
-    macro(PutPromiseInternalField, NodeMustGenerate) \
+    macro(GetInternalField, NodeResultJS) \
+    macro(PutInternalField, NodeMustGenerate) \
     \
     macro(CreateActivation, NodeResultJS) \
     macro(PushWithScope, NodeResultJS | NodeMustGenerate) \

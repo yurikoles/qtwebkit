@@ -46,7 +46,8 @@ css-dark-mode [ Skip ]
 
 webgpu [ Skip ]
 inspector/canvas/create-context-webgpu.html [ Skip ]
-inspector/canvas/resolveCanvasContext-webgpu.html [ Skip ]
+inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
+inspector/canvas/resolveContext-webgpu.html [ Skip ]
 
 # Media Stream API testing is not supported for WK1 yet.
 fast/mediastream
@@ -269,6 +270,8 @@ imported/w3c/web-platform-tests/fetch/cross-origin-resource-policy [ Skip ]
 imported/w3c/web-platform-tests/server-timing/service_worker_idl.html [ Skip ]
 imported/w3c/web-platform-tests/service-workers [ Skip ]
 imported/w3c/web-platform-tests/streams/readable-byte-streams/detached-buffers.serviceworker.https.html [ Skip ]
+imported/w3c/web-platform-tests/infrastructure/server/context.any.serviceworker.html [ Skip ]
+imported/w3c/web-platform-tests/infrastructure/server/secure-context.https.any.serviceworker.html [ Skip ]
 
 # Quota check missing in WK1
 http/tests/IndexedDB/storage-limit.https.html [ Skip ]
@@ -429,6 +432,10 @@ imported/w3c/web-platform-tests/html/browsers/history/the-history-interface/hist
 # Newly imported WPT tests that are flaky only on WK1.
 imported/w3c/web-platform-tests/html/browsers/history/the-location-interface/assign_after_load.html [ Pass Failure ]
 imported/w3c/web-platform-tests/html/browsers/history/the-location-interface/assign_before_load.html [ Pass Failure ]
+
+# MathML WPT tests failing on WK1
+webkit.org/b/201680 imported/w3c/web-platform-tests/mathml/relations/css-styling/displaystyle-013.html [ ImageOnlyFailure ]
+webkit.org/b/201680 imported/w3c/web-platform-tests/mathml/relations/css-styling/displaystyle-014.html [ ImageOnlyFailure ]
 
 # testRunner.setShouldDownloadUndisplayableMIMETypes() is not supported on WK1.
 fast/dom/HTMLAnchorElement/anchor-file-blob-convert-to-download.html [ Skip ]
@@ -763,10 +770,5 @@ webkit.org/b/199242 [ Debug ] http/tests/performance/performance-resource-timing
 # <rdar://problem/42625657> REGRESSION (Mojave): 12 fast/images tests timing out on WK1
 [ Mojave+ ] fast/images/animated-heics-draw.html [ Skip ]
 [ Mojave+ ] fast/images/animated-heics-verify.html [ Skip ]
-
-# <rdar://problem/51229282> REGRESSION: [ Catalina WK1 ] Three image tests are failing with an extra pixel of boarder
-[ Catalina+ ] http/tests/security/cached-svg-image-with-css-cross-domain.html [ ImageOnlyFailure ]
-[ Catalina+ ] http/tests/security/svg-image-with-css-cross-domain.html [ ImageOnlyFailure ]
-[ Catalina+ ] imported/blink/svg/as-image/svgview-references.html [ ImageOnlyFailure ]
 
 webkit.org/b/200002 [ Mojave+ Debug ] imported/blink/storage/indexeddb/blob-basics-metadata.html [ Timeout ]

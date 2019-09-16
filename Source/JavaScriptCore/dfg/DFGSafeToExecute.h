@@ -283,8 +283,8 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case GetGlobalVar:
     case GetGlobalLexicalVariable:
     case PutGlobalVariable:
-    case GetPromiseInternalField:
-    case PutPromiseInternalField:
+    case GetInternalField:
+    case PutInternalField:
     case CheckCell:
     case CheckBadCell:
     case CheckNotEmpty:
@@ -526,6 +526,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case ArrayPop:
     case StringCharAt:
     case StringCharCodeAt:
+    case StringCodePointAt:
         return node->arrayMode().alreadyChecked(graph, node, state.forNode(graph.child(node, 0)));
 
     case ArrayPush:

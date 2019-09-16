@@ -377,7 +377,6 @@ webkit.org/b/147674 editing/mac/pasteboard/5583362.html [ Skip ]
 [ Debug ] imported/w3c/web-platform-tests/fetch/api/redirect/redirect-method.any.worker.html [ Skip ]
 [ Debug ] imported/w3c/web-platform-tests/fetch/api/redirect/redirect-method.any.html [ Skip ]
 
-webkit.org/b/184060 [ Debug ] imported/w3c/web-platform-tests/html/browsers/history/the-location-interface/location-protocol-setter-non-broken.html [ Pass Failure ]
 webkit.org/b/107118 fast/canvas/canvas-quadratic-same-endpoint.html [ Failure ]
 webkit.org/b/142258 fast/css/object-fit/object-fit-canvas.html [ Pass ImageOnlyFailure ]
 
@@ -467,7 +466,6 @@ webkit.org/b/57688 fast/text/international/bidi-AN-after-empty-run.html [ Failur
 webkit.org/b/57688 fast/text/international/bidi-CS-after-AN.html [ Failure Pass ]
 webkit.org/b/57688 fast/text/international/thai-line-breaks.html [ Failure Pass ]
 
-webkit.org/b/112646 plugins/private-browsing-mode.html [ Failure Pass ]
 webkit.org/b/112616 plugins/plugin-clip-subframe.html [ Failure Pass ]
 
 # Flakey plugin tests
@@ -1033,11 +1031,11 @@ webkit.org/b/174066 inspector/canvas/console-record-webgl2.html [ Pass Timeout ]
 webkit.org/b/173931 inspector/canvas/context-attributes.html [ Pass Timeout ]
 webkit.org/b/178028 inspector/canvas/create-context-2d.html [ Pass Timeout ]
 webkit.org/b/174066 inspector/canvas/create-context-webgl2.html [ Pass Timeout ]
-webkit.org/b/174272 inspector/canvas/css-canvas-clients.html [ Pass Failure ]
 webkit.org/b/174066 inspector/canvas/recording-webgl2-frameCount.html [ Pass Failure Timeout ]
 webkit.org/b/174066 inspector/canvas/recording-webgl2-full.html [ Pass Failure Timeout ]
 webkit.org/b/174066 inspector/canvas/recording-webgl2-memoryLimit.html [ Pass Failure Timeout ]
 webkit.org/b/174066 inspector/canvas/recording-webgl2-snapshots.html [ Pass Failure Timeout ]
+webkit.org/b/174272 inspector/canvas/requestClientNodes-css.html [ Pass Failure ]
 webkit.org/b/174066 inspector/canvas/shaderProgram-add-remove-webgl2.html [ Pass Failure Timeout ]
 webkit.org/b/160048 [ Debug ] inspector/codemirror/prettyprinting-javascript.html [ Pass Timeout ]
 webkit.org/b/152025 [ Debug ] inspector/console/messagesCleared.html [ Pass Timeout ]
@@ -1060,8 +1058,7 @@ webkit.org/b/168090 [ Debug ] inspector/debugger/breakpoint-columns.html [ Pass 
 webkit.org/b/161951 [ Release ] inspector/debugger/breakpoints/resolved-dump-each-line.html [ Pass Timeout ]
 webkit.org/b/167711 [ Debug ] inspector/debugger/probe-manager-add-remove-actions.html [ Slow ]
 webkit.org/b/168399 [ Debug ] inspector/debugger/search-scripts.html [ Pass Timeout ]
-webkit.org/b/181952 [ Debug ] inspector/debugger/tail-deleted-frames-from-vm-entry.html [ Slow ]
-webkit.org/b/169119 [ Debug ] inspector/debugger/tail-deleted-frames-this-value.html [ Pass Timeout ]
+webkit.org/b/181952 [ Debug ] inspector/debugger/tail-deleted-frames/tail-deleted-frames-vm-entry.html [ Slow ]
 webkit.org/b/168387 [ Debug ] inspector/debugger/tail-recursion.html [ Pass Timeout ]
 webkit.org/b/170127 inspector/dom-debugger/dom-breakpoints.html [ Pass Timeout ]
 webkit.org/b/148636 inspector/dom/getAccessibilityPropertiesForNode.html [ Pass Timeout ]
@@ -1245,8 +1242,6 @@ webkit.org/b/159755 [ Sierra+ ] fast/text/emoji-gender-fe0f-7.html [ Pass ]
 webkit.org/b/159755 [ Sierra+ ] fast/text/emoji-gender-fe0f-8.html [ Pass ]
 webkit.org/b/159755 [ Sierra+ ] fast/text/emoji-gender-fe0f-9.html [ Pass ]
 webkit.org/b/159755 [ Sierra+ ] fast/text/emoji-gender.html [ Pass ]
-
-webkit.org/b/161142 [ Release ] imported/w3c/web-platform-tests/html/dom/interfaces.html [ Pass Failure ]
 
 webkit.org/b/161144 http/tests/media/hls/hls-accessiblity-describes-video-menu.html [ Skip ]
 
@@ -1658,7 +1653,7 @@ webkit.org/b/177616 [ HighSierra+ ] http/tests/media/video-buffered-range-contai
 
 webkit.org/b/184610 media/video-volume-slider-drag.html [ Pass Timeout ]
 
-webkit.org/b/184612 [ Debug ] media/audio-concurrent-supported.html [ Pass Failure ]
+webkit.org/b/184612 media/audio-concurrent-supported.html [ Pass Failure ]
 
 # Font collections are not supported on every OS.
 webkit.org/b/184624 [ Sierra ] fast/text/font-collection.html [ ImageOnlyFailure ]
@@ -1785,7 +1780,8 @@ webkit.org/b/190976 imported/w3c/web-platform-tests/media-source/mediasource-cha
 
 webkit.org/b/199275 [ HighSierra ] webgpu [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/create-context-webgpu.html [ Skip ]
-webkit.org/b/199275 [ HighSierra ] inspector/canvas/resolveCanvasContext-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/resolveContext-webgpu.html [ Skip ]
 
 webkit.org/b/189680 platform/mac/media/audio-session-category-video-paused.html [ Pass Timeout ]
 
@@ -1995,3 +1991,8 @@ webkit.org/b/200128 imported/w3c/web-platform-tests/html/semantics/embedded-cont
 
 # rdar://54317204 (fast/text/font-cursive-italic-cjk-2.html is failing)
 [ Catalina+ ] fast/text/font-cursive-italic-cjk-2.html [ ImageOnlyFailure ]
+
+webkit.org/b/181837 [ Release ] imported/w3c/web-platform-tests/service-workers/service-worker/ready.https.html [ Pass Failure ]
+
+webkit.org/b/199124 http/tests/appcache/remove-cache.html [ Pass Failure ]
+

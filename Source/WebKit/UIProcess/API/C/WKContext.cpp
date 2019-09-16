@@ -40,6 +40,7 @@
 #include "WKContextConfigurationRef.h"
 #include "WKRetainPtr.h"
 #include "WKString.h"
+#include "WKWebsiteDataStoreRef.h"
 #include "WebCertificateInfo.h"
 #include "WebContextInjectedBundleClient.h"
 #include "WebPageProxy.h"
@@ -68,13 +69,13 @@ WKTypeID WKContextGetTypeID()
 
 WKContextRef WKContextCreate()
 {
-    auto configuration = API::ProcessPoolConfiguration::createWithLegacyOptions();
+    auto configuration = API::ProcessPoolConfiguration::create();
     return WebKit::toAPI(&WebKit::WebProcessPool::create(configuration).leakRef());
 }
 
 WKContextRef WKContextCreateWithInjectedBundlePath(WKStringRef pathRef)
 {
-    auto configuration = API::ProcessPoolConfiguration::createWithLegacyOptions();
+    auto configuration = API::ProcessPoolConfiguration::create();
     configuration->setInjectedBundlePath(WebKit::toWTFString(pathRef));
 
     return WebKit::toAPI(&WebKit::WebProcessPool::create(configuration).leakRef());
@@ -417,6 +418,11 @@ bool WKContextGetUsesSingleWebProcess(WKContextRef contextRef)
     return WebKit::toImpl(contextRef)->configuration().usesSingleWebProcess();
 }
 
+void WKContextSetStorageAccessAPIEnabled(WKContextRef contextRef, bool enabled)
+{
+    WebKit::toImpl(contextRef)->setStorageAccessAPIEnabled(enabled);
+}
+
 void WKContextSetCustomWebContentServiceBundleIdentifier(WKContextRef contextRef, WKStringRef name)
 {
     WebKit::toImpl(contextRef)->setCustomWebContentServiceBundleIdentifier(WebKit::toImpl(name)->string());
@@ -427,9 +433,8 @@ void WKContextSetDiskCacheSpeculativeValidationEnabled(WKContextRef contextRef, 
     WebKit::toImpl(contextRef)->configuration().setDiskCacheSpeculativeValidationEnabled(value);
 }
 
-void WKContextPreconnectToServer(WKContextRef contextRef, WKURLRef serverURLRef)
+void WKContextPreconnectToServer(WKContextRef, WKURLRef)
 {
-    WebKit::toImpl(contextRef)->preconnectToServer(URL(URL(), WebKit::toWTFString(serverURLRef)));
 }
 
 WKCookieManagerRef WKContextGetCookieManager(WKContextRef contextRef)
@@ -437,21 +442,14 @@ WKCookieManagerRef WKContextGetCookieManager(WKContextRef contextRef)
     return WebKit::toAPI(WebKit::toImpl(contextRef)->supplement<WebKit::WebCookieManagerProxy>());
 }
 
-WKWebsiteDataStoreRef WKContextGetWebsiteDataStore(WKContextRef context)
+WKWebsiteDataStoreRef WKContextGetWebsiteDataStore(WKContextRef)
 {
-    auto* dataStore = WebKit::toImpl(context)->websiteDataStore();
-    if (!dataStore) {
-        auto defaultDataStore = API::WebsiteDataStore::defaultDataStore();
-        WebKit::toImpl(context)->setPrimaryDataStore(defaultDataStore.get());
-        dataStore = defaultDataStore.ptr();
-    }
-
-    return WebKit::toAPI(dataStore);
+    return WKWebsiteDataStoreGetDefaultDataStore();
 }
 
 WKApplicationCacheManagerRef WKContextGetApplicationCacheManager(WKContextRef context)
 {
-    return reinterpret_cast<WKApplicationCacheManagerRef>(WKContextGetWebsiteDataStore(context));
+    return reinterpret_cast<WKApplicationCacheManagerRef>(WKWebsiteDataStoreGetDefaultDataStore());
 }
 
 WKGeolocationManagerRef WKContextGetGeolocationManager(WKContextRef contextRef)
@@ -466,7 +464,7 @@ WKIconDatabaseRef WKContextGetIconDatabase(WKContextRef)
 
 WKKeyValueStorageManagerRef WKContextGetKeyValueStorageManager(WKContextRef context)
 {
-    return reinterpret_cast<WKKeyValueStorageManagerRef>(WKContextGetWebsiteDataStore(context));
+    return reinterpret_cast<WKKeyValueStorageManagerRef>(WKWebsiteDataStoreGetDefaultDataStore());
 }
 
 WKMediaSessionFocusManagerRef WKContextGetMediaSessionFocusManager(WKContextRef context)
@@ -486,7 +484,7 @@ WKNotificationManagerRef WKContextGetNotificationManager(WKContextRef contextRef
 
 WKResourceCacheManagerRef WKContextGetResourceCacheManager(WKContextRef context)
 {
-    return reinterpret_cast<WKResourceCacheManagerRef>(WKContextGetWebsiteDataStore(context));
+    return reinterpret_cast<WKResourceCacheManagerRef>(WKWebsiteDataStoreGetDefaultDataStore());
 }
 
 void WKContextStartMemorySampler(WKContextRef contextRef, WKDoubleRef interval)

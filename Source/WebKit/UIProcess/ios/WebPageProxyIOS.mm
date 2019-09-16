@@ -46,6 +46,7 @@
 #import "RemoteLayerTreeDrawingAreaProxy.h"
 #import "RemoteLayerTreeDrawingAreaProxyMessages.h"
 #import "RemoteLayerTreeTransaction.h"
+#import "RemoteScrollingCoordinatorProxy.h"
 #import "UIKitSPI.h"
 #import "UserData.h"
 #import "VersionChecks.h"
@@ -272,6 +273,19 @@ WebCore::FloatRect WebPageProxy::computeCustomFixedPositionRect(const FloatRect&
     if (layoutViewportRect != currentCustomFixedPositionRect)
         LOG_WITH_STREAM(VisibleRects, stream << "WebPageProxy::computeCustomFixedPositionRect: new layout viewport  " << layoutViewportRect);
     return layoutViewportRect;
+}
+
+FloatRect WebPageProxy::unconstrainedLayoutViewportRect() const
+{
+    return computeCustomFixedPositionRect(unobscuredContentRect(), unobscuredContentRectRespectingInputViewBounds(), customFixedPositionRect(), displayedContentScale(), FrameView::LayoutViewportConstraint::Unconstrained);
+}
+
+void WebPageProxy::adjustLayersForLayoutViewport(const FloatRect& layoutViewport)
+{
+    if (!m_scrollingCoordinatorProxy)
+        return;
+
+    m_scrollingCoordinatorProxy->viewportChangedViaDelegatedScrolling(unobscuredContentRect().location(), layoutViewport, displayedContentScale());
 }
 
 void WebPageProxy::scrollingNodeScrollViewWillStartPanGesture()
@@ -1086,13 +1100,6 @@ uint32_t WebPageProxy::computePagesForPrintingAndDrawToPDF(FrameIdentifier frame
     return pageCount;
 }
 
-void WebPageProxy::drawToPDFCallback(const IPC::DataReference& pdfData, CallbackID callbackID)
-{
-    auto callback = m_callbacks.take<DrawToPDFCallback>(callbackID);
-    RELEASE_ASSERT(callback);
-    callback->performCallbackWithReturnValue(pdfData);
-}
-
 void WebPageProxy::contentSizeCategoryDidChange(const String& contentSizeCategory)
 {
     process().send(Messages::WebPage::ContentSizeCategoryDidChange(contentSizeCategory), m_webPageID);
@@ -1272,9 +1279,8 @@ UIViewController *WebPageProxy::paymentCoordinatorPresentingViewController(const
     return uiClient().presentingViewController();
 }
 
-const String& WebPageProxy::paymentCoordinatorCTDataConnectionServiceType(const WebPaymentCoordinatorProxy&, PAL::SessionID sessionID)
+const String& WebPageProxy::paymentCoordinatorCTDataConnectionServiceType(const WebPaymentCoordinatorProxy&)
 {
-    ASSERT_UNUSED(sessionID, sessionID == websiteDataStore().sessionID());
     return process().processPool().configuration().ctDataConnectionServiceType();
 }
 
@@ -1337,6 +1343,9 @@ static bool desktopClassBrowsingRecommendedForRequest(const WebCore::ResourceReq
         return false;
 
     if (equalLettersIgnoringASCIICase(host, "trello.com") || host.endsWithIgnoringASCIICase(".trello.com"))
+        return false;
+
+    if (equalLettersIgnoringASCIICase(host, "ted.com") || host.endsWithIgnoringASCIICase(".ted.com"))
         return false;
 
     if (host.containsIgnoringASCIICase("hsbc.")) {

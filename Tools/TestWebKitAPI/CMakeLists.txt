@@ -130,6 +130,7 @@ if (ENABLE_WEBCORE)
         Tests/WebCore/FloatSize.cpp
         Tests/WebCore/GridPosition.cpp
         Tests/WebCore/HTMLParserIdioms.cpp
+        Tests/WebCore/HTTPParsers.cpp
         Tests/WebCore/IntPoint.cpp
         Tests/WebCore/IntRect.cpp
         Tests/WebCore/IntSize.cpp
@@ -195,7 +196,6 @@ if (ENABLE_WEBKIT)
     set(TestWebKit_SOURCES
         Tests/WebKit/AboutBlankLoad.cpp
         Tests/WebKit/CanHandleRequest.cpp
-        Tests/WebKit/CookieManager.cpp
         Tests/WebKit/DOMWindowExtensionBasic.cpp
         Tests/WebKit/DOMWindowExtensionNoCache.cpp
         Tests/WebKit/DocumentStartUserScriptAlertCrash.cpp

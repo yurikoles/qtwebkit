@@ -107,6 +107,7 @@ public:
 #endif
 
     bool hasPendingActivity() const { return m_imageLoader.hasPendingActivity(); }
+    size_t pendingDecodePromisesCountForTesting() const { return m_imageLoader.pendingDecodePromisesCountForTesting(); }
 
     bool canContainRangeEndPoint() const override { return false; }
 

@@ -168,6 +168,7 @@ void clobberize(Graph& graph, Node* node, const ReadFunctor& read, const WriteFu
     case SkipScope:
     case GetGlobalObject:
     case StringCharCodeAt:
+    case StringCodePointAt:
     case CompareStrictEq:
     case SameValue:
     case IsEmpty:
@@ -1317,14 +1318,14 @@ void clobberize(Graph& graph, Node* node, const ReadFunctor& read, const WriteFu
         def(HeapLocation(ClosureVariableLoc, AbstractHeap(ScopeProperties, node->scopeOffset().offset()), node->child1()), LazyNode(node->child2().node()));
         return;
 
-    case GetPromiseInternalField: {
+    case GetInternalField: {
         AbstractHeap heap(JSPromiseFields, node->internalFieldIndex());
         read(heap);
         def(HeapLocation(PromiseInternalFieldLoc, heap, node->child1()), LazyNode(node));
         return;
     }
 
-    case PutPromiseInternalField: {
+    case PutInternalField: {
         AbstractHeap heap(JSPromiseFields, node->internalFieldIndex());
         write(heap);
         def(HeapLocation(PromiseInternalFieldLoc, heap, node->child1()), LazyNode(node->child2().node()));
