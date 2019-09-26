@@ -134,7 +134,7 @@ def createZip(directoryToZip, configuration, embedParentDirectoryNameOnDarwin=Fa
 
 
 def archiveBuiltProduct(configuration, platform, fullPlatform):
-    assert platform in ('mac', 'win', 'gtk', 'efl', 'ios')
+    assert platform in ('mac', 'win', 'gtk', 'efl', 'ios', 'qt')
 
     if fullPlatform.startswith('ios-simulator'):
         # We need to include in the archive the Mac tool, LayoutTestRelay, to run layout tests in the iOS simulator.
@@ -173,7 +173,7 @@ def archiveBuiltProduct(configuration, platform, fullPlatform):
 
         shutil.rmtree(thinDirectory)
 
-    elif platform == 'gtk' or platform == 'efl':
+    elif platform == 'gtk' or platform == 'efl' or platform == 'qt':
         thinDirectory = os.path.join(_configurationBuildDirectory, 'thin')
 
         removeDirectoryIfExists(thinDirectory)
@@ -223,7 +223,7 @@ def unzipArchive(directoryToExtractTo, configuration):
 
 
 def extractBuiltProduct(configuration, platform):
-    assert platform in ('mac', 'win', 'gtk', 'efl', 'ios')
+    assert platform in ('mac', 'win', 'gtk', 'efl', 'ios', 'qt')
 
     archiveFile = os.path.join(_topLevelBuildDirectory, configuration + '.zip')
 
@@ -232,7 +232,7 @@ def extractBuiltProduct(configuration, platform):
 
     if platform in ('mac', 'ios'):
         return unzipArchive(_topLevelBuildDirectory, configuration)
-    elif platform == 'win' or platform == 'gtk' or platform == 'efl':
+    elif platform == 'win' or platform == 'gtk' or platform == 'efl' or platform == 'qt':
         print 'Extracting', _configurationBuildDirectory
         return unzipArchive(_configurationBuildDirectory, configuration)
 
