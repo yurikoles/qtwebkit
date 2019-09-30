@@ -1321,8 +1321,6 @@ webkit.org/b/168087 media/video-zoom.html [ Pass Failure ]
 webkit.org/b/168094 imported/w3c/web-platform-tests/media-source/SourceBuffer-abort.html [ Pass Failure ]
 webkit.org/b/167975 imported/w3c/web-platform-tests/media-source/SourceBuffer-abort-removed.html [ Pass Failure ]
 
-[ Debug ] imported/w3c/web-platform-tests/IndexedDB/interfaces.any.html [ Slow ]
-[ Debug ] imported/w3c/web-platform-tests/IndexedDB/interfaces.any.worker.html [ Slow ]
 [ Debug ] imported/w3c/web-platform-tests/hr-time/idlharness.html [ Slow ]
 
 webkit.org/b/168503 editing/pasteboard/drag-drop-copy-content.html [ Failure ]
@@ -1781,7 +1779,10 @@ webkit.org/b/190976 imported/w3c/web-platform-tests/media-source/mediasource-cha
 webkit.org/b/199275 [ HighSierra ] webgpu [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/create-context-webgpu.html [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/requestShaderSource-webgpu.html [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/resolveContext-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/updateShader-webgpu.html [ Skip ]
 
 webkit.org/b/189680 platform/mac/media/audio-session-category-video-paused.html [ Pass Timeout ]
 
@@ -1806,6 +1807,9 @@ webkit.org/b/196274 [ Mojave ] imported/w3c/web-platform-tests/xhr/send-redirect
 webkit.org/b/196112 imported/w3c/web-platform-tests/mathml/relations/css-styling/mathvariant-bold.html [ Pass ImageOnlyFailure ]
 webkit.org/b/196112 imported/w3c/web-platform-tests/mathml/relations/css-styling/mathvariant-double-struck.html [ Pass ImageOnlyFailure ]
 webkit.org/b/196112 imported/w3c/web-platform-tests/mathml/relations/css-styling/mathvariant-italic.html [ Pass ImageOnlyFailure ]
+
+# Flaky for non MathML core.
+imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/cramped-001.html [ Pass Failure ]
 
 webkit.org/b/19650 [ HighSierra+ ] accessibility/mac/press-not-work-for-disabled-menu-list.html [ Pass Failure ]
 
@@ -1941,9 +1945,6 @@ webkit.org/b/195635 scrollingcoordinator/mac/multiple-fixed.html [ Pass Timeout 
 [ Catalina+ ] fast/text/font-collection.html [ ImageOnlyFailure ]
 [ Catalina+ ] fast/text/woff2.html [ ImageOnlyFailure ]
 
-# <rdar://problem/43305675>
-[ Catalina+ ] webaudio/silence-after-playback.html [ Failure ]
-
 # <rdar://problem/45056204>
 [ Catalina+ ] http/tests/cookies/third-party-cookie-relaxing.html [ Failure ]
 [ Catalina+ ] http/tests/xmlhttprequest/cross-origin-cookie-storage.html [ Failure ]
@@ -1996,3 +1997,33 @@ webkit.org/b/181837 [ Release ] imported/w3c/web-platform-tests/service-workers/
 
 webkit.org/b/199124 http/tests/appcache/remove-cache.html [ Pass Failure ]
 
+# rdar://55405851 ([ macOS ] Layout tests webgpu/*-triangle-strip.html are flaky failures. (201827))
+webkit.org/b/201827 webgpu/blend-color-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/blend-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/color-write-mask-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/depth-enabled-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/simple-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/texture-triangle-strip.html [ Pass ImageOnlyFailure ]
+webkit.org/b/201827 webgpu/viewport-scissor-rect-triangle-strip.html [ Pass ImageOnlyFailure ]
+
+# rdar://55204775 (REGRESSION (MacOS): Many webgpu/whlsl/* tests are flaky failures)
+webgpu/whlsl/arbitrary-vertex-attribute-locations.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/nested-dot-expression-rvalue.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/ensure-proper-variable-lifetime-3.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-2.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-10.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-11.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-12.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-13.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-14.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-15.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-16.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-17.html [ Pass ImageOnlyFailure ] 
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-18.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-19.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-24.html [ Pass ImageOnlyFailure ]
+webgpu/whlsl/separate-shader-modules/separate-shader-modules-26.html [ Pass ImageOnlyFailure ]
+
+# rdar://55484256 (REGRESSION: (Catalina) fast/images/async-image-multiple-clients-repaint.html is a flakey failure)
+[ Catalina+ ] fast/images/async-image-multiple-clients-repaint.html [ Pass Failure ]

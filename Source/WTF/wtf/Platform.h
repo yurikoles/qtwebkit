@@ -718,13 +718,13 @@
 #define HAVE_MACHINE_CONTEXT 1
 #endif
 
-#if OS(DARWIN) || (OS(LINUX) && defined(__GLIBC__) && !defined(__UCLIBC__))
+#if OS(DARWIN) || (OS(LINUX) && defined(__GLIBC__) && !defined(__UCLIBC__) && !CPU(MIPS))
 #define HAVE_BACKTRACE 1
 #endif
 
 #if OS(DARWIN) || OS(LINUX)
 #if PLATFORM(QT) || PLATFORM(GTK)
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#if defined(__GLIBC__) && !defined(__UCLIBC__) && !CPU(MIPS)
 #define HAVE_BACKTRACE_SYMBOLS 1
 #endif
 #endif /* PLATFORM(GTK) */
@@ -1200,7 +1200,7 @@
 #endif
 #endif
 
-#if PLATFORM(IOS_FAMILY) || PLATFORM(MAC)
+#if PLATFORM(COCOA)
 #define USE_COREMEDIA 1
 #define USE_VIDEOTOOLBOX 1
 #define HAVE_AVFOUNDATION_VIDEO_OUTPUT 1
@@ -1208,16 +1208,16 @@
 #define HAVE_MEDIA_PLAYER 1
 #endif
 
-#if PLATFORM(IOS_FAMILY) || PLATFORM(MAC)
+#if PLATFORM(COCOA)
 #define HAVE_AVFOUNDATION_MEDIA_SELECTION_GROUP 1
 #endif
 
-#if PLATFORM(IOS_FAMILY) || PLATFORM(MAC)
+#if PLATFORM(COCOA)
 #define HAVE_AVFOUNDATION_LEGIBLE_OUTPUT_SUPPORT 1
 #define HAVE_MEDIA_ACCESSIBILITY_FRAMEWORK 1
 #endif
 
-#if PLATFORM(IOS_FAMILY) || PLATFORM(MAC)
+#if PLATFORM(COCOA)
 #define HAVE_AVFOUNDATION_LOADER_DELEGATE 1
 #endif
 
@@ -1284,7 +1284,7 @@
 #define USE_INSERTION_UNDO_GROUPING 1
 #endif
 
-#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+#if PLATFORM(COCOA)
 #define HAVE_AVASSETREADER 1
 #endif
 
@@ -1342,7 +1342,7 @@
 #define USE_MEDIATOOLBOX 1
 #endif
 
-#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+#if PLATFORM(COCOA)
 #define USE_OS_LOG 1
 #if USE(APPLE_INTERNAL_SDK)
 #define USE_OS_STATE 1
@@ -1379,7 +1379,7 @@
 #endif
 #endif
 
-#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+#if PLATFORM(COCOA)
 #define USE_MEDIAREMOTE 1
 #endif
 
@@ -1447,7 +1447,7 @@
 #define HAVE_NSHTTPCOOKIESTORAGE__INITWITHIDENTIFIER_WITH_INACCURATE_NULLABILITY 1
 #endif
 
-#if PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+#if PLATFORM(COCOA)
 #define HAVE_CFNETWORK_WITH_CONTENT_ENCODING_SNIFFING_OVERRIDE 1
 /* The override isn't needed on iOS family, as the default behavior is to not sniff. */
 /* FIXME: This should probably be enabled on 10.13.2 and newer, not just 10.14 and newer. */

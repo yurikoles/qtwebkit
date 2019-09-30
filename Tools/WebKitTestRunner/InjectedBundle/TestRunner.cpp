@@ -741,6 +741,7 @@ enum {
     StatisticsDidClearThroughWebsiteDataRemovalCallbackID,
     StatisticsDidResetToConsistentStateCallbackID,
     StatisticsDidSetBlockCookiesForHostCallbackID,
+    StatisticsDidSetShouldDowngradeReferrerCallbackID,
     AllStorageAccessEntriesCallbackID,
     DidRemoveAllSessionCredentialsCallbackID,
     GetApplicationManifestCallbackID,
@@ -857,6 +858,9 @@ static inline bool toBool(JSStringRef value)
 void TestRunner::overridePreference(JSStringRef preference, JSStringRef value)
 {
     auto& injectedBundle = InjectedBundle::singleton();
+    // Should use `<!-- webkit-test-runner [ enablePageCache=true ] -->` instead.
+    RELEASE_ASSERT(!JSStringIsEqualToUTF8CString(preference, "WebKitUsesPageCachePreferenceKey"));
+
     // FIXME: handle non-boolean preferences.
     WKBundleOverrideBoolPreferenceForTestRunner(injectedBundle.bundle(), injectedBundle.pageGroup(), toWK(preference).get(), toBool(value));
 }
@@ -1694,7 +1698,15 @@ void TestRunner::setStatisticsGrandfathered(JSStringRef hostName, bool value)
     
     WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
 }
+
+void TestRunner::setUseITPDatabase(bool value)
+{
+    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("SetUseITPDatabase"));
+    WKRetainPtr<WKBooleanRef> messageBody = adoptWK(WKBooleanCreate(value));
     
+    WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
+}
+
 bool TestRunner::isStatisticsGrandfathered(JSStringRef hostName)
 {
     WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("IsStatisticsGrandfathered"));
@@ -2087,6 +2099,23 @@ bool TestRunner::hasStatisticsIsolatedSession(JSStringRef hostName)
     WKBundlePagePostSynchronousMessageForTesting(InjectedBundle::singleton().page()->page(), messageName.get(), messageBody.get(), &returnData);
     ASSERT(WKGetTypeID(returnData) == WKBooleanGetTypeID());
     return WKBooleanGetValue(adoptWK(static_cast<WKBooleanRef>(returnData)).get());
+}
+
+void TestRunner::setStatisticsShouldDowngradeReferrer(bool value, JSValueRef completionHandler)
+{
+    if (m_hasSetDowngradeReferrerCallback)
+        return;
+    
+    cacheTestRunnerCallback(StatisticsDidSetShouldDowngradeReferrerCallbackID, completionHandler);
+    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("SetStatisticsShouldDowngradeReferrer"));
+    WKRetainPtr<WKBooleanRef> messageBody = adoptWK(WKBooleanCreate(value));
+    WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
+    m_hasSetDowngradeReferrerCallback = true;
+}
+
+void TestRunner::statisticsCallDidSetShouldDowngradeReferrerCallback()
+{
+    callTestRunnerCallback(StatisticsDidSetShouldDowngradeReferrerCallbackID);
 }
 
 void TestRunner::statisticsCallClearThroughWebsiteDataRemovalCallback()
@@ -2579,7 +2608,7 @@ void TestRunner::setWebAuthenticationMockConfiguration(JSValueRef configurationV
             JSRetainPtr<JSStringRef> intermediateCACertificateBase64PropertyName(Adopt, JSStringCreateWithUTF8CString("intermediateCACertificateBase64"));
             JSValueRef intermediateCACertificateBase64Value = JSObjectGetProperty(context, local, intermediateCACertificateBase64PropertyName.get(), 0);
             if (!JSValueIsString(context, intermediateCACertificateBase64Value))
-            return;
+                return;
 
             localKeys.append(adoptWK(WKStringCreateWithUTF8CString("PrivateKeyBase64")));
             localValues.append(toWK(adopt(JSValueToStringCopy(context, privateKeyBase64Value, 0)).get()));
@@ -2587,6 +2616,16 @@ void TestRunner::setWebAuthenticationMockConfiguration(JSValueRef configurationV
             localValues.append(toWK(adopt(JSValueToStringCopy(context, userCertificateBase64Value, 0)).get()));
             localKeys.append(adoptWK(WKStringCreateWithUTF8CString("IntermediateCACertificateBase64")));
             localValues.append(toWK(adopt(JSValueToStringCopy(context, intermediateCACertificateBase64Value, 0)).get()));
+        }
+
+        JSRetainPtr<JSStringRef> preferredUserhandleBase64PropertyName(Adopt, JSStringCreateWithUTF8CString("preferredUserhandleBase64"));
+        JSValueRef preferredUserhandleBase64Value = JSObjectGetProperty(context, local, preferredUserhandleBase64PropertyName.get(), 0);
+        if (!JSValueIsUndefined(context, preferredUserhandleBase64Value) && !JSValueIsNull(context, preferredUserhandleBase64Value)) {
+            if (!JSValueIsString(context, preferredUserhandleBase64Value))
+                return;
+
+            localKeys.append(adoptWK(WKStringCreateWithUTF8CString("PreferredUserhandleBase64")));
+            localValues.append(toWK(adopt(JSValueToStringCopy(context, preferredUserhandleBase64Value, 0)).get()));
         }
 
         Vector<WKStringRef> rawLocalKeys;
@@ -2831,10 +2870,31 @@ void TestRunner::addTestKeyToKeychain(JSStringRef privateKeyBase64, JSStringRef 
     WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
 }
 
-void TestRunner::cleanUpKeychain(JSStringRef attrLabel)
+void TestRunner::cleanUpKeychain(JSStringRef attrLabel, JSStringRef applicationTagBase64)
 {
+    Vector<WKRetainPtr<WKStringRef>> keys;
+    Vector<WKRetainPtr<WKTypeRef>> values;
+
+    keys.append(adoptWK(WKStringCreateWithUTF8CString("AttrLabel")));
+    values.append(toWK(attrLabel));
+
+    if (applicationTagBase64) {
+        keys.append(adoptWK(WKStringCreateWithUTF8CString("ApplicationTag")));
+        values.append(toWK(applicationTagBase64));
+    }
+
+    Vector<WKStringRef> rawKeys;
+    Vector<WKTypeRef> rawValues;
+    rawKeys.resize(keys.size());
+    rawValues.resize(values.size());
+
+    for (size_t i = 0; i < keys.size(); ++i) {
+        rawKeys[i] = keys[i].get();
+        rawValues[i] = values[i].get();
+    }
+
     WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("CleanUpKeychain"));
-    WKRetainPtr<WKStringRef> messageBody = adoptWK(WKStringCreateWithJSString(attrLabel));
+    WKRetainPtr<WKDictionaryRef> messageBody = adoptWK(WKDictionaryCreate(rawKeys.data(), rawValues.data(), rawKeys.size()));
 
     WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
 }
@@ -2865,22 +2925,6 @@ bool TestRunner::keyExistsInKeychain(JSStringRef attrLabel, JSStringRef applicat
 
     WKTypeRef returnData = nullptr;
     WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), &returnData);
-    ASSERT(WKGetTypeID(returnData) == WKBooleanGetTypeID());
-    return WKBooleanGetValue(adoptWK(static_cast<WKBooleanRef>(returnData)).get());
-}
-
-void TestRunner::setCanHandleHTTPSServerTrustEvaluation(bool canHandle)
-{
-    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("SetCanHandleHTTPSServerTrustEvaluation"));
-    WKRetainPtr<WKBooleanRef> messageBody = adoptWK(WKBooleanCreate(canHandle));
-    WKBundlePostSynchronousMessage(InjectedBundle::singleton().bundle(), messageName.get(), messageBody.get(), nullptr);
-}
-
-bool TestRunner::canDoServerTrustEvaluationInNetworkProcess()
-{
-    WKRetainPtr<WKStringRef> messageName = adoptWK(WKStringCreateWithUTF8CString("CanDoServerTrustEvaluationInNetworkProcess"));
-    WKTypeRef returnData = nullptr;
-    WKBundlePagePostSynchronousMessageForTesting(InjectedBundle::singleton().page()->page(), messageName.get(), nullptr, &returnData);
     ASSERT(WKGetTypeID(returnData) == WKBooleanGetTypeID());
     return WKBooleanGetValue(adoptWK(static_cast<WKBooleanRef>(returnData)).get());
 }

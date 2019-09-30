@@ -197,16 +197,6 @@ IntRect computeBoundingBox(const RenderObject& renderer, const Layout& layout)
     return enclosingIntRect(boundingBoxRect);
 }
 
-IntPoint computeFirstRunLocation(const RenderObject& renderer, const Layout& layout)
-{
-    auto& resolver = layout.runResolver();
-    auto range = resolver.rangeForRenderer(renderer);
-    auto begin = range.begin();
-    if (begin == range.end())
-        return IntPoint(0, 0);
-    return flooredIntPoint((*begin).rect().location());
-}
-
 Vector<IntRect> collectAbsoluteRects(const RenderObject& renderer, const Layout& layout, const LayoutPoint& accumulatedOffset)
 {
     Vector<IntRect> rects;
@@ -392,7 +382,7 @@ static void printPrefix(TextStream& stream, int& printedCharacters, int depth)
         stream << " ";
 }
 
-void outputLineLayoutForFlow(TextStream& stream, const RenderBlockFlow& flow, const Layout& layout, int depth)
+void outputLineLayoutForFlow(TextStream& stream, const RenderBlockFlow&, const Layout& layout, int depth)
 {
     int printedCharacters = 0;
     printPrefix(stream, printedCharacters, depth);
@@ -401,7 +391,7 @@ void outputLineLayoutForFlow(TextStream& stream, const RenderBlockFlow& flow, co
     stream.nextLine();
     ++depth;
 
-    for (auto run : runResolver(flow, layout)) {
+    for (auto run : layout.runResolver()) {
         FloatRect rect = run.rect();
         printPrefix(stream, printedCharacters, depth);
         if (run.start() < run.end()) {

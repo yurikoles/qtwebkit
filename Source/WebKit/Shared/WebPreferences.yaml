@@ -92,11 +92,6 @@ SafeBrowsingEnabled:
   defaultValue: true
   webcoreBinding: none
 
-PrivateBrowsingEnabled:
-  type: bool
-  defaultValue: false
-  webcoreBinding: none
-
 TextAreasAreResizable:
   type: bool
   defaultValue: DEFAULT_TEXT_AREAS_ARE_RESIZABLE
@@ -111,7 +106,7 @@ HyperlinkAuditingEnabled:
 
 NeedsSiteSpecificQuirks:
   type: bool
-  defaultValue: false
+  defaultValue: true
 
 AcceleratedCompositingEnabled:
   type: bool
@@ -1727,7 +1722,7 @@ IsNSURLSessionWebSocketEnabled:
   defaultValue: false
   humanReadableName: "NSURLSession WebSocket"
   humanReadableDescription: "Use NSURLSession WebSocket API"
-  category: internal
+  category: experimental
   webcoreBinding: RuntimeEnabledFeatures
   condition: HAVE(NSURLSESSION_WEBSOCKET)
 

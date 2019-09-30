@@ -55,6 +55,10 @@ interface ID2D1GeometrySink;
 
 typedef ID2D1GeometryGroup PlatformPath;
 
+namespace WebCore {
+class PlatformContextDirect2D;
+}
+
 #elif USE(CAIRO)
 
 namespace WebCore {
@@ -184,6 +188,7 @@ namespace WebCore {
         // To keep Path() cheap, it does not allocate a PlatformPath immediately
         // meaning Path::platformPath() can return null (except on Qt).
 #if USE(DIRECT2D)
+        FloatRect fastBoundingRectForStroke(const PlatformContextDirect2D&) const;
         PlatformPathPtr platformPath() const { return m_path.get(); }
 #else
         PlatformPathPtr platformPath() const { return m_path; }

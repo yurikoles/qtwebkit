@@ -303,18 +303,11 @@ void NetworkProcess::initializeNetworkProcess(NetworkProcessCreationParameters&&
         memoryPressureHandler.install();
     }
 
-    m_diskCacheIsDisabledForTesting = parameters.shouldUseTestingNetworkSession;
+    setCacheModel(parameters.cacheModel, parameters.defaultDataStoreParameters.networkSessionParameters.networkCacheDirectory);
 
-    setCacheModel(parameters.cacheModel);
-
-    setCanHandleHTTPSServerTrustEvaluation(parameters.canHandleHTTPSServerTrustEvaluation);
-
-    if (parameters.shouldUseTestingNetworkSession) {
-        m_shouldUseTestingNetworkStorageSession = true;
-        m_defaultNetworkStorageSession = newTestingSession(PAL::SessionID::defaultSessionID());
-    }
-
-    WebCore::RuntimeEnabledFeatures::sharedFeatures().setIsITPDatabaseEnabled(parameters.shouldEnableITPDatabase);
+#if ENABLE(RESOURCE_LOAD_STATISTICS)
+    m_isITPDatabaseEnabled = parameters.shouldEnableITPDatabase;
+#endif
 
     WebCore::RuntimeEnabledFeatures::sharedFeatures().setAdClickAttributionDebugModeEnabled(parameters.enableAdClickAttributionDebugMode);
 
@@ -329,12 +322,11 @@ void NetworkProcess::initializeNetworkProcess(NetworkProcessCreationParameters&&
 
 #if ENABLE(SERVICE_WORKER)
     if (parentProcessHasServiceWorkerEntitlement()) {
-        addServiceWorkerSession(PAL::SessionID::defaultSessionID(), parameters.serviceWorkerRegistrationDirectory, parameters.serviceWorkerRegistrationDirectoryExtensionHandle);
+        bool serviceWorkerProcessTerminationDelayEnabled = true;
+        addServiceWorkerSession(PAL::SessionID::defaultSessionID(), serviceWorkerProcessTerminationDelayEnabled, parameters.serviceWorkerRegistrationDirectory, parameters.serviceWorkerRegistrationDirectoryExtensionHandle);
 
         for (auto& scheme : parameters.urlSchemesServiceWorkersCanHandle)
             registerURLSchemeServiceWorkersCanHandle(scheme);
-
-        m_shouldDisableServiceWorkerProcessTerminationDelay = parameters.shouldDisableServiceWorkerProcessTerminationDelay;
     }
 #endif
     initializeStorageQuota(parameters.defaultDataStoreParameters);
@@ -462,7 +454,7 @@ void NetworkProcess::addWebsiteDataStore(WebsiteDataStoreParameters&& parameters
 
 #if ENABLE(SERVICE_WORKER)
     if (parentProcessHasServiceWorkerEntitlement())
-        addServiceWorkerSession(parameters.networkSessionParameters.sessionID, parameters.serviceWorkerRegistrationDirectory, parameters.serviceWorkerRegistrationDirectoryExtensionHandle);
+        addServiceWorkerSession(parameters.networkSessionParameters.sessionID, parameters.serviceWorkerProcessTerminationDelayEnabled, parameters.serviceWorkerRegistrationDirectory, parameters.serviceWorkerRegistrationDirectoryExtensionHandle);
 #endif
 
     m_storageManagerSet->add(parameters.networkSessionParameters.sessionID, parameters.localStorageDirectory, parameters.localStorageDirectoryExtensionHandle);
@@ -508,9 +500,9 @@ std::unique_ptr<WebCore::NetworkStorageSession> NetworkProcess::newTestingSessio
 }
 
 #if PLATFORM(COCOA)
-void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, const String& identifierBase, RetainPtr<CFHTTPCookieStorageRef>&& cookieStorage)
+void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, bool shouldUseTestingNetworkSession, const String& identifierBase, RetainPtr<CFHTTPCookieStorageRef>&& cookieStorage)
 #else
-void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, const String& identifierBase)
+void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, bool shouldUseTestingNetworkSession, const String& identifierBase)
 #endif
 {
     ASSERT(sessionID != PAL::SessionID::defaultSessionID());
@@ -519,7 +511,7 @@ void NetworkProcess::ensureSession(const PAL::SessionID& sessionID, const String
     if (!addResult.isNewEntry)
         return;
 
-    if (m_shouldUseTestingNetworkStorageSession) {
+    if (shouldUseTestingNetworkSession) {
         addResult.iterator->value = newTestingSession(sessionID);
         return;
     }
@@ -571,12 +563,6 @@ NetworkSession* NetworkProcess::networkSession(PAL::SessionID sessionID) const
     return m_networkSessions.get(sessionID);
 }
 
-NetworkSession* NetworkProcess::networkSessionByConnection(IPC::Connection& connection) const
-{
-    auto iterator = m_sessionByConnection.find(connection.uniqueID());
-    return iterator != m_sessionByConnection.end() ? networkSession(iterator->value) : nullptr;
-}
-
 void NetworkProcess::setSession(PAL::SessionID sessionID, std::unique_ptr<NetworkSession>&& session)
 {
     ASSERT(RunLoop::isMain());
@@ -600,19 +586,12 @@ void NetworkProcess::destroySession(PAL::SessionID sessionID)
 
 #if ENABLE(SERVICE_WORKER)
     m_swServers.remove(sessionID);
-    m_swDatabasePaths.remove(sessionID);
+    m_serviceWorkerInfo.remove(sessionID);
 #endif
 
     m_storageManagerSet->remove(sessionID);
 
     m_storageQuotaManagers.remove(sessionID);
-}
-
-BlobRegistryImpl* NetworkProcess::blobRegistry(NetworkConnectionToWebProcess& connection)
-{
-    // FIXME: Deprecate this method and use sessionID -> NetworkSession -> blob registry.
-    auto* session = networkSessionByConnection(connection.connection());
-    return session ? &session->blobRegistry() : nullptr;
 }
 
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
@@ -693,6 +672,17 @@ void NetworkProcess::setGrandfathered(PAL::SessionID sessionID, const Registrabl
         ASSERT_NOT_REACHED();
         completionHandler();
     }
+}
+
+void NetworkProcess::setUseITPDatabase(PAL::SessionID sessionID, bool value)
+{
+    if (auto* networkSession = this->networkSession(sessionID)) {
+        if (m_isITPDatabaseEnabled != value) {
+            m_isITPDatabaseEnabled = value;
+            networkSession->recreateResourceLoadStatisticStore();
+        }
+    } else
+        ASSERT_NOT_REACHED();
 }
 
 void NetworkProcess::setPrevalentResource(PAL::SessionID sessionID, const RegistrableDomain& domain, CompletionHandler<void()>&& completionHandler)
@@ -1150,11 +1140,10 @@ void NetworkProcess::setShouldClassifyResourcesBeforeDataRecordsRemoval(PAL::Ses
     }
 }
 
-void NetworkProcess::setResourceLoadStatisticsEnabled(bool enabled)
+void NetworkProcess::setResourceLoadStatisticsEnabled(PAL::SessionID sessionID, bool enabled)
 {
-    forEachNetworkSession([enabled](auto& networkSession) {
-        networkSession.setResourceLoadStatisticsEnabled(enabled);
-    });
+    if (auto* networkSession = this->networkSession(sessionID))
+        networkSession->setResourceLoadStatisticsEnabled(enabled);
 }
 
 void NetworkProcess::setResourceLoadStatisticsLogTestingEvent(bool enabled)
@@ -1239,6 +1228,14 @@ void NetworkProcess::hasIsolatedSession(PAL::SessionID sessionID, const WebCore:
     if (auto* networkSession = this->networkSession(sessionID))
         result = networkSession->hasIsolatedSession(domain);
     completionHandler(result);
+}
+
+void NetworkProcess::setShouldDowngradeReferrerForTesting(bool enabled, CompletionHandler<void()>&& completionHandler)
+{
+    forEachNetworkSession([enabled](auto& networkSession) {
+        networkSession.setShouldDowngradeReferrerForTesting(enabled);
+    });
+    completionHandler();
 }
 #endif // ENABLE(RESOURCE_LOAD_STATISTICS)
 
@@ -1367,7 +1364,7 @@ void NetworkProcess::fetchWebsiteData(PAL::SessionID sessionID, OptionSet<Websit
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    path = m_swDatabasePaths.get(sessionID);
+    path = m_serviceWorkerInfo.get(sessionID).databasePath;
     if (!path.isEmpty() && websiteDataTypes.contains(WebsiteDataType::ServiceWorkerRegistrations)) {
         swServerForSession(sessionID).getOriginsWithRegistrations([callbackAggregator = callbackAggregator.copyRef()](const HashSet<SecurityOriginData>& securityOrigins) mutable {
             for (auto& origin : securityOrigins)
@@ -1748,7 +1745,7 @@ void NetworkProcess::deleteWebsiteDataForRegistrableDomains(PAL::SessionID sessi
 #endif
     
 #if ENABLE(SERVICE_WORKER)
-    path = m_swDatabasePaths.get(sessionID);
+    path = m_serviceWorkerInfo.get(sessionID).databasePath;
     if (!path.isEmpty() && websiteDataTypes.contains(WebsiteDataType::ServiceWorkerRegistrations)) {
         swServerForSession(sessionID).getOriginsWithRegistrations([this, sessionID, domainsToDeleteAllButCookiesFor, callbackAggregator = callbackAggregator.copyRef()](const HashSet<SecurityOriginData>& securityOrigins) mutable {
             for (auto& securityOrigin : securityOrigins) {
@@ -1885,7 +1882,7 @@ void NetworkProcess::registrableDomainsWithWebsiteData(PAL::SessionID sessionID,
 #endif
     
 #if ENABLE(SERVICE_WORKER)
-    path = m_swDatabasePaths.get(sessionID);
+    path = m_serviceWorkerInfo.get(sessionID).databasePath;
     if (!path.isEmpty() && websiteDataTypes.contains(WebsiteDataType::ServiceWorkerRegistrations)) {
         swServerForSession(sessionID).getOriginsWithRegistrations([callbackAggregator = callbackAggregator.copyRef()](const HashSet<SecurityOriginData>& securityOrigins) mutable {
             for (auto& securityOrigin : securityOrigins)
@@ -1980,7 +1977,7 @@ void NetworkProcess::continueDecidePendingDownloadDestination(DownloadID downloa
         downloadManager().continueDecidePendingDownloadDestination(downloadID, destination, WTFMove(sandboxExtensionHandle), allowOverwrite);
 }
 
-void NetworkProcess::setCacheModel(CacheModel cacheModel)
+void NetworkProcess::setCacheModel(CacheModel cacheModel, String cacheStorageDirectory)
 {
     if (m_hasSetCacheModel && (cacheModel == m_cacheModel))
         return;
@@ -1991,7 +1988,16 @@ void NetworkProcess::setCacheModel(CacheModel cacheModel)
     unsigned urlCacheMemoryCapacity = 0;
     uint64_t urlCacheDiskCapacity = 0;
     uint64_t diskFreeSize = 0;
-    if (FileSystem::getVolumeFreeSpace(m_diskCacheDirectory, diskFreeSize)) {
+
+    // FIXME: Move the cache model to WebsiteDataStore so we don't need to assume the first cache is on the same volume as all caches.
+    forEachNetworkSession([&](auto& session) {
+        if (!cacheStorageDirectory.isNull())
+            return;
+        if (auto* cache = session.cache())
+            cacheStorageDirectory = cache->storageDirectory();
+    });
+
+    if (FileSystem::getVolumeFreeSpace(cacheStorageDirectory, diskFreeSize)) {
         // As a fudge factor, use 1000 instead of 1024, in case the reported byte
         // count doesn't align exactly to a megabyte boundary.
         diskFreeSize /= KB * 1000;
@@ -2002,11 +2008,6 @@ void NetworkProcess::setCacheModel(CacheModel cacheModel)
         if (auto* cache = session.cache())
             cache->setCapacity(urlCacheDiskCapacity);
     });
-}
-
-void NetworkProcess::setCanHandleHTTPSServerTrustEvaluation(bool value)
-{
-    m_canHandleHTTPSServerTrustEvaluation = value;
 }
 
 void NetworkProcess::getNetworkProcessStatistics(uint64_t callbackID)
@@ -2387,19 +2388,17 @@ void NetworkProcess::forEachSWServer(const Function<void(SWServer&)>& callback)
 SWServer& NetworkProcess::swServerForSession(PAL::SessionID sessionID)
 {
     auto result = m_swServers.ensure(sessionID, [&] {
-        auto path = m_swDatabasePaths.get(sessionID);
+        auto info = m_serviceWorkerInfo.get(sessionID);
+        auto path = info.databasePath;
         // There should already be a registered path for this PAL::SessionID.
         // If there's not, then where did this PAL::SessionID come from?
         ASSERT(sessionID.isEphemeral() || !path.isEmpty());
-        
-        auto value = makeUnique<SWServer>(makeUniqueRef<WebSWOriginStore>(), WTFMove(path), sessionID, [this, sessionID](auto& registrableDomain) {
+
+        return makeUnique<SWServer>(makeUniqueRef<WebSWOriginStore>(), info.processTerminationDelayEnabled, WTFMove(path), sessionID, [this, sessionID](auto& registrableDomain) {
+            ASSERT(!registrableDomain.isEmpty());
             parentProcessConnection()->send(Messages::NetworkProcessProxy::EstablishWorkerContextConnectionToNetworkProcess { registrableDomain, sessionID }, 0);
         });
-        if (m_shouldDisableServiceWorkerProcessTerminationDelay)
-            value->disableServiceWorkerProcessTerminationDelay();
-        return value;
     });
-
     return *result.iterator->value;
 }
 
@@ -2409,12 +2408,6 @@ WebSWOriginStore* NetworkProcess::existingSWOriginStoreForSession(PAL::SessionID
     if (!swServer)
         return nullptr;
     return &static_cast<WebSWOriginStore&>(swServer->originStore());
-}
-
-void NetworkProcess::postMessageToServiceWorkerClient(PAL::SessionID sessionID, const ServiceWorkerClientIdentifier& destinationIdentifier, MessageWithMessagePorts&& message, ServiceWorkerIdentifier sourceIdentifier, const String& sourceOrigin)
-{
-    if (auto* connection = swServerForSession(sessionID).connection(destinationIdentifier.serverConnectionIdentifier))
-        connection->postMessageToServiceWorkerClient(destinationIdentifier.contextIdentifier, WTFMove(message), sourceIdentifier, sourceOrigin);
 }
 
 void NetworkProcess::registerSWServerConnection(WebSWServerConnection& connection)
@@ -2432,19 +2425,13 @@ void NetworkProcess::unregisterSWServerConnection(WebSWServerConnection& connect
         store->unregisterSWServerConnection(connection);
 }
 
-void NetworkProcess::disableServiceWorkerProcessTerminationDelay()
+void NetworkProcess::addServiceWorkerSession(PAL::SessionID sessionID, bool processTerminationDelayEnabled, String& serviceWorkerRegistrationDirectory, const SandboxExtension::Handle& handle)
 {
-    if (m_shouldDisableServiceWorkerProcessTerminationDelay)
-        return;
-    
-    m_shouldDisableServiceWorkerProcessTerminationDelay = true;
-    for (auto& swServer : m_swServers.values())
-        swServer->disableServiceWorkerProcessTerminationDelay();
-}
-
-void NetworkProcess::addServiceWorkerSession(PAL::SessionID sessionID, String& serviceWorkerRegistrationDirectory, const SandboxExtension::Handle& handle)
-{
-    auto addResult = m_swDatabasePaths.add(sessionID, serviceWorkerRegistrationDirectory);
+    ServiceWorkerInfo info {
+        serviceWorkerRegistrationDirectory,
+        processTerminationDelayEnabled,
+    };
+    auto addResult = m_serviceWorkerInfo.add(sessionID, WTFMove(info));
     if (addResult.isNewEntry) {
         SandboxExtension::consumePermanently(handle);
         if (!serviceWorkerRegistrationDirectory.isEmpty())

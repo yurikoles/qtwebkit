@@ -402,16 +402,23 @@ class ValidatePatch(buildstep.BuildStep):
             return 1
         return 0
 
+    def getResultSummary(self):
+        if self.results == FAILURE:
+            return {u'step': unicode(self.descriptionDone)}
+        return super(ValidatePatch, self).getResultSummary()
+
     def skip_build(self, reason):
         self._addToLog('stdio', reason)
         self.finished(FAILURE)
         self.build.results = SKIPPED
+        self.descriptionDone = reason
         self.build.buildFinished([reason], SKIPPED)
 
     def start(self):
         patch_id = self.getProperty('patch_id', '')
         if not patch_id:
             self._addToLog('stdio', 'No patch_id found. Unable to proceed without patch_id.\n')
+            self.descriptionDone = 'No patch id found'
             self.finished(FAILURE)
             return None
 
@@ -744,7 +751,10 @@ class CompileWebKit(shell.Compile):
                 steps_to_add.append(InstallWpeDependencies())
             elif platform == 'gtk':
                 steps_to_add.append(InstallGtkDependencies())
-            steps_to_add.append(CompileWebKitToT())
+            if self.getProperty('group') == 'jsc':
+                steps_to_add.append(CompileJSCToT())
+            else:
+                steps_to_add.append(CompileWebKitToT())
             steps_to_add.append(AnalyzeCompileWebKitResults())
             # Using a single addStepsAfterCurrentStep because of https://github.com/buildbot/buildbot/issues/4874
             self.build.addStepsAfterCurrentStep(steps_to_add)
@@ -776,7 +786,10 @@ class AnalyzeCompileWebKitResults(buildstep.BuildStep):
     descriptionDone = ['analyze-compile-webkit-results']
 
     def start(self):
-        compile_webkit_tot_result = self.getStepResult(CompileWebKitToT.name)
+        compile_tot_step = CompileWebKitToT.name
+        if self.getProperty('group') == 'jsc':
+            compile_tot_step = CompileJSCToT.name
+        compile_webkit_tot_result = self.getStepResult(compile_tot_step)
 
         if compile_webkit_tot_result == FAILURE:
             self.finished(FAILURE)
@@ -799,20 +812,21 @@ class AnalyzeCompileWebKitResults(buildstep.BuildStep):
                 return step.results
 
 
-class CompileJSCOnly(CompileWebKit):
-    name = 'build-jsc'
+class CompileJSC(CompileWebKit):
+    name = 'compile-jsc'
     descriptionDone = ['Compiled JSC']
     command = ['perl', 'Tools/Scripts/build-jsc', WithProperties('--%(configuration)s')]
 
+    def start(self):
+        self.setProperty('group', 'jsc')
+        return CompileWebKit.start(self)
 
-class CompileJSCOnlyToT(CompileJSCOnly):
-    name = 'build-jsc-tot'
 
-    def doStepIf(self, step):
-        return self.getProperty('patchFailedToBuild')
+class CompileJSCToT(CompileJSC):
+    name = 'compile-jsc-tot'
 
-    def hideStepIf(self, results, step):
-        return not self.doStepIf(step)
+    def evaluateCommand(self, cmd):
+        return shell.Compile.evaluateCommand(self, cmd)
 
 
 class RunJavaScriptCoreTests(shell.Test):
@@ -829,36 +843,39 @@ class RunJavaScriptCoreTests(shell.Test):
         return shell.Test.start(self)
 
     def evaluateCommand(self, cmd):
-        if cmd.didFail():
-            self.setProperty('patchFailedTests', True)
-
-        return super(RunJavaScriptCoreTests, self).evaluateCommand(cmd)
+        rc = shell.Test.evaluateCommand(self, cmd)
+        if rc == SUCCESS or rc == WARNINGS:
+            message = 'Passed JSC tests'
+            self.descriptionDone = message
+            self.build.results = SUCCESS
+            self.build.buildFinished([message], SUCCESS)
+        else:
+            self.build.addStepsAfterCurrentStep([ReRunJavaScriptCoreTests()])
+        return rc
 
 
 class ReRunJavaScriptCoreTests(RunJavaScriptCoreTests):
     name = 'jscore-test-rerun'
 
-    def doStepIf(self, step):
-        return self.getProperty('patchFailedTests')
-
-    def hideStepIf(self, results, step):
-        return not self.doStepIf(step)
-
     def evaluateCommand(self, cmd):
-        self.setProperty('patchFailedTests', cmd.didFail())
-        return super(RunJavaScriptCoreTests, self).evaluateCommand(cmd)
+        rc = shell.Test.evaluateCommand(self, cmd)
+        if rc == SUCCESS or rc == WARNINGS:
+            message = 'Passed JSC tests'
+            self.descriptionDone = message
+            self.build.results = SUCCESS
+            self.build.buildFinished([message], SUCCESS)
+        else:
+            self.setProperty('patchFailedTests', True)
+            self.build.addStepsAfterCurrentStep([UnApplyPatchIfRequired(), CompileJSCToT(), RunJavaScriptCoreTestsToT()])
+        return rc
 
 
 class RunJavaScriptCoreTestsToT(RunJavaScriptCoreTests):
     name = 'jscore-test-tot'
     jsonFileName = 'jsc_results.json'
-    command = ['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-fail-fast', '--json-output={0}'.format(jsonFileName), WithProperties('--%(configuration)s')]
 
-    def doStepIf(self, step):
-        return self.getProperty('patchFailedTests')
-
-    def hideStepIf(self, results, step):
-        return not self.doStepIf(step)
+    def evaluateCommand(self, cmd):
+        return shell.Test.evaluateCommand(self, cmd)
 
 
 class CleanBuild(shell.Compile):

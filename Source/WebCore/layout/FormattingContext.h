@@ -29,6 +29,7 @@
 
 #include "DisplayBox.h"
 #include "LayoutBox.h"
+#include "LayoutContainer.h"
 #include "LayoutState.h"
 #include <wtf/IsoMalloc.h>
 #include <wtf/WeakPtr.h>
@@ -76,13 +77,13 @@ public:
     };
     const Display::Box& geometryForBox(const Box&, Optional<EscapeType> = WTF::nullopt) const;
 
-    const Container& root() const { return *m_root; }
-
 protected:
     using LayoutQueue = Vector<const Box*>;
 
+    const Container& root() const { return *m_root; }
     LayoutState& layoutState() const;
-    FormattingState& formattingState() const { return m_formattingState; }
+    const FormattingState& formattingState() const { return m_formattingState; }
+    FormattingState& formattingState() { return m_formattingState; }
 
     void computeBorderAndPadding(const Box&, Optional<UsedHorizontalValues> = WTF::nullopt);
 
@@ -93,21 +94,19 @@ protected:
     // This class implements generic positioning and sizing.
     class Geometry {
     public:
-        Geometry(const FormattingContext&);
-
         VerticalGeometry outOfFlowVerticalGeometry(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
-        HorizontalGeometry outOfFlowHorizontalGeometry(const Box&, UsedHorizontalValues);
+        HorizontalGeometry outOfFlowHorizontalGeometry(const Box&, UsedHorizontalValues, UsedVerticalValues);
 
         HeightAndMargin floatingHeightAndMargin(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
         WidthAndMargin floatingWidthAndMargin(const Box&, UsedHorizontalValues);
 
         HeightAndMargin inlineReplacedHeightAndMargin(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
-        WidthAndMargin inlineReplacedWidthAndMargin(const Box&, UsedHorizontalValues) const;
+        WidthAndMargin inlineReplacedWidthAndMargin(const Box&, UsedHorizontalValues, Optional<UsedVerticalValues> = WTF::nullopt) const;
 
         LayoutSize inFlowPositionedPositionOffset(const Box&, UsedHorizontalValues) const;
 
         HeightAndMargin complicatedCases(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
-        LayoutUnit shrinkToFitWidth(const Box&, UsedHorizontalValues);
+        LayoutUnit shrinkToFitWidth(const Box&, LayoutUnit availableWidth);
 
         Edges computedBorder(const Box&) const;
         Optional<Edges> computedPadding(const Box&, UsedHorizontalValues) const;
@@ -118,16 +117,19 @@ protected:
         Optional<LayoutUnit> computedValueIfNotAuto(const Length& geometryProperty, LayoutUnit containingBlockWidth) const;
         Optional<LayoutUnit> fixedValue(const Length& geometryProperty) const;
 
-        Optional<LayoutUnit> computedMinHeight(const Box&, Optional<UsedVerticalValues> = WTF::nullopt) const;
-        Optional<LayoutUnit> computedMaxHeight(const Box&, Optional<UsedVerticalValues> = WTF::nullopt) const;
+        Optional<LayoutUnit> computedMinHeight(const Box&, Optional<LayoutUnit> containingBlockHeight = WTF::nullopt) const;
+        Optional<LayoutUnit> computedMaxHeight(const Box&, Optional<LayoutUnit> containingBlockHeight = WTF::nullopt) const;
 
         FormattingContext::IntrinsicWidthConstraints constrainByMinMaxWidth(const Box&, IntrinsicWidthConstraints) const;
 
         LayoutUnit contentHeightForFormattingContextRoot(const Box&) const;
 
     protected:
+        friend class FormattingContext;
+        Geometry(const FormattingContext&);
+
         enum class HeightType { Min, Max, Normal };
-        Optional<LayoutUnit> computedHeightValue(const Box&, HeightType, Optional<UsedVerticalValues> = WTF::nullopt) const;
+        Optional<LayoutUnit> computedHeightValue(const Box&, HeightType, Optional<LayoutUnit> containingBlockHeight = WTF::nullopt) const;
 
         const LayoutState& layoutState() const { return m_formattingContext.layoutState(); }
         LayoutState& layoutState() { return m_formattingContext.layoutState(); }
@@ -135,7 +137,7 @@ protected:
 
     private:
         VerticalGeometry outOfFlowReplacedVerticalGeometry(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
-        HorizontalGeometry outOfFlowReplacedHorizontalGeometry(const Box&, UsedHorizontalValues) const;
+        HorizontalGeometry outOfFlowReplacedHorizontalGeometry(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
 
         VerticalGeometry outOfFlowNonReplacedVerticalGeometry(const Box&, UsedHorizontalValues, UsedVerticalValues) const;
         HorizontalGeometry outOfFlowNonReplacedHorizontalGeometry(const Box&, UsedHorizontalValues);
@@ -145,8 +147,8 @@ protected:
 
         WidthAndMargin floatingNonReplacedWidthAndMargin(const Box&, UsedHorizontalValues);
 
-        LayoutUnit staticVerticalPositionForOutOfFlowPositioned(const Box&) const;
-        LayoutUnit staticHorizontalPositionForOutOfFlowPositioned(const Box&) const;
+        LayoutUnit staticVerticalPositionForOutOfFlowPositioned(const Box&, UsedVerticalValues) const;
+        LayoutUnit staticHorizontalPositionForOutOfFlowPositioned(const Box&, UsedHorizontalValues) const;
 
         const FormattingContext& m_formattingContext;
     };
@@ -154,11 +156,12 @@ protected:
 
     class Quirks {
     public:
-        Quirks(const FormattingContext&);
-
         LayoutUnit heightValueOfNearestContainingBlockWithFixedHeight(const Box&);
 
     protected:
+        friend class FormattingContext;
+        Quirks(const FormattingContext&);
+
         const LayoutState& layoutState() const { return m_formattingContext.layoutState(); }
         LayoutState& layoutState() { return m_formattingContext.layoutState(); }
         const FormattingContext& formattingContext() const { return m_formattingContext; }

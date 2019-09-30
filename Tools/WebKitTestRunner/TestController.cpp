@@ -523,6 +523,9 @@ WKWebsiteDataStoreRef TestController::websiteDataStore()
             WKWebsiteDataStoreConfigurationSetWebSQLDatabaseDirectory(configuration.get(), toWK(temporaryFolder + pathSeparator + "Databases" + pathSeparator + "WebSQL").get());
             WKWebsiteDataStoreConfigurationSetMediaKeysStorageDirectory(configuration.get(), toWK(temporaryFolder + pathSeparator + "MediaKeys").get());
             WKWebsiteDataStoreConfigurationSetResourceLoadStatisticsDirectory(configuration.get(), toWK(temporaryFolder + pathSeparator + "ResourceLoadStatistics").get());
+            WKWebsiteDataStoreConfigurationSetPerOriginStorageQuota(configuration.get(), 400 * 1024);
+            WKWebsiteDataStoreConfigurationSetNetworkCacheSpeculativeValidationEnabled(configuration.get(), true);
+            WKWebsiteDataStoreConfigurationSetTestingSessionEnabled(configuration.get(), true);
         }
         dataStore = WKWebsiteDataStoreCreateWithConfiguration(configuration.get());
     }
@@ -547,11 +550,8 @@ WKRetainPtr<WKPageConfigurationRef> TestController::generatePageConfiguration(co
             WKContextSetIconDatabasePath(m_context.get(), toWK(emptyString()).get());
         }
 
-        WKContextSetDiskCacheSpeculativeValidationEnabled(m_context.get(), true);
         WKContextUseTestingNetworkSession(m_context.get());
         WKContextSetCacheModel(m_context.get(), kWKCacheModelDocumentBrowser);
-
-        WKWebsiteDataStoreSetPerOriginStorageQuota(TestController::websiteDataStore(), 400 * 1024);
 
         platformInitializeContext();
     }
@@ -876,6 +876,8 @@ void TestController::resetPreferencesToConsistentValues(const TestOptions& optio
     WKPreferencesSetAcceleratedDrawingEnabled(preferences, m_shouldUseAcceleratedDrawing || options.useAcceleratedDrawing);
     // FIXME: We should be testing the default.
     WKPreferencesSetStorageBlockingPolicy(preferences, kWKAllowAllStorage);
+
+    WKPreferencesSetIsNSURLSessionWebSocketEnabled(preferences, false);
 
     WKPreferencesSetFetchAPIKeepAliveEnabled(preferences, true);
     WKPreferencesSetResourceTimingEnabled(preferences, true);
@@ -3354,6 +3356,11 @@ bool TestController::isStatisticsGrandfathered(WKStringRef host)
     return context.result;
 }
 
+void TestController::setUseITPDatabase(bool value)
+{
+    WKWebsiteDataStoreSetUseITPDatabase(TestController::websiteDataStore(), value);
+}
+
 void TestController::setStatisticsSubframeUnderTopFrameOrigin(WKStringRef host, WKStringRef topFrameHost)
 {
     WKWebsiteDataStoreSetStatisticsSubframeUnderTopFrameOrigin(TestController::websiteDataStore(), host, topFrameHost);
@@ -3514,6 +3521,14 @@ bool TestController::hasStatisticsIsolatedSession(WKStringRef host)
     return context.result;
 }
 
+void TestController::setStatisticsShouldDowngradeReferrer(bool value)
+{
+    ResourceStatisticsCallbackContext context(*this);
+    WKWebsiteDataStoreSetResourceLoadStatisticsShouldDowngradeReferrerForTesting(TestController::websiteDataStore(), value, &context, resourceStatisticsVoidResultCallback);
+    runUntil(context.done, noTimeout);
+    m_currentInvocation->didSetShouldDowngradeReferrer();
+}
+
 void TestController::statisticsResetToConsistentState()
 {
     ResourceStatisticsCallbackContext context(*this);
@@ -3555,16 +3570,11 @@ void TestController::addTestKeyToKeychain(const String&, const String&, const St
 {
 }
 
-void TestController::cleanUpKeychain(const String&)
+void TestController::cleanUpKeychain(const String&, const String&)
 {
 }
 
 bool TestController::keyExistsInKeychain(const String&, const String&)
-{
-    return false;
-}
-
-bool TestController::canDoServerTrustEvaluationInNetworkProcess() const
 {
     return false;
 }

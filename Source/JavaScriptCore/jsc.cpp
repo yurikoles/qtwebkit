@@ -142,8 +142,19 @@
 #include <QCoreApplication>
 #endif
 
-#if __has_include(<WebKitAdditions/MemoryFootprint.h>)
-#include <WebKitAdditions/MemoryFootprint.h>
+#if OS(DARWIN)
+#include <wtf/spi/darwin/ProcessMemoryFootprint.h>
+#elif OS(LINUX)
+#include <wtf/linux/ProcessMemoryFootprint.h>
+#endif
+
+#if OS(DARWIN) || OS(LINUX)
+struct MemoryFootprint : ProcessMemoryFootprint {
+    MemoryFootprint(const ProcessMemoryFootprint& src)
+        : ProcessMemoryFootprint(src)
+    {
+    }
+};
 #else
 struct MemoryFootprint {
     uint64_t current;
@@ -194,7 +205,7 @@ public:
     }
 
     typedef JSNonFinalObject Base;
-    static const unsigned StructureFlags = Base::StructureFlags | JSC::MasqueradesAsUndefined;
+    static constexpr unsigned StructureFlags = Base::StructureFlags | JSC::MasqueradesAsUndefined;
 
     static Masquerader* create(VM& vm, JSGlobalObject* globalObject)
     {
@@ -491,7 +502,7 @@ public:
         return object;
     }
 
-    static const bool needsDestruction = false;
+    static constexpr bool needsDestruction = false;
 
     DECLARE_INFO;
     static const GlobalObjectMethodTable s_globalObjectMethodTable;
@@ -834,8 +845,9 @@ JSInternalPromise* GlobalObject::moduleLoaderImportModule(JSGlobalObject* global
     if (sourceOrigin.isNull())
         return reject(createError(exec, "Could not resolve the module specifier."_s));
 
-    const auto& referrer = sourceOrigin.string();
-    const auto& moduleName = moduleNameValue->value(exec);
+    auto referrer = sourceOrigin.string();
+    auto moduleName = moduleNameValue->value(exec);
+    RETURN_IF_EXCEPTION(throwScope, nullptr);
     if (UNLIKELY(catchScope.exception()))
         return reject(catchScope.exception());
 

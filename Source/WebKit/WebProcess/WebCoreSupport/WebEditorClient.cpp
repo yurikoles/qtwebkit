@@ -441,6 +441,11 @@ void WebEditorClient::overflowScrollPositionChanged()
 {
     notImplemented();
 }
+
+void WebEditorClient::subFrameScrollPositionChanged()
+{
+    notImplemented();
+}
 #endif
 
 static bool getActionTypeForKeyEvent(KeyboardEvent* event, WKInputFieldActionType& type)

@@ -142,6 +142,15 @@ http/tests/misc/willCacheResponse-delegate-callback.html [ Skip ]
 # testRunner.setAlwaysAcceptCookies() is not implemented on Windows.
 http/tests/xmlhttprequest/cross-origin-cookie-storage.html [ Skip ]
 
+# testRunner.setStatisticsShouldDowngradeReferrer() is not supported on Windows
+http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies.php [ Skip ] 
+http/tests/security/contentSecurityPolicy/report-cross-origin-no-cookies-when-private-browsing-enabled.php [ Skip ] 
+http/tests/navigation/ping-attribute/area-cross-origin.html [ Skip ] 
+http/tests/navigation/ping-attribute/anchor-cross-origin.html [ Skip ] 
+http/tests/referrer-policy/no-referrer-when-downgrade/ [ Skip ] 
+http/tests/referrer-policy/unsafe-url/cross-origin-http-http.html [ Skip ] 
+http/tests/referrer-policy/unsafe-url/cross-origin-http.https.html [ Skip ] 
+
 # Dark mode not supported on Windows
 css-dark-mode [ Skip ]
 
@@ -476,6 +485,9 @@ http/tests/download/area-download.html [ Skip ]
 http/tests/security/anchor-download-allow-data.html [ Skip ]
 http/tests/security/anchor-download-allow-sameorigin.html [ Skip ]
 http/tests/download/anchor-download-no-value.html [ Skip ]
+http/tests/download/anchor-download-attribute-content-disposition-no-extension-octet-stream.html [ Skip ]
+http/tests/download/anchor-download-attribute-content-disposition-no-extension-text-plain.html [ Skip ]
+http/tests/security/anchor-download-octet-stream-no-extension.html [ Skip ]
 
 # testRunner.setShouldDownloadUndisplayableMIMETypes() is not supported on WK1.
 fast/dom/HTMLAnchorElement/anchor-file-blob-convert-to-download.html [ Skip ]
@@ -2001,12 +2013,13 @@ inspector/canvas/recording-webgl2-memoryLimit.html [ Skip ]
 inspector/canvas/recording-webgl2-snapshots.html [ Skip ]
 inspector/canvas/requestContent-webgl.html [ Skip ]
 inspector/canvas/requestContent-webgl2.html [ Skip ]
-inspector/canvas/requestShaderSource.html [ Skip ]
+inspector/canvas/requestShaderSource-webgl.html [ Skip ]
 inspector/canvas/resolveContext-webgl.html [ Skip ]
 inspector/canvas/resolveContext-webgl2.html [ Skip ]
 inspector/canvas/shaderProgram-add-remove-webgl.html [ Skip ]
 inspector/canvas/shaderProgram-add-remove-webgl2.html [ Skip ]
-inspector/canvas/updateShader.html [ Skip ]
+inspector/canvas/updateShader-webgl.html [ Skip ]
+
 ################################################################################
 #################          End WebGL Issues              #######################
 ################################################################################
@@ -2031,6 +2044,7 @@ mathml/presentation/mathvariant-tokens.html [ ImageOnlyFailure ]
 mathml/presentation/tokenElements-mathvariant.html [ ImageOnlyFailure ]
 mathml/non-core/lengths-1.html [ ImageOnlyFailure ]
 mathml/non-core/lengths-3.html [ Failure ]
+mathml/presentation/row-nonstretchy-or-horizontal.html [ ImageOnlyFailure ]
 ################################################################################
 #################          End MathML Issues                ####################
 ################################################################################
@@ -3342,6 +3356,7 @@ pageoverlay/overlay-large-document.html [ Failure ]
 security/contentSecurityPolicy/plugins-types-allows-youtube-plugin-replacement.html [ Failure ]
 storage/indexeddb/modern/blob-cursor.html [ Failure ]
 streams/readable-byte-stream-controller.html [ Failure ]
+streams/readable-byte-stream-controller-worker.html [ Failure ]
 svg/W3C-SVG-1.1/struct-dom-03-b.svg [ Failure ]
 svg/W3C-SVG-1.1/struct-dom-04-b.svg [ Failure ]
 svg/W3C-SVG-1.1/struct-dom-05-b.svg [ Failure ]
@@ -3593,7 +3608,9 @@ storage/indexeddb/version-change-event-basic.html [ Failure ]
 storage/indexeddb/wasm-exceptions.html [ Failure ]
 streams/pipe-to.html [ Failure ]
 streams/readable-stream-byob-reader.html [ Failure ]
+streams/readable-stream-byob-reader-worker.html [ Failure ]
 streams/readable-stream-byob-request.html [ Failure ]
+streams/readable-stream-byob-request-worker.html [ Failure ]
 streams/reference-implementation/bad-strategies.html [ Failure ]
 streams/reference-implementation/bad-underlying-sinks.html [ Failure ]
 streams/reference-implementation/brand-checks.html [ Failure ]
@@ -3957,8 +3974,6 @@ webkit.org/b/182128 fast/dom/navigator-detached-no-crash.html [ Failure ]
 
 webkit.org/b/182129 editing/input/reveal-edit-on-paste-vertically.html [ Failure ]
 
-webkit.org/b/182130 http/tests/misc/bubble-drag-events.html [ Crash Pass ]
-
 webkit.org/b/182132 accessibility/aria-combobox-control-owns-elements.html [ Skip ]
 
 webkit.org/b/182133 fast/text/font-load-data-partitioned-alphabet.html [ Failure ]
@@ -4243,7 +4258,10 @@ webkit.org/b/190520 editing/pasteboard/copy-paste-across-shadow-boundaries-with-
 webgpu [ Skip ]
 inspector/canvas/create-context-webgpu.html [ Skip ]
 inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
+inspector/canvas/requestShaderSource-webgpu.html [ Skip ]
 inspector/canvas/resolveContext-webgpu.html [ Skip ]
+inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
+inspector/canvas/updateShader-webgpu.html [ Skip ]
 
 webkit.org/b/191194 fast/block/basic/inline-content-with-floating-image.html [ Failure ]
 webkit.org/b/191194 fast/block/basic/inline-content-with-floating-images2.html [ Failure ]

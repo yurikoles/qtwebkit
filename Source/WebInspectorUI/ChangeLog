@@ -1,3 +1,384 @@
+2019-09-26  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Include LocalResourceOverrides in the Open Resource dialog
+        https://bugs.webkit.org/show_bug.cgi?id=202023
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/OpenResourceDialog.js:
+        (WI.OpenResourceDialog.prototype._addScriptsForTarget):
+        Also walk the extraScriptCollection. Some Worker resource loads never
+        fully become resources.
+
+        (WI.OpenResourceDialog.prototype.didPresentDialog):
+        (WI.OpenResourceDialog.prototype._addLocalResourceOverrides):
+        Include local resource override resources.
+
+        (WI.OpenResourceDialog.prototype._populateResourceTreeOutline):
+        * Localizations/en.lproj/localizedStrings.js:
+        Include a subtitle for local resource overrides.
+
+        * UserInterface/Views/OpenResourceDialog.css:
+        (.open-resource-dialog .tree-outline.large .item .titles .subtitle):
+        Improved subtitle styling.
+
+2019-09-25  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: REGRESSION: Elements detail sidebar sometimes starts collapsed
+        https://bugs.webkit.org/show_bug.cgi?id=202057
+        <rdar://problem/55572345>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/ElementsTabContentView.js:
+        (WI.ElementsTabContentView.prototype.get detailsSidebarExpandedByDefault):
+        Default the Elements tab detail sidebar to be shown, not collapsed.
+
+        * UserInterface/Views/TabContentView.js:
+        (WI.TabContentView):
+        (WI.TabContentView.prototype.get detailsSidebarExpandedByDefault):
+        Allow classes to specify whether or not their detail sidebar should
+        be expanded by default.
+
+2019-09-25  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Uncaught Exception: TypeError: undefined is not an object (evaluating 'WI.showDebugUISetting.addEventListener')
+        https://bugs.webkit.org/show_bug.cgi?id=202220
+
+        Reviewed by Joseph Pecoraro.
+
+        * UserInterface/Views/SettingsTabContentView.js:
+        (WI.SettingsTabContentView.prototype.initialLayout):
+
+2019-09-23  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: WebGPU compute shaders aren't syntax highlighted
+        https://bugs.webkit.org/show_bug.cgi?id=202030
+
+        Reviewed by Joseph Pecoraro.
+
+        * UserInterface/Views/CodeMirrorAdditions.js:
+        `CodeMirror.defineMIME` expects a "spec" object, which can't just be another MIME type.
+        Instead, get the "spec" of the defined "x-shader/x-vertex" and "x-shader/x-fragment" modes
+        and use that when defining MIMEs for the WebGPU shader pipeline modes.
+
+        * UserInterface/Views/ShaderProgramContentView.js:
+        (WI.ShaderProgramContentView):
+        Get the `contextType` off of the shader's canvas, which is where it actually lives.
+
+2019-09-23  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: show WebGPU shader pipelines
+        https://bugs.webkit.org/show_bug.cgi?id=201675
+        <rdar://problem/55543450>
+
+        Reviewed by Joseph Pecoraro.
+
+        Show WebGPU shader pipelines ("programs") underneath each corresponding WebGPU device.
+
+        Allow editing of attached shader modules for each WebGPU shader pipeline, but don't allow
+        highlighting/disabling, as WebGPU pipelines don't have those capabilities/concepts yet.
+
+        * UserInterface/Protocol/CanvasObserver.js:
+        (WI.CanvasObserver.prototype.programCreated):
+        * UserInterface/Controllers/CanvasManager.js:
+        (WI.CanvasManager.prototype.programCreated):
+
+        * UserInterface/Models/Canvas.js:
+        (WI.Canvas.prototype.nextShaderProgramDisplayNumberForProgramType): Added.
+        (WI.Canvas.prototype.nextShaderProgramDisplayNumber): Deleted.
+
+        * UserInterface/Models/ShaderProgram.js:
+        (WI.ShaderProgram):
+        (WI.ShaderProgram.contextTypeSupportsProgramType): Added.
+        (WI.ShaderProgram.programTypeSupportsShaderType): Added.
+        (WI.ShaderProgram.prototype.get programType): Added.
+        (WI.ShaderProgram.prototype.get displayName):
+        (WI.ShaderProgram.prototype.set disabled):
+        (WI.ShaderProgram.prototype.requestShaderSource):
+        (WI.ShaderProgram.prototype.updateShader):
+        (WI.ShaderProgram.prototype.showHighlight):
+        (WI.ShaderProgram.prototype.hideHighlight):
+        (WI.ShaderProgram.prototype.requestVertexShaderSource): Deleted.
+        (WI.ShaderProgram.prototype.requestFragmentShaderSource): Deleted.
+        (WI.ShaderProgram.prototype.updateVertexShader): Deleted.
+        (WI.ShaderProgram.prototype.updateFragmentShader): Deleted.
+        (WI.ShaderProgram.prototype._requestShaderSource): Deleted.
+        (WI.ShaderProgram.prototype._updateShader): Deleted.
+
+        * UserInterface/Views/ShaderProgramContentView.js:
+        (WI.ShaderProgramContentView):
+        (WI.ShaderProgramContentView.prototype.get navigationItems): Added.
+        (WI.ShaderProgramContentView.prototype.shown):
+        (WI.ShaderProgramContentView.prototype.hidden):
+        (WI.ShaderProgramContentView.prototype.get saveData):
+        (WI.ShaderProgramContentView.prototype._refreshContent):
+        (WI.ShaderProgramContentView.prototype._updateShader):
+        (WI.ShaderProgramContentView.prototype._contentDidChange):
+        * UserInterface/Views/ShaderProgramContentView.css:
+        (.content-view.shader-program > .shader): Added.
+        (.content-view.shader-program > .shader.compute): Added.
+        (body[dir=ltr] .content-view.shader-program > .shader.vertex,): Added.
+        (body[dir=ltr] .content-view.shader-program > .shader.fragment,): Added.
+        (.content-view.shader-program > .shader + .shader): Added.
+        (.content-view.shader-program > .shader > header > *): Added.
+        (.content-view.shader-program > .shader > header > .shader-type): Added.
+        (@media (prefers-color-scheme: dark) .content-view.shader-program > .shader > header): Added.
+        (.content-view.shader-program > .text-editor.shader): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader.vertex,): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader.fragment,): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader + .text-editor.shader): Deleted.
+        (body[dir=rtl] .content-view.shader-program > .text-editor.shader + .text-editor.shader): Deleted.
+        (.content-view.shader-program > .text-editor.shader > .type-title): Deleted.
+        (.content-view.shader-program > .text-editor.shader > .CodeMirror): Deleted.
+        * UserInterface/Views/CodeMirrorAdditions.js:
+
+        * UserInterface/Views/ShaderProgramTreeElement.js:
+        (WI.ShaderProgramTreeElement):
+        (WI.ShaderProgramTreeElement.prototype.onattach):
+        (WI.ShaderProgramTreeElement.prototype.ondetach):
+        (WI.ShaderProgramTreeElement.prototype.canSelectOnMouseDown):
+        (WI.ShaderProgramTreeElement.prototype.populateContextMenu):
+
+        * Localizations/en.lproj/localizedStrings.js:
+
+2019-09-23  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Improve the Uncaught Exception View file a bug link
+        https://bugs.webkit.org/show_bug.cgi?id=201717
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Debug/UncaughtExceptionReporter.js:
+        Allow the link to be clicked. Use openInNewTab on click to also
+        bring the new tab to the foreground. Also update the content.
+
+2019-09-20  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: HTML Formatter - better indentation/newline handling for self closing tags
+        https://bugs.webkit.org/show_bug.cgi?id=202036
+
+        Reviewed by Joseph Pecoraro.
+
+        * UserInterface/Workers/Formatter/HTMLFormatter.js:
+        (HTMLFormatter.prototype._before):
+
+2019-09-20  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Remove BranchManager in favor of just using currentRevision
+        https://bugs.webkit.org/show_bug.cgi?id=202000
+
+        Reviewed by Devin Rousso.
+
+        Remove BranchManager. The Branch concept never got fleshed out, and would
+        likely be too complex for the average case. Local Overrides are simpler.
+        In the interest of expanding Local Overrides to more content lets simply
+        by removing Branches.
+
+        * Localizations/en.lproj/localizedStrings.js:
+        * UserInterface/Base/Main.js:
+        (WI.loaded):
+        * UserInterface/Controllers/BranchManager.js: Removed.
+        * UserInterface/Controllers/CSSManager.js:
+        (WI.CSSManager.prototype._resourceContentDidChange.applyStyleSheetChanges.styleSheetFound):
+        (WI.CSSManager.prototype._resourceContentDidChange.applyStyleSheetChanges):
+        (WI.CSSManager.prototype._resourceContentDidChange):
+        (WI.CSSManager.prototype._updateResourceContent.fetchedStyleSheetContent):
+        * UserInterface/Main.html:
+        * UserInterface/Models/Branch.js: Removed.
+        * UserInterface/Models/SourceCode.js:
+        (WI.SourceCode.prototype._processContent):
+        (WI.SourceCode):
+        * UserInterface/Views/TextResourceContentView.js:
+        (WI.TextResourceContentView.prototype._textEditorContentDidChange):
+
+2019-09-20  Truitt Savell  <tsavell@apple.com>
+
+        Unreviewed, rolling out r250114.
+
+        Broke ~16 webgpu/ tests on Mojave wk2
+
+        Reverted changeset:
+
+        "Web Inspector: Canvas: show WebGPU shader pipelines"
+        https://bugs.webkit.org/show_bug.cgi?id=201675
+        https://trac.webkit.org/changeset/250114
+
+2019-09-19  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: searching in overrides doesn't work
+        https://bugs.webkit.org/show_bug.cgi?id=202020
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/SourceCodeTextEditor.js:
+        (WI.SourceCodeTextEditor.prototype.customPerformSearch):
+        Do not go to agents for a local resource. Search locally in the TextEditor.
+
+2019-09-19  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: show WebGPU shader pipelines
+        https://bugs.webkit.org/show_bug.cgi?id=201675
+
+        Reviewed by Joseph Pecoraro.
+
+        Show WebGPU shader pipelines ("programs") underneath each corresponding WebGPU device.
+
+        Allow editing of attached shader modules for each WebGPU shader pipeline, but don't allow
+        highlighting/disabling, as WebGPU pipelines don't have those capabilities/concepts yet.
+
+        * UserInterface/Protocol/CanvasObserver.js:
+        (WI.CanvasObserver.prototype.programCreated):
+        * UserInterface/Controllers/CanvasManager.js:
+        (WI.CanvasManager.prototype.programCreated):
+
+        * UserInterface/Models/Canvas.js:
+        (WI.Canvas.prototype.nextShaderProgramDisplayNumberForProgramType): Added.
+        (WI.Canvas.prototype.nextShaderProgramDisplayNumber): Deleted.
+
+        * UserInterface/Models/ShaderProgram.js:
+        (WI.ShaderProgram):
+        (WI.ShaderProgram.contextTypeSupportsProgramType): Added.
+        (WI.ShaderProgram.programTypeSupportsShaderType): Added.
+        (WI.ShaderProgram.prototype.get programType): Added.
+        (WI.ShaderProgram.prototype.get displayName):
+        (WI.ShaderProgram.prototype.set disabled):
+        (WI.ShaderProgram.prototype.requestShaderSource):
+        (WI.ShaderProgram.prototype.updateShader):
+        (WI.ShaderProgram.prototype.showHighlight):
+        (WI.ShaderProgram.prototype.hideHighlight):
+        (WI.ShaderProgram.prototype.requestVertexShaderSource): Deleted.
+        (WI.ShaderProgram.prototype.requestFragmentShaderSource): Deleted.
+        (WI.ShaderProgram.prototype.updateVertexShader): Deleted.
+        (WI.ShaderProgram.prototype.updateFragmentShader): Deleted.
+        (WI.ShaderProgram.prototype._requestShaderSource): Deleted.
+        (WI.ShaderProgram.prototype._updateShader): Deleted.
+
+        * UserInterface/Views/ShaderProgramContentView.js:
+        (WI.ShaderProgramContentView):
+        (WI.ShaderProgramContentView.prototype.get navigationItems): Added.
+        (WI.ShaderProgramContentView.prototype.shown):
+        (WI.ShaderProgramContentView.prototype.hidden):
+        (WI.ShaderProgramContentView.prototype.get saveData):
+        (WI.ShaderProgramContentView.prototype._refreshContent):
+        (WI.ShaderProgramContentView.prototype._updateShader):
+        (WI.ShaderProgramContentView.prototype._contentDidChange):
+        * UserInterface/Views/ShaderProgramContentView.css:
+        (.content-view.shader-program > .shader): Added.
+        (.content-view.shader-program > .shader.compute): Added.
+        (body[dir=ltr] .content-view.shader-program > .shader.vertex,): Added.
+        (body[dir=ltr] .content-view.shader-program > .shader.fragment,): Added.
+        (.content-view.shader-program > .shader + .shader): Added.
+        (.content-view.shader-program > .shader > header > *): Added.
+        (.content-view.shader-program > .shader > header > .shader-type): Added.
+        (@media (prefers-color-scheme: dark) .content-view.shader-program > .shader > header): Added.
+        (.content-view.shader-program > .text-editor.shader): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader.vertex,): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader.fragment,): Deleted.
+        (body[dir=ltr] .content-view.shader-program > .text-editor.shader + .text-editor.shader): Deleted.
+        (body[dir=rtl] .content-view.shader-program > .text-editor.shader + .text-editor.shader): Deleted.
+        (.content-view.shader-program > .text-editor.shader > .type-title): Deleted.
+        (.content-view.shader-program > .text-editor.shader > .CodeMirror): Deleted.
+        * UserInterface/Views/CodeMirrorAdditions.js:
+
+        * UserInterface/Views/ShaderProgramTreeElement.js:
+        (WI.ShaderProgramTreeElement):
+        (WI.ShaderProgramTreeElement.prototype.onattach):
+        (WI.ShaderProgramTreeElement.prototype.ondetach):
+        (WI.ShaderProgramTreeElement.prototype.canSelectOnMouseDown):
+        (WI.ShaderProgramTreeElement.prototype.populateContextMenu):
+
+        * Localizations/en.lproj/localizedStrings.js:
+
+2019-09-18  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Better handling for large arrays and collections in Object Trees
+        https://bugs.webkit.org/show_bug.cgi?id=143589
+        <rdar://problem/16135388>
+
+        Reviewed by Joseph Pecoraro.
+
+        Adds two buttons before the "Prototype" item in expanded object/collection previews:
+         - Show %d More
+         - Show All (%d More)
+
+        The default `fetchCount` increment is `100`. The first button will only be shown if there
+        are more than `100` items remaining (haven't been shown).
+
+        * UserInterface/Protocol/RemoteObject.js:
+        (WI.RemoteObject.prototype.getPropertyDescriptors):
+        (WI.RemoteObject.prototype.getDisplayablePropertyDescriptors):
+        (WI.RemoteObject.prototype.getCollectionEntries):
+        (WI.RemoteObject.prototype.getOwnPropertyDescriptor.wrappedCallback):
+        (WI.RemoteObject.prototype._getProperties): Added.
+        (WI.RemoteObject.prototype._getDisplayableProperties): Added.
+
+        * UserInterface/Views/ObjectTreeView.js:
+        (WI.ObjectTreeView):
+        (WI.ObjectTreeView.showMoreFetchCount): Added.
+        (WI.ObjectTreeView.addShowMoreIfNeeded): Added.
+        (WI.ObjectTreeView.prototype.update):
+        (WI.ObjectTreeView.prototype._updateChildren):
+        (WI.ObjectTreeView.prototype._updateEntries):
+        (WI.ObjectTreeView.prototype._updateProperties):
+        * UserInterface/Views/ObjectTreeView.css:
+        (.tree-outline.object li > button[disabled] + .indeterminate-progress-spinner): Added.
+        Avoid duplicating the button creation logic in `WI.ObjectTreePropertyTreeElement` by using a
+        `static` function. This expects the existence of and requires access to "private" values.
+
+        * UserInterface/Views/ObjectTreePropertyTreeElement.js:
+        (WI.ObjectTreePropertyTreeElement):
+        (WI.ObjectTreePropertyTreeElement.prototype.onpopulate):
+        (WI.ObjectTreePropertyTreeElement.prototype._updateChildren):
+        (WI.ObjectTreePropertyTreeElement.prototype._updateEntries):
+        (WI.ObjectTreePropertyTreeElement.prototype._updateProperties):
+        (WI.ObjectTreePropertyTreeElement.prototype._updateChildrenInternal): Deleted.
+
+        * UserInterface/Controllers/JavaScriptRuntimeCompletionProvider.js:
+        (WI.JavaScriptRuntimeCompletionProvider.prototype.completionControllerCompletionsNeeded.evaluated):
+        (WI.JavaScriptRuntimeCompletionProvider.prototype.completionControllerCompletionsNeeded.receivedArrayPropertyNames): Deleted.
+
+        * UserInterface/Controllers/RuntimeManager.js:
+        (WI.RuntimeManager.prototype.getPropertiesForRemoteObject): Deleted.
+        Remove unused function.
+        * Localizations/en.lproj/localizedStrings.js:
+
+2019-09-18  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: console assertion when pressing up/down in empty console log view
+        https://bugs.webkit.org/show_bug.cgi?id=201948
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Views/LogContentView.js:
+        (WI.LogContentView.prototype._upArrowWasPressed):
+        (WI.LogContentView.prototype._downArrowWasPressed):
+        Ensure that a message exists before calling `_updateMessagesSelection`, which
+        would assert if given a bad message. Additionally, only perform preventDefault
+        when selecting a message. This allows us to fall back to a system beep if
+        this key event does nothing.
+
+2019-09-17  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: HTML Formatter - better handling for HTML specific tag cases (<p>/<li>)
+        https://bugs.webkit.org/show_bug.cgi?id=201757
+        <rdar://problem/55409987>
+
+        Reviewed by Devin Rousso.
+
+        * UserInterface/Workers/Formatter/HTMLFormatter.js:
+        (HTMLFormatter.prototype._after):
+        Handle a closing tag with different text than the opening tag.
+
+        * UserInterface/Workers/Formatter/HTMLTreeBuilderFormatter.js:
+        (HTMLTreeBuilderFormatter.prototype._pushParserNodeTopLevel):
+        (HTMLTreeBuilderFormatter.prototype._pushParserNodeStack):
+        (HTMLTreeBuilderFormatter.prototype._implicitlyCloseHTMLNodesForOpenTag):
+        (HTMLTreeBuilderFormatter.prototype._implicitlyCloseTagNamesInsideParentTagNames):
+        (HTMLTreeBuilderFormatter.prototype._indexOfStackNodeMatchingTagNames):
+        Generalize the implicit closing a bit. Allow open tags to implicitly
+        close certain other open tags in the stack.
+
 2019-09-13  Joseph Pecoraro  <pecoraro@apple.com>
 
         Web Inspector: HTML Formatter - XML mode

@@ -42,6 +42,7 @@ typedef void (*AXPostedNotificationCallback)(id element, NSString* notification,
 @interface NSObject (UIAccessibilityHidden)
 - (id)accessibilityHitTest:(CGPoint)point;
 - (id)accessibilityLinkedElement;
+- (id)accessibilityTitleElement;
 - (NSRange)accessibilityColumnRange;
 - (NSRange)accessibilityRowRange;
 - (id)accessibilityElementForRow:(NSInteger)row andColumn:(NSInteger)column;
@@ -58,7 +59,7 @@ typedef void (*AXPostedNotificationCallback)(id element, NSString* notification,
 - (NSRange)_accessibilitySelectedTextRange;
 - (void)_accessibilitySetSelectedTextRange:(NSRange)range;
 - (BOOL)accessibilityReplaceRange:(NSRange)range withText:(NSString *)string;
-- (BOOL)_accessibilityInsertText:(NSString *)text;
+- (BOOL)accessibilityInsertText:(NSString *)text;
 - (void)accessibilitySetPostedNotificationCallback:(AXPostedNotificationCallback)function withContext:(void*)context;
 - (CGFloat)_accessibilityMinValue;
 - (CGFloat)_accessibilityMaxValue;
@@ -326,6 +327,9 @@ RefPtr<AccessibilityUIElement> AccessibilityUIElement::selectedRowAtIndex(unsign
 
 RefPtr<AccessibilityUIElement> AccessibilityUIElement::titleUIElement()
 {
+    id titleElement = [m_element accessibilityTitleElement];
+    if (titleElement)
+        return AccessibilityUIElement::create(titleElement);
     return nullptr;
 }
 
@@ -469,7 +473,7 @@ JSRetainPtr<JSStringRef> AccessibilityUIElement::subrole()
 
 JSRetainPtr<JSStringRef> AccessibilityUIElement::roleDescription()
 {
-    return createEmptyJSString();
+    return concatenateAttributeAndValue(@"AXRoleDescription", [m_element accessibilityRoleDescription]);
 }
 
 JSRetainPtr<JSStringRef> AccessibilityUIElement::computedRoleString()
@@ -1180,7 +1184,7 @@ bool AccessibilityUIElement::replaceTextInRange(JSStringRef string, int location
 
 bool AccessibilityUIElement::insertText(JSStringRef text)
 {
-    return [m_element _accessibilityInsertText:[NSString stringWithJSStringRef:text]];
+    return [m_element accessibilityInsertText:[NSString stringWithJSStringRef:text]];
 }
 
 RefPtr<AccessibilityTextMarker> AccessibilityUIElement::textMarkerForPoint(int x, int y)

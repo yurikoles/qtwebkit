@@ -27,7 +27,35 @@
 
 namespace JSC {
 
-#define FOR_EACH_JSC_OPTION(v) \
+// How do JSC VM options work?
+// ===========================
+// The FOR_EACH_JSC_OPTION() macro below defines a list of all JSC options in use,
+// along with their types and default values. The options values are actually
+// realized as an array of OptionEntry elements in JSC::Config.
+//
+//     Options::initialize() will initialize the array of options values with
+// the defaults specified in FOR_EACH_JSC_OPTION() below. After that, the values can
+// be programmatically read and written to using an accessor method with the
+// same name as the option. For example, the option "useJIT" can be read and
+// set like so:
+//
+//     bool jitIsOn = Options::useJIT();  // Get the option value.
+//     Options::useJIT() = false;         // Sets the option value.
+//
+//     If you want to tweak any of these values programmatically for testing
+// purposes, you can do so in Options::initialize() after the default values
+// are set.
+//
+//     Alternatively, you can override the default values by specifying
+// environment variables of the form: JSC_<name of JSC option>.
+//
+// Note: Options::initialize() tries to ensure some sanity on the option values
+// which are set by doing some range checks, and value corrections. These
+// checks are done after the option values are set. If you alter the option
+// values after the sanity checks (for your own testing), then you're liable to
+// ensure that the new values set are sane and reasonable for your own run.
+
+#define FOR_EACH_JSC_OPTION(v)                                          \
     v(Bool, useKernTCSM, true, Normal, "Note: this needs to go before other options since they depend on this value.") \
     v(Bool, validateOptions, false, Normal, "crashes if mis-typed JSC options were passed to the VM") \
     v(Unsigned, dumpOptions, 0, Normal, "dumps JSC options (0 = None, 1 = Overridden only, 2 = All, 3 = Verbose)") \
@@ -316,6 +344,7 @@ namespace JSC {
     \
     v(Bool, alwaysGeneratePCToCodeOriginMap, false, Normal, "This will make sure we always generate a PCToCodeOriginMap for JITed code.") \
     \
+    v(Double, randomIntegrityAuditRate, 0.05, Normal, "Probability of random integrity audits [0.0 - 1.0]") \
     v(Bool, verifyHeap, false, Normal, nullptr) \
     v(Unsigned, numberOfGCCyclesToRecordForVerification, 3, Normal, nullptr) \
     \
@@ -338,6 +367,7 @@ namespace JSC {
     v(Unsigned, fireOSRExitFuzzAt, 0, Normal, nullptr) \
     v(Unsigned, fireOSRExitFuzzAtOrAfter, 0, Normal, nullptr) \
     \
+    v(Unsigned, seedOfVMRandomForFuzzer, 0, Normal, "0 means not fuzzing this; use a cryptographically random seed") \
     v(Bool, useRandomizingFuzzerAgent, false, Normal, nullptr) \
     v(Unsigned, seedOfRandomizingFuzzerAgent, 1, Normal, nullptr) \
     v(Bool, dumpRandomizingFuzzerAgentPredictions, false, Normal, nullptr) \

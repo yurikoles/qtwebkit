@@ -1102,6 +1102,15 @@
          "caryclark"
       ]
    },
+   "Cathie Chen" : {
+      "emails" : [
+         "cathiechen@igalia.com"
+      ],
+      "nicks" : [
+         "cathiechen"
+      ],
+      "status" : "committer"
+   },
    "Chang Shu" : {
       "emails" : [
          "cshu@webkit.org",
@@ -4304,6 +4313,15 @@
       "expertise" : "CMake build system, The WinCE Port",
       "nicks" : [
          "paroga"
+      ]
+   },
+   "Patrick Griffis" : {
+      "emails" : [
+         "pgriffis@igalia.com"
+      ],
+      "nicks" : [
+         "pgriffis",
+         "TingPing"
       ]
    },
    "Pavel Feldman" : {

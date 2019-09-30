@@ -309,6 +309,36 @@ SLOW_PATH_DECL(slow_path_new_promise)
     RETURN(result);
 }
 
+SLOW_PATH_DECL(slow_path_create_generator)
+{
+    BEGIN();
+    auto bytecode = pc->as<OpCreateGenerator>();
+    JSGlobalObject* globalObject = exec->lexicalGlobalObject();
+    JSObject* constructorAsObject = asObject(GET(bytecode.m_callee).jsValue());
+
+    Structure* structure = InternalFunction::createSubclassStructure(exec, nullptr, constructorAsObject, globalObject->generatorStructure());
+    CHECK_EXCEPTION();
+    JSGenerator* result = JSGenerator::create(vm, structure);
+
+    JSFunction* constructor = jsDynamicCast<JSFunction*>(vm, constructorAsObject);
+    if (constructor && constructor->canUseAllocationProfile()) {
+        WriteBarrier<JSCell>& cachedCallee = bytecode.metadata(exec).m_cachedCallee;
+        if (!cachedCallee)
+            cachedCallee.set(vm, exec->codeBlock(), constructor);
+        else if (cachedCallee.unvalidatedGet() != JSCell::seenMultipleCalleeObjects() && cachedCallee.get() != constructor)
+            cachedCallee.setWithoutWriteBarrier(JSCell::seenMultipleCalleeObjects());
+    }
+    RETURN(result);
+}
+
+SLOW_PATH_DECL(slow_path_new_generator)
+{
+    BEGIN();
+    auto bytecode = pc->as<OpNewGenerator>();
+    JSGenerator* result = JSGenerator::create(vm, exec->lexicalGlobalObject()->generatorStructure());
+    RETURN(result);
+}
+
 SLOW_PATH_DECL(slow_path_to_this)
 {
     BEGIN();
@@ -742,13 +772,13 @@ SLOW_PATH_DECL(slow_path_rshift)
         if (WTF::holds_alternative<JSBigInt*>(leftNumeric) && WTF::holds_alternative<JSBigInt*>(rightNumeric)) {
             JSBigInt* result = JSBigInt::signedRightShift(exec, WTF::get<JSBigInt*>(leftNumeric), WTF::get<JSBigInt*>(rightNumeric));
             CHECK_EXCEPTION();
-            RETURN(result);
+            RETURN_PROFILED(result);
         }
 
-        THROW(createTypeError(exec, "Invalid mix of BigInt and other type in signed right shift operation."));
+        THROW(createTypeError(exec, "Invalid mix of BigInt and other type in signed right shift operation."_s));
     }
 
-    RETURN(jsNumber(WTF::get<int32_t>(leftNumeric) >> (WTF::get<int32_t>(rightNumeric) & 31)));
+    RETURN_PROFILED(jsNumber(WTF::get<int32_t>(leftNumeric) >> (WTF::get<int32_t>(rightNumeric) & 31)));
 }
 
 SLOW_PATH_DECL(slow_path_urshift)

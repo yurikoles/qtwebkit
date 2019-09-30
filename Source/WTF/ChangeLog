@@ -1,3 +1,293 @@
+2019-09-30  Guillaume Emont  <guijemont@igalia.com>
+
+        Don't try to use backtrace() on MIPS
+        https://bugs.webkit.org/show_bug.cgi?id=202196
+
+        Reviewed by Carlos Garcia Campos.
+
+        backtrace() on mips seems to always return 1 on mips/glibc (I tried
+        with buildroot, debian stable and debian testing, with and without
+        libunwind), which renders it useless and breaks a RELEASE_ASSERT in
+        StackTrace::captureStackTrace().
+
+        * wtf/Platform.h:
+
+2019-09-29  Keith Rollin  <krollin@apple.com>
+
+        Address static analysis warning in ParkingLot.cpp: Access to field 'size' results in a dereference of a null pointer
+        https://bugs.webkit.org/show_bug.cgi?id=202154
+        <rdar://problem/55672103>
+
+        Reviewed by Brent Fulgham.
+
+        Static analysis reports the following:
+
+            .../OpenSource/Source/WTF/wtf/ParkingLot.cpp:376:30: warning: Access to field 'size' results in a dereference of a null pointer (loaded from variable 'oldHashtable')
+                RELEASE_ASSERT(newSize > oldHashtable->size);
+                                         ^~~~~~~~~~~~~~~~~~
+
+        This warning arises because earlier code checks to see if oldHashtable
+        is NULL, leading the static analyzer to think that it *could* be NULL.
+        However, even earlier code actually ensures that oldHashtable will not
+        be NULL. Address this by removing the NULL check, and back it up with
+        an ASSERT to ensure that it's not NULL.
+
+        * wtf/ParkingLot.cpp:
+
+2019-09-26  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        toExponential, toFixed, and toPrecision should allow arguments up to 100
+        https://bugs.webkit.org/show_bug.cgi?id=199163
+
+        Reviewed by Ross Kirsling.
+
+        Increase size of NumberToStringBuffer: <21 digits> + decimal point + <100 digits> + null char = 123.
+        Increase kMaxFixedDigitsAfterPoint to make Number.prototype.toFixed work with arguments up to 100.
+        Also update other constants to their correct values.
+
+        * wtf/dtoa.h:
+        * wtf/dtoa/double-conversion.cc:
+        * wtf/dtoa/double-conversion.h:
+
+2019-09-25  Keith Rollin  <krollin@apple.com>
+
+        Address static analysis warning in UTextProviderLatin1.cpp: Array access results in a null pointer dereference
+        https://bugs.webkit.org/show_bug.cgi?id=202155
+        <rdar://problem/55672422>
+
+        Reviewed by Geoffrey Garen.
+
+        Xcode's static analysis reports:
+
+            .../OpenSource/Source/WTF/wtf/text/icu/UTextProviderLatin1.cpp:185:22: warning: Array access (from variable 'dest') results in a null pointer dereference
+                    dest[length] = 0;
+                    ~~~~         ^
+
+        This error is due to an earlier "if" statement that caused the static
+        analyzer to infer that "dest" could be NULL. It turns out that that
+        previous check was in error, in that it tested for "!dest" when it
+        should have tested for "dest". So this patch fixes that.
+
+        Even with that error fixed, the static analyzer will still infer that
+        "dest" could be NULL at the point shown above. Therefore, add a "dest"
+        test just before the assignment.
+
+        * wtf/text/icu/UTextProviderLatin1.cpp:
+        (WTF::uTextLatin1Extract):
+
+2019-09-25  Wenson Hsieh  <wenson_hsieh@apple.com>
+
+        [iPadOS] [DataActivation] Focus moves away after focusing input fields on www.att.com
+        https://bugs.webkit.org/show_bug.cgi?id=202167
+        <rdar://problem/55185021>
+
+        Reviewed by Tim Horton.
+
+        Declare DYLD_IOS_VERSION_13_2.
+
+        * wtf/spi/darwin/dyldSPI.h:
+
+2019-09-24  Keith Rollin  <krollin@apple.com>
+
+        Coalesce or remove PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+        https://bugs.webkit.org/show_bug.cgi?id=202119
+        <rdar://problem/55638792>
+
+        Reviewed by Alex Christensen.
+
+        After refactoring and other code evolution, some platform checks have
+        ended up looking like PLATFORM(MAC) || PLATFORM(IOS_FAMILY) (or
+        vice-versa). These can be converted into the equivalent
+        PLATFORM(COCOA). Where the instance occurs in a Cocoa-only file, the
+        check can be removed altogether (along with any "#else" branches).
+
+        * wtf/Platform.h:
+        * wtf/text/TextBreakIterator.h:
+
+2019-09-21  David Kilzer  <ddkilzer@apple.com>
+
+        clang-tidy: Fix unnecessary copy/ref churn of for loop variables in WTF/JavaScriptCore
+        <https://webkit.org/b/202069>
+
+        Reviewed by Mark Lam.
+
+        Fix unwanted copying/ref churn of loop variables by making them
+        const references.
+
+        * wtf/AggregateLogger.h:
+        (WTF::AggregateLogger::log const):
+
+2019-09-20  Keith Rollin  <krollin@apple.com>
+
+        Remove some support for < iOS 13
+        https://bugs.webkit.org/show_bug.cgi?id=201967
+        <rdar://problem/55504738>
+
+        Reviewed by Andy Estes.
+
+        Remove some support for iOS versions less than 13.0.
+
+        Update conditionals that reference __IPHONE_OS_VERSION_MIN_REQUIRED
+        and __IPHONE_OS_VERSION_MAX_ALLOWED, assuming that they both have
+        values >= 130000. This means that expressions like
+        "__IPHONE_OS_VERSION_MIN_REQUIRED < 101300" are always False and
+        "__IPHONE_OS_VERSION_MIN_REQUIRED >= 101300" are always True.
+
+        After version checks have been removed, there are some cases where the
+        preprocessor conditional looks like "#if PLATFORM(MAC) ||
+        PLATFORM(IOS_FAMILY)". These can be collapsed into "#if
+        PLATFORM(COCOA)". This additional cleanup will be performed in a
+        subsequent patch.
+
+        This removal is part of a series of patches effecting the removal of
+        dead code for old versions of iOS. This particular pass involves
+        changes in which Andy Estes was involved. These changes are isolated
+        from other similar changes in order to facilitate the reviewing
+        process.
+
+        * wtf/FeatureDefines.h:
+
+2019-09-20  Keith Rollin  <krollin@apple.com>
+
+        Remove some support for < iOS 13
+        https://bugs.webkit.org/show_bug.cgi?id=201973
+        <rdar://problem/55506966>
+
+        Reviewed by Alex Christensen.
+
+        Remove some support for iOS versions less than 13.0.
+
+        Update conditionals that reference __IPHONE_OS_VERSION_MIN_REQUIRED
+        and __IPHONE_OS_VERSION_MAX_ALLOWED, assuming that they both have
+        values >= 130000. This means that expressions like
+        "__IPHONE_OS_VERSION_MIN_REQUIRED < 101300" are always False and
+        "__IPHONE_OS_VERSION_MIN_REQUIRED >= 101300" are always True.
+
+        This removal is part of a series of patches effecting the removal of
+        dead code for old versions of iOS. This particular pass involves
+        changes in which Chris Dumez was involved. These changes are isolated
+        from other similar changes in order to facilitate the reviewing
+        process.
+
+        * wtf/FeatureDefines.h:
+
+2019-09-20  Paulo Matos  <pmatos@igalia.com>
+
+        Implement memory monitoring functions for Linux OS
+        https://bugs.webkit.org/show_bug.cgi?id=200391
+
+        Reviewed by Žan Doberšek.
+
+        * wtf/PlatformGTK.cmake:
+        * wtf/PlatformJSCOnly.cmake:
+        * wtf/PlatformWPE.cmake:
+        * wtf/linux/ProcessMemoryFootprint.h: Added.
+        (ProcessMemoryFootprint::now):
+        (ProcessMemoryFootprint::resetPeak):
+
+2019-09-20  Libor Bukata  <libor.bukata@oracle.com>
+
+        UI process crash when using callOnMainThread() after the main thread dispatcher has been destroyed
+        https://bugs.webkit.org/show_bug.cgi?id=197266
+
+        Reviewed by Carlos Garcia Campos.
+
+        * wtf/generic/MainThreadGeneric.cpp:
+        (WTF::scheduleDispatchFunctionsOnMainThread):
+
+2019-09-17  Mark Lam  <mark.lam@apple.com>
+
+        Use constexpr instead of const in symbol definitions that are obviously constexpr.
+        https://bugs.webkit.org/show_bug.cgi?id=201879
+
+        Rubber-stamped by Joseph Pecoraro.
+
+        * wtf/Assertions.cpp:
+        * wtf/AutomaticThread.cpp:
+        * wtf/BitVector.h:
+        * wtf/Bitmap.h:
+        * wtf/BloomFilter.h:
+        * wtf/Brigand.h:
+        * wtf/CheckedArithmetic.h:
+        * wtf/CrossThreadCopier.h:
+        * wtf/CurrentTime.cpp:
+        * wtf/DataLog.cpp:
+        * wtf/DateMath.cpp:
+        (WTF::daysFrom1970ToYear):
+        * wtf/DeferrableRefCounted.h:
+        * wtf/GetPtr.h:
+        * wtf/HashFunctions.h:
+        * wtf/HashMap.h:
+        * wtf/HashTable.h:
+        * wtf/HashTraits.h:
+        * wtf/JSONValues.cpp:
+        * wtf/JSONValues.h:
+        * wtf/ListHashSet.h:
+        * wtf/Lock.h:
+        * wtf/LockAlgorithm.h:
+        * wtf/LockAlgorithmInlines.h:
+        (WTF::Hooks>::lockSlow):
+        * wtf/Logger.h:
+        * wtf/LoggerHelper.h:
+        (WTF::LoggerHelper::childLogIdentifier const):
+        * wtf/MainThread.cpp:
+        * wtf/MetaAllocatorPtr.h:
+        * wtf/MonotonicTime.h:
+        * wtf/NaturalLoops.h:
+        (WTF::NaturalLoops::NaturalLoops):
+        * wtf/ObjectIdentifier.h:
+        * wtf/RAMSize.cpp:
+        * wtf/Ref.h:
+        * wtf/RefPtr.h:
+        * wtf/RetainPtr.h:
+        * wtf/SchedulePair.h:
+        * wtf/StackShot.h:
+        * wtf/StdLibExtras.h:
+        * wtf/TinyPtrSet.h:
+        * wtf/URL.cpp:
+        * wtf/URLHash.h:
+        * wtf/URLParser.cpp:
+        (WTF::URLParser::defaultPortForProtocol):
+        * wtf/Vector.h:
+        * wtf/VectorTraits.h:
+        * wtf/WallTime.h:
+        * wtf/WeakHashSet.h:
+        * wtf/WordLock.h:
+        * wtf/cocoa/CPUTimeCocoa.cpp:
+        * wtf/cocoa/MemoryPressureHandlerCocoa.mm:
+        * wtf/persistence/PersistentDecoder.h:
+        * wtf/persistence/PersistentEncoder.h:
+        * wtf/text/AtomStringHash.h:
+        * wtf/text/CString.h:
+        * wtf/text/StringBuilder.cpp:
+        (WTF::expandedCapacity):
+        * wtf/text/StringHash.h:
+        * wtf/text/StringImpl.h:
+        * wtf/text/StringToIntegerConversion.h:
+        (WTF::toIntegralType):
+        * wtf/text/SymbolRegistry.h:
+        * wtf/text/TextStream.cpp:
+        (WTF::hasFractions):
+        * wtf/text/WTFString.h:
+        * wtf/text/cocoa/TextBreakIteratorInternalICUCocoa.cpp:
+
+2019-09-16  Alex Christensen  <achristensen@webkit.org>
+
+        Remove "gopher" from list of special schemes in URLParser
+        https://bugs.webkit.org/show_bug.cgi?id=201852
+
+        Reviewed by Simon Fraser.
+
+        There is little meaningful content on gopher servers, and WebKit does not actually support gopher.
+        This makes WebKit match the behavior of Gecko and goes along with a change proposed at
+        https://github.com/whatwg/url/issues/342
+
+        * wtf/URLParser.cpp:
+        (WTF::URLParser::defaultPortForProtocol):
+        (WTF::scheme):
+        (WTF::URLParser::copyURLPartsUntil):
+        (WTF::URLParser::parse):
+
 2019-09-14  Yusuke Suzuki  <ysuzuki@apple.com>
 
         Retire x86 32bit JIT support

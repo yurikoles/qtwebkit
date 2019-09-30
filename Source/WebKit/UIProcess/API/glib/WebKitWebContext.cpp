@@ -27,6 +27,7 @@
 #include "APIPageConfiguration.h"
 #include "APIProcessPoolConfiguration.h"
 #include "APIString.h"
+#include "LegacyGlobalSettings.h"
 #include "TextChecker.h"
 #include "TextCheckerState.h"
 #include "WebAutomationSession.h"
@@ -42,6 +43,7 @@
 #include "WebKitNotificationProvider.h"
 #include "WebKitPluginPrivate.h"
 #include "WebKitPrivate.h"
+#include "WebKitProtocolHandler.h"
 #include "WebKitSecurityManagerPrivate.h"
 #include "WebKitSecurityOriginPrivate.h"
 #include "WebKitSettingsPrivate.h"
@@ -178,7 +180,6 @@ struct _WebKitWebContextPrivate {
     WebKitProcessModel processModel;
 
     HashMap<uint64_t, WebKitWebView*> webViews;
-    unsigned ephemeralPageCount;
 
     CString webExtensionsDirectory;
     GRefPtr<GVariant> webExtensionsInitializationUserData;
@@ -191,6 +192,7 @@ struct _WebKitWebContextPrivate {
     std::unique_ptr<WebKitAutomationClient> automationClient;
     GRefPtr<WebKitAutomationSession> automationSession;
 #endif
+    std::unique_ptr<WebKitProtocolHandler> webkitProtocolHandler;
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -311,18 +313,6 @@ static void webkitWebContextSetProperty(GObject* object, guint propID, const GVa
     }
 }
 
-static inline Ref<WebsiteDataStoreConfiguration> websiteDataStoreConfigurationForWebProcessPoolConfiguration(const API::ProcessPoolConfiguration& processPoolconfigurarion)
-{
-    auto configuration = WebsiteDataStoreConfiguration::create();
-    configuration->setApplicationCacheDirectory(String(processPoolconfigurarion.applicationCacheDirectory()));
-    configuration->setNetworkCacheDirectory(String(processPoolconfigurarion.diskCacheDirectory()));
-    configuration->setWebSQLDatabaseDirectory(String(processPoolconfigurarion.webSQLDatabaseDirectory()));
-    configuration->setLocalStorageDirectory(String(processPoolconfigurarion.localStorageDirectory()));
-    configuration->setDeviceIdHashSaltsStorageDirectory(String(processPoolconfigurarion.deviceIdHashSaltsStorageDirectory()));
-    configuration->setMediaKeysStorageDirectory(String(processPoolconfigurarion.mediaKeysStorageDirectory()));
-    return configuration;
-}
-
 static void webkitWebContextConstructed(GObject* object)
 {
     G_OBJECT_CLASS(webkit_web_context_parent_class)->constructed(object);
@@ -331,26 +321,16 @@ static void webkitWebContextConstructed(GObject* object)
 
     API::ProcessPoolConfiguration configuration;
     configuration.setInjectedBundlePath(FileSystem::stringFromFileSystemRepresentation(bundleFilename.get()));
-    configuration.setDiskCacheSpeculativeValidationEnabled(true);
 
     WebKitWebContext* webContext = WEBKIT_WEB_CONTEXT(object);
     WebKitWebContextPrivate* priv = webContext->priv;
-    if (priv->websiteDataManager && !webkit_website_data_manager_is_ephemeral(priv->websiteDataManager.get())) {
-        configuration.setLocalStorageDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_local_storage_directory(priv->websiteDataManager.get())));
-        configuration.setDiskCacheDirectory(FileSystem::pathByAppendingComponent(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_disk_cache_directory(priv->websiteDataManager.get())), networkCacheSubdirectory));
-        configuration.setApplicationCacheDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_offline_application_cache_directory(priv->websiteDataManager.get())));
-        configuration.setIndexedDBDatabaseDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_indexeddb_directory(priv->websiteDataManager.get())));
-        configuration.setHSTSStorageDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_hsts_cache_directory(priv->websiteDataManager.get())));
-ALLOW_DEPRECATED_DECLARATIONS_BEGIN
-        configuration.setWebSQLDatabaseDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_websql_directory(priv->websiteDataManager.get())));
-ALLOW_DEPRECATED_DECLARATIONS_END
-    } else if (!priv->localStorageDirectory.isNull())
-        configuration.setLocalStorageDirectory(FileSystem::stringFromFileSystemRepresentation(priv->localStorageDirectory.data()));
+    if (!priv->websiteDataManager)
+        priv->websiteDataManager = adoptGRef(webkit_website_data_manager_new("local-storage-directory", priv->localStorageDirectory.data(), nullptr));
+
+    if (!webkit_website_data_manager_is_ephemeral(priv->websiteDataManager.get()))
+        WebKit::LegacyGlobalSettings::singleton().setHSTSStorageDirectory(FileSystem::stringFromFileSystemRepresentation(webkit_website_data_manager_get_hsts_cache_directory(priv->websiteDataManager.get())));
 
     priv->processPool = WebProcessPool::create(configuration);
-
-    if (!priv->websiteDataManager)
-        priv->websiteDataManager = adoptGRef(webkitWebsiteDataManagerCreate(websiteDataStoreConfigurationForWebProcessPoolConfiguration(configuration)));
     priv->processPool->setPrimaryDataStore(webkitWebsiteDataManagerGetDataStore(priv->websiteDataManager.get()));
 
     webkitWebsiteDataManagerAddProcessPool(priv->websiteDataManager.get(), *priv->processPool);
@@ -374,6 +354,7 @@ ALLOW_DEPRECATED_DECLARATIONS_END
 #if PLATFORM(GTK) && ENABLE(REMOTE_INSPECTOR)
     priv->remoteInspectorProtocolHandler = makeUnique<RemoteInspectorProtocolHandler>(webContext);
 #endif
+    priv->webkitProtocolHandler = makeUnique<WebKitProtocolHandler>(webContext);
 }
 
 static void webkitWebContextDispose(GObject* object)
@@ -382,13 +363,18 @@ static void webkitWebContextDispose(GObject* object)
     if (!priv->clientsDetached) {
         priv->clientsDetached = true;
         priv->processPool->setInjectedBundleClient(nullptr);
-        priv->processPool->setDownloadClient(nullptr);
+        priv->processPool->setDownloadClient(makeUniqueRef<API::DownloadClient>());
         priv->processPool->setLegacyCustomProtocolManagerClient(nullptr);
     }
 
     if (priv->websiteDataManager) {
         webkitWebsiteDataManagerRemoveProcessPool(priv->websiteDataManager.get(), *priv->processPool);
         priv->websiteDataManager = nullptr;
+    }
+
+    if (priv->faviconDatabase) {
+        webkitFaviconDatabaseClose(priv->faviconDatabase.get());
+        priv->faviconDatabase = nullptr;
     }
 
     G_OBJECT_CLASS(webkit_web_context_parent_class)->dispose(object);
@@ -711,11 +697,9 @@ void webkit_web_context_set_automation_allowed(WebKitWebContext* context, gboole
  * specifying %WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER. The default value is
  * %WEBKIT_CACHE_MODEL_WEB_BROWSER.
  */
-void webkit_web_context_set_cache_model(WebKitWebContext* context, WebKitCacheModel model)
+void webkit_web_context_set_cache_model(WebKitWebContext*, WebKitCacheModel model)
 {
     CacheModel cacheModel;
-
-    g_return_if_fail(WEBKIT_IS_WEB_CONTEXT(context));
 
     switch (model) {
     case WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER:
@@ -731,8 +715,8 @@ void webkit_web_context_set_cache_model(WebKitWebContext* context, WebKitCacheMo
         g_assert_not_reached();
     }
 
-    if (cacheModel != context->priv->processPool->cacheModel())
-        context->priv->processPool->setCacheModel(cacheModel);
+    if (cacheModel != LegacyGlobalSettings::singleton().cacheModel())
+        LegacyGlobalSettings::singleton().setCacheModel(cacheModel);
 }
 
 /**
@@ -749,7 +733,7 @@ WebKitCacheModel webkit_web_context_get_cache_model(WebKitWebContext* context)
 {
     g_return_val_if_fail(WEBKIT_IS_WEB_CONTEXT(context), WEBKIT_CACHE_MODEL_WEB_BROWSER);
 
-    switch (context->priv->processPool->cacheModel()) {
+    switch (LegacyGlobalSettings::singleton().cacheModel()) {
     case CacheModel::DocumentViewer:
         return WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER;
     case CacheModel::PrimaryWebBrowser:
@@ -777,7 +761,7 @@ void webkit_web_context_clear_cache(WebKitWebContext* context)
     OptionSet<WebsiteDataType> websiteDataTypes;
     websiteDataTypes.add(WebsiteDataType::MemoryCache);
     websiteDataTypes.add(WebsiteDataType::DiskCache);
-    auto& websiteDataStore = webkitWebsiteDataManagerGetDataStore(context->priv->websiteDataManager.get()).websiteDataStore();
+    auto& websiteDataStore = webkitWebsiteDataManagerGetDataStore(context->priv->websiteDataManager.get());
     websiteDataStore.removeData(websiteDataTypes, -WallTime::infinity(), [] { });
 }
 
@@ -893,31 +877,6 @@ static void ensureFaviconDatabase(WebKitWebContext* context)
     priv->faviconDatabase = adoptGRef(webkitFaviconDatabaseCreate());
 }
 
-static void webkitWebContextEnableIconDatabasePrivateBrowsingIfNeeded(WebKitWebContext* context, WebKitWebView* webView)
-{
-    if (webkit_web_context_is_ephemeral(context))
-        return;
-    if (!webkit_web_view_is_ephemeral(webView))
-        return;
-
-    if (!context->priv->ephemeralPageCount && context->priv->faviconDatabase)
-        webkitFaviconDatabaseSetPrivateBrowsingEnabled(context->priv->faviconDatabase.get(), true);
-    context->priv->ephemeralPageCount++;
-}
-
-static void webkitWebContextDisableIconDatabasePrivateBrowsingIfNeeded(WebKitWebContext* context, WebKitWebView* webView)
-{
-    if (webkit_web_context_is_ephemeral(context))
-        return;
-    if (!webkit_web_view_is_ephemeral(webView))
-        return;
-
-    ASSERT(context->priv->ephemeralPageCount);
-    context->priv->ephemeralPageCount--;
-    if (!context->priv->ephemeralPageCount && context->priv->faviconDatabase)
-        webkitFaviconDatabaseSetPrivateBrowsingEnabled(context->priv->faviconDatabase.get(), false);
-}
-
 /**
  * webkit_web_context_set_favicon_database_directory:
  * @context: a #WebKitWebContext
@@ -958,10 +917,7 @@ void webkit_web_context_set_favicon_database_directory(WebKitWebContext* context
         "WebpageIcons.db", nullptr));
 
     // Setting the path will cause the icon database to be opened.
-    webkitFaviconDatabaseOpen(priv->faviconDatabase.get(), FileSystem::stringFromFileSystemRepresentation(faviconDatabasePath.get()));
-
-    if (webkit_web_context_is_ephemeral(context))
-        webkitFaviconDatabaseSetPrivateBrowsingEnabled(priv->faviconDatabase.get(), true);
+    webkitFaviconDatabaseOpen(priv->faviconDatabase.get(), FileSystem::stringFromFileSystemRepresentation(faviconDatabasePath.get()), webkit_web_context_is_ephemeral(context));
 }
 
 /**
@@ -1161,7 +1117,7 @@ void webkit_web_context_register_uri_scheme(WebKitWebContext* context, const cha
     RefPtr<WebKitURISchemeHandler> handler = adoptRef(new WebKitURISchemeHandler(callback, userData, destroyNotify));
     auto addResult = context->priv->uriSchemeHandlers.set(String::fromUTF8(scheme), handler.get());
     if (addResult.isNewEntry)
-        context->priv->processPool->registerSchemeForCustomProtocol(String::fromUTF8(scheme));
+        WebKit::WebProcessPool::registerGlobalURLSchemeAsHavingCustomProtocolHandlers(String::fromUTF8(scheme));
 }
 
 /**
@@ -1474,12 +1430,9 @@ void webkit_web_context_set_web_extensions_initialization_user_data(WebKitWebCon
  *
  * Deprecated: 2.10. Use webkit_web_context_new_with_website_data_manager() instead.
  */
-void webkit_web_context_set_disk_cache_directory(WebKitWebContext* context, const char* directory)
+void webkit_web_context_set_disk_cache_directory(WebKitWebContext*, const char*)
 {
-    g_return_if_fail(WEBKIT_IS_WEB_CONTEXT(context));
-    g_return_if_fail(directory);
-
-    context->priv->processPool->configuration().setDiskCacheDirectory(FileSystem::pathByAppendingComponent(FileSystem::stringFromFileSystemRepresentation(directory), networkCacheSubdirectory));
+    g_warning("webkit_web_context_set_disk_cache_directory is deprecated and does nothing, use WebKitWebsiteDataManager instead");
 }
 #endif
 
@@ -1683,7 +1636,7 @@ WebKitDownload* webkitWebContextGetOrCreateDownload(DownloadProxy* downloadProxy
 WebKitDownload* webkitWebContextStartDownload(WebKitWebContext* context, const char* uri, WebPageProxy* initiatingPage)
 {
     WebCore::ResourceRequest request(String::fromUTF8(uri));
-    return webkitWebContextGetOrCreateDownload(&context->priv->processPool->download(initiatingPage, request));
+    return webkitWebContextGetOrCreateDownload(&context->priv->processPool->download(WebKit::WebsiteDataStore::defaultDataStore().get(), initiatingPage, request));
 }
 
 void webkitWebContextRemoveDownload(DownloadProxy* downloadProxy)
@@ -1752,10 +1705,6 @@ bool webkitWebContextIsLoadingCustomProtocol(WebKitWebContext* context, uint64_t
 
 void webkitWebContextCreatePageForWebView(WebKitWebContext* context, WebKitWebView* webView, WebKitUserContentManager* userContentManager, WebKitWebView* relatedView)
 {
-    // FIXME: icon database private mode is global, not per page, so while there are
-    // pages in private mode we need to enable the private mode in the icon database.
-    webkitWebContextEnableIconDatabasePrivateBrowsingIfNeeded(context, webView);
-
     auto pageConfiguration = API::PageConfiguration::create();
     pageConfiguration->setProcessPool(context->priv->processPool.get());
     pageConfiguration->setPreferences(webkitSettingsGetPreferences(webkit_web_view_get_settings(webView)));
@@ -1774,11 +1723,10 @@ void webkitWebContextCreatePageForWebView(WebKitWebContext* context, WebKitWebVi
 
 void webkitWebContextWebViewDestroyed(WebKitWebContext* context, WebKitWebView* webView)
 {
-    webkitWebContextDisableIconDatabasePrivateBrowsingIfNeeded(context, webView);
     context->priv->webViews.remove(webkit_web_view_get_page_id(webView));
 }
 
 WebKitWebView* webkitWebContextGetWebViewForPage(WebKitWebContext* context, WebPageProxy* page)
 {
-    return page ? context->priv->webViews.get(page->identifier().toUInt64()) : nullptr;
+    return page ? context->priv->webViews.get(page->webPageID().toUInt64()) : nullptr;
 }

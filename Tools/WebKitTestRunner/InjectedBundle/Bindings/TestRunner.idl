@@ -309,6 +309,7 @@ interface TestRunner {
     boolean isStatisticsHasHadUserInteraction(DOMString hostName);
     void setStatisticsGrandfathered(DOMString hostName, boolean value);
     boolean isStatisticsGrandfathered(DOMString hostName);
+    void setUseITPDatabase(boolean value);
     void setStatisticsSubframeUnderTopFrameOrigin(DOMString hostName, DOMString topFrameHostName);
     void setStatisticsSubresourceUnderTopFrameOrigin(DOMString hostName, DOMString topFrameHostName);
     void setStatisticsSubresourceUniqueRedirectTo(DOMString hostName, DOMString hostNameRedirectedTo);
@@ -337,6 +338,7 @@ interface TestRunner {
     void setStatisticsCacheMaxAgeCap(double seconds);
     void statisticsResetToConsistentState(object completionHandler);
     boolean hasStatisticsIsolatedSession(DOMString hostName);
+    void setStatisticsShouldDowngradeReferrer(boolean value, object callback);
 
     // Injected bundle form client.
     void installTextDidChangeInTextFieldCallback(object callback);
@@ -364,8 +366,6 @@ interface TestRunner {
     void terminateNetworkProcess();
     void terminateServiceWorkerProcess();
 
-    void setCanHandleHTTPSServerTrustEvaluation(boolean canHandle);
-    readonly attribute boolean canDoServerTrustEvaluationInNetworkProcess;
     readonly attribute unsigned long serverTrustEvaluationCallbackCallsCount;
 
     readonly attribute boolean didCancelClientRedirect;
@@ -391,7 +391,7 @@ interface TestRunner {
     // WebAuthN
     void setWebAuthenticationMockConfiguration(object configuration);
     void addTestKeyToKeychain(DOMString privateKeyBase64, DOMString attrLabel, DOMString applicationTagBase64);
-    void cleanUpKeychain(DOMString attrLabel);
+    void cleanUpKeychain(DOMString attrLabel, optional DOMString applicationTagBase64);
     boolean keyExistsInKeychain(DOMString attrLabel, DOMString applicationTagBase64);
 
     // Ad Click Attribution

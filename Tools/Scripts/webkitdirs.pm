@@ -105,6 +105,7 @@ BEGIN {
 # Ports
 use constant {
     AppleWin    => "AppleWin",
+    FTW         => "FTW",
     GTK         => "GTK",
     iOS         => "iOS",
     tvOS        => "tvOS",
@@ -495,6 +496,8 @@ sub argumentsForConfiguration()
     push(@args, '--maccatalyst') if (defined $xcodeSDK && $xcodeSDK =~ /^maccatalyst/);
     push(@args, '--32-bit') if ($architecture eq "x86" and !isWin64());
     push(@args, '--64-bit') if (isWin64());
+    push(@args, '--64-bit') if (isFTW());
+    push(@args, '--ftw') if isFTW();
     push(@args, '--gtk') if isGtk();
     push(@args, '--qt') if isQt();
     push(@args, '--wpe') if isWPE();
@@ -507,7 +510,7 @@ sub argumentsForConfiguration()
 sub extractNonMacOSHostConfiguration
 {
     my @args = ();
-    my @extract = ('--device', '--gtk', '--ios', '--platform', '--sdk', '--simulator', '--wincairo', 'SDKROOT', 'ARCHS');
+    my @extract = ('--device', '--gtk', '--ios', '--platform', '--sdk', '--simulator', '--wincairo', '--ftw', 'SDKROOT', 'ARCHS');
     foreach (@{$_[0]}) {
         my $line = $_;
         my $flag = 0;
@@ -714,7 +717,7 @@ sub usesPerConfigurationBuildDirectory
     # autotool builds (non build-webkit). In this case and if
     # WEBKIT_OUTPUTDIR exist, use that as our configuration dir. This will
     # allows us to run run-webkit-tests without using build-webkit.
-    return ($ENV{"WEBKIT_OUTPUTDIR"} && isGtk()) || isAppleWinWebKit();
+    return ($ENV{"WEBKIT_OUTPUTDIR"} && isGtk()) || isAppleWinWebKit() || isFTW();
 }
 
 sub determineConfigurationProductDir
@@ -722,7 +725,7 @@ sub determineConfigurationProductDir
     return if defined $configurationProductDir;
     determineBaseProductDir();
     determineConfiguration();
-    if (isAppleWinWebKit() || isWinCairo() || isPlayStation()) {
+    if (isAppleWinWebKit() || isWinCairo() || isPlayStation() || isFTW()) {
         $configurationProductDir = File::Spec->catdir($baseProductDir, $configuration);
     } else {
         if (usesPerConfigurationBuildDirectory()) {
@@ -1091,7 +1094,7 @@ sub builtDylibPathForName
     if (isAppleCocoaWebKit()) {
         return "$configurationProductDir/$libraryName.framework/Versions/A/$libraryName";
     }
-    if (isAppleWinWebKit()) {
+    if (isAppleWinWebKit() || isFTW()) {
         if ($libraryName eq "JavaScriptCore") {
             return "$baseProductDir/lib/$libraryName.lib";
         } else {
@@ -1213,6 +1216,7 @@ sub determinePortName()
     return if defined $portName;
 
     my %argToPortName = (
+        ftw => FTW,
         gtk => GTK,
         'jsc-only' => JSCOnly,
         playstation => PlayStation,
@@ -1309,6 +1313,11 @@ sub isFedoraBased()
     return -e "/etc/fedora-release";
 }
 
+sub isFTW()
+{
+    return portName() eq FTW;
+}
+
 sub isWinCairo()
 {
     return portName() eq WinCairo;
@@ -1335,7 +1344,7 @@ sub isWin64()
 sub determineIsWin64()
 {
     return if defined($isWin64);
-    $isWin64 = checkForArgumentAndRemoveFromARGV("--64-bit") || ((isWinCairo() || isJSCOnly()) && !shouldBuild32Bit());
+    $isWin64 = checkForArgumentAndRemoveFromARGV("--64-bit") || ((isFTW() || isWinCairo() || isJSCOnly()) && !shouldBuild32Bit());
 }
 
 sub determineIsWin64FromArchitecture($)
@@ -1745,7 +1754,7 @@ sub launcherName()
         return "MiniBrowser";
     } elsif (isAppleMacWebKit()) {
         return "Safari";
-    } elsif (isAppleWinWebKit()) {
+    } elsif (isAppleWinWebKit() || isFTW()) {
         return "MiniBrowser";
     }
 }
@@ -1848,7 +1857,7 @@ sub checkInstalledTools()
 
 sub setupAppleWinEnv()
 {
-    return unless isAppleWinWebKit();
+    return unless isAppleWinWebKit() || isFTW();
 
     checkInstalledTools();
 
@@ -2325,7 +2334,7 @@ sub generateBuildSystemFromCMakeProject
     push @args, '-DSHOW_BINDINGS_GENERATION_PROGRESS=1' unless ($willUseNinja && -t STDOUT);
 
     # Some ports have production mode, but build-webkit should always use developer mode.
-    push @args, "-DDEVELOPER_MODE=ON" if isGtk() || isJSCOnly() || isQt() || isWPE() || isWinCairo();
+    push @args, "-DDEVELOPER_MODE=ON" if isFTW() || isGtk() || isJSCOnly() || isQt() || isWPE() || isWinCairo();
 
     if (architecture() eq "x86_64" && shouldBuild32Bit()) {
         # CMAKE_LIBRARY_ARCHITECTURE is needed to get the right .pc
@@ -2503,7 +2512,7 @@ sub setPathForRunningWebKitApp
 
     if (isAnyWindows()) {
         my $productBinaryDir = executableProductDir();
-        if (isAppleWinWebKit()) {
+        if (isAppleWinWebKit() || isFTW()) {
             $env->{PATH} = join(':', $productBinaryDir, appleApplicationSupportPath(), $env->{PATH} || "");
         } elsif (isWinCairo()) {
             my $winCairoBin = sourceDir() . "/WebKitLibraries/win/" . (isWin64() ? "bin64/" : "bin32/");
@@ -2593,7 +2602,7 @@ sub setupIOSWebKitEnvironment($)
 sub iosSimulatorApplicationsPath()
 {
     # FIXME: We should ask simctl for this information, instead of guessing from available runtimes.
-    my $runtimePath = File::Spec->catdir(sdkPlatformDirectory("iphoneos"), "Developer", "Library", "CoreSimulator", "Profiles", "Runtimes");
+    my $runtimePath = File::Spec->catdir(sdkPlatformDirectory("iphoneos"), "Library", "Developer", "CoreSimulator", "Profiles", "Runtimes");
     opendir(RUNTIMES, $runtimePath);
     my @runtimes = grep {/.*\.simruntime/} readdir(RUNTIMES);
     close(RUNTIMES);
@@ -2960,7 +2969,7 @@ sub runSafari
         return runMacWebKitApp(safariPath());
     }
 
-    if (isAppleWinWebKit()) {
+    if (isAppleWinWebKit() || isFTW()) {
         my $result;
         my $webKitLauncherPath = File::Spec->catfile(executableProductDir(), "MiniBrowser.exe");
         return system { $webKitLauncherPath } $webKitLauncherPath, @ARGV;
@@ -2974,7 +2983,7 @@ sub runMiniBrowser
     if (isAppleMacWebKit()) {
         return runMacWebKitApp(File::Spec->catfile(productDir(), "MiniBrowser.app", "Contents", "MacOS", "MiniBrowser"));
     }
-    if (isAppleWinWebKit()) {
+    if (isAppleWinWebKit() || isFTW()) {
         my $webKitLauncherPath = File::Spec->catfile(executableProductDir(), "MiniBrowser.exe");
         return system { $webKitLauncherPath } $webKitLauncherPath, @ARGV;
     }

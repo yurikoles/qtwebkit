@@ -1455,7 +1455,7 @@ void WebView::frameRect(RECT* rect)
     ::GetWindowRect(m_viewWindow, rect);
 }
 
-class WindowCloseTimer final : public WebCore::SuspendableTimer {
+class WindowCloseTimer final : public WebCore::SuspendableTimerBase {
 public:
     static WindowCloseTimer* create(WebView*);
 
@@ -1466,7 +1466,7 @@ private:
     void contextDestroyed() override;
     const char* activeDOMObjectName() const override { return "WindowCloseTimer"; }
 
-    // SuspendableTimer API.
+    // SuspendableTimerBase API.
     void fired() override;
 
     WebView* m_webView;
@@ -1491,7 +1491,7 @@ WindowCloseTimer* WindowCloseTimer::create(WebView* webView)
 }
 
 WindowCloseTimer::WindowCloseTimer(ScriptExecutionContext& context, WebView* webView)
-    : SuspendableTimer(context)
+    : SuspendableTimerBase(&context)
     , m_webView(webView)
 {
     ASSERT_ARG(webView, webView);
@@ -1499,7 +1499,7 @@ WindowCloseTimer::WindowCloseTimer(ScriptExecutionContext& context, WebView* web
 
 void WindowCloseTimer::contextDestroyed()
 {
-    SuspendableTimer::contextDestroyed();
+    SuspendableTimerBase::contextDestroyed();
     delete this;
 }
 
@@ -3101,6 +3101,7 @@ HRESULT WebView::initWithFrame(RECT frame, _In_ BSTR frameName, _In_ BSTR groupN
 
     auto storageProvider = PageStorageSessionProvider::create();
     PageConfiguration configuration(
+        PAL::SessionID::defaultSessionID(),
         makeUniqueRef<WebEditorClient>(this),
         SocketProvider::create(),
         makeUniqueRef<LibWebRTCProvider>(),
@@ -7338,7 +7339,6 @@ HRESULT WebView::registerURLSchemeAsSecure(_In_ BSTR scheme)
 
 HRESULT WebView::registerURLSchemeAsAllowingLocalStorageAccessInPrivateBrowsing(_In_ BSTR scheme)
 {
-    SchemeRegistry::registerURLSchemeAsAllowingLocalStorageAccessInPrivateBrowsing(toString(scheme));
     return S_OK;
 }
 

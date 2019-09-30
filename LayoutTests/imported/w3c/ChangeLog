@@ -1,3 +1,757 @@
+2019-09-30  Rob Buis  <rbuis@igalia.com>
+
+        No-Cors check should take into account same-origin
+        https://bugs.webkit.org/show_bug.cgi?id=202353
+
+        Reviewed by Youenn Fablet.
+
+        * web-platform-tests/fetch/api/redirect/redirect-mode-expected.txt: Removed.
+        * web-platform-tests/fetch/api/redirect/redirect-mode.any-expected.txt:
+        * web-platform-tests/fetch/api/redirect/redirect-mode.any.worker-expected.txt:
+        * web-platform-tests/service-workers/service-worker/fetch-event-redirect.https-expected.txt:
+
+2019-09-26  Truitt Savell  <tsavell@apple.com>
+
+        Unreviewed, rolling out r250385.
+
+        Broke imported/w3c/web-platform-tests/svg/animations/syncbase-
+        remove-add-while-running.html on all platforms. Which was
+        caught by EWS
+
+        Reverted changeset:
+
+        "Non-callable "handleEvent" property is silently ignored"
+        https://bugs.webkit.org/show_bug.cgi?id=200066
+        https://trac.webkit.org/changeset/250385
+
+2019-09-26  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Non-callable "handleEvent" property is silently ignored
+        https://bugs.webkit.org/show_bug.cgi?id=200066
+
+        Reviewed by Darin Adler.
+
+        * web-platform-tests/IndexedDB/fire-error-event-exception-expected.txt:
+        * web-platform-tests/IndexedDB/fire-success-event-exception-expected.txt:
+        * web-platform-tests/IndexedDB/fire-upgradeneeded-event-exception-expected.txt:
+        * web-platform-tests/dom/events/EventListener-handleEvent-expected.txt:
+
+2019-09-25  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Re-sync web-platform-tests/IndexedDB from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=202179
+
+        Reviewed by Alex Christensen.
+
+        Re-sync web-platform-tests/IndexedDB from upstream a0f781e4d4e9.
+
+        * web-platform-tests/IndexedDB/*: Updated.
+
+2019-09-24  Antoine Quint  <graouts@apple.com>
+
+        [Web Animations] Removing an element should only cancel its declarative animations
+        https://bugs.webkit.org/show_bug.cgi?id=202165
+
+        Reviewed by Dean Jackson.
+
+        Mark a WPT progression and a change in FAIL expectation in a test where we used to cancel an animation and now don't.
+
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-context-expected.txt:
+        * web-platform-tests/web-animations/timing-model/animations/canceling-an-animation-expected.txt:
+
+2019-09-24  Antoine Quint  <graouts@apple.com>
+
+        [Web Animations] Unflake web-animations/timing-model/animations/updating-the-finished-state.html WPT test
+        https://bugs.webkit.org/show_bug.cgi?id=181121
+
+        Reviewed by Dean Jackson.
+
+        * web-platform-tests/web-animations/timing-model/animations/updating-the-finished-state-expected.txt:
+
+2019-09-24  Alex Christensen  <achristensen@webkit.org>
+
+        Import navigation-timing WPT tests that don't time out
+        https://bugs.webkit.org/show_bug.cgi?id=202131
+
+        Reviewed by Youenn Fablet.
+
+        * web-platform-tests/navigation-timing/buffered-flag.window.js: Added.
+        (async_test.t):
+        * web-platform-tests/navigation-timing/idlharness.window.js: Added.
+        * web-platform-tests/navigation-timing/nav2_test_document_open-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_document_open.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_document_replaced-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_document_replaced.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_frame_removed-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_frame_removed.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_instance_accessible_from_the_start-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_instance_accessible_from_the_start.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigate_within_document-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigate_within_document.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigation_type_backforward-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigation_type_backforward.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigation_type_reload-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_navigation_type_reload.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_chain_xserver_partial_opt_in-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_chain_xserver_partial_opt_in.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_server-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_server.html: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_xserver-expected.txt: Added.
+        * web-platform-tests/navigation-timing/nav2_test_redirect_xserver.html: Added.
+        * web-platform-tests/navigation-timing/resources: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_green.html: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_green_with_onunload.html: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_meta_redirect.html: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_unload.html: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_yellow.html: Added.
+        * web-platform-tests/navigation-timing/resources/blank_page_yellow_with_onunload.html: Added.
+        * web-platform-tests/navigation-timing/resources/performance_attribute_sender.html: Added.
+        * web-platform-tests/navigation-timing/resources/secure-connection-interim.html: Added.
+        * web-platform-tests/navigation-timing/resources/secure-connection-interim.html.headers: Added.
+        * web-platform-tests/navigation-timing/resources/secure-connection-test.html: Added.
+        * web-platform-tests/navigation-timing/resources/webperftestharness.js: Added.
+        (test_namespace):
+        (test_timing_order):
+        (test_timing_equals):
+        (sleep_milliseconds):
+        (test_greater_than):
+        (test_greater_or_equals):
+        * web-platform-tests/navigation-timing/secure_connection_start_non_zero.https-expected.txt: Added.
+        * web-platform-tests/navigation-timing/secure_connection_start_non_zero.https.html: Added.
+        * web-platform-tests/navigation-timing/supported_navigation_type.window.js: Added.
+        (test):
+        (typeof.PerformanceObserver.supportedEntryTypes.string_appeared_here.PerformanceObserver.supportedEntryTypes.includes.promise_test.):
+        (typeof.PerformanceObserver.supportedEntryTypes.string_appeared_here.PerformanceObserver.supportedEntryTypes.includes):
+        * web-platform-tests/navigation-timing/test_document_open-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_document_open.html: Added.
+        * web-platform-tests/navigation-timing/test_document_readiness_exist-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_document_readiness_exist.html: Added.
+        * web-platform-tests/navigation-timing/test_navigate_within_document-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigate_within_document.html: Added.
+        * web-platform-tests/navigation-timing/test_navigation_attributes_exist-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigation_attributes_exist.html: Added.
+        * web-platform-tests/navigation-timing/test_navigation_redirectCount_none-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigation_redirectCount_none.html: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_backforward-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_backforward.html: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_enums-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_enums.html: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_reload-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_navigation_type_reload.html: Added.
+        * web-platform-tests/navigation-timing/test_no_previous_document-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_no_previous_document.html: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes.sub-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes.sub.html: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes_exist-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes_exist.html: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes_exist_in_object-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_performance_attributes_exist_in_object.html: Added.
+        * web-platform-tests/navigation-timing/test_readwrite-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_readwrite.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_attributes_exist-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_attributes_exist.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_attributes_order-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_attributes_order.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_client_redirect-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_client_redirect.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_reload-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_reload.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_server_redirect-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_server_redirect.html: Added.
+        * web-platform-tests/navigation-timing/test_timing_xserver_redirect-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_timing_xserver_redirect.html: Added.
+        * web-platform-tests/navigation-timing/test_unique_performance_objects-expected.txt: Added.
+        * web-platform-tests/navigation-timing/test_unique_performance_objects.html: Added.
+        * web-platform-tests/navigation-timing/unload-event-same-origin-check-expected.txt: Added.
+        * web-platform-tests/navigation-timing/unload-event-same-origin-check.html: Added.
+
+2019-09-23  Youenn Fablet  <youenn@apple.com>
+
+        Support sync-xhr feature policy
+        https://bugs.webkit.org/show_bug.cgi?id=202098
+
+        Reviewed by Alex Christensen.
+
+        Update test to use hosts[alt][].
+
+        * web-platform-tests/xhr/xmlhttprequest-sync-default-feature-policy.sub-expected.txt:
+        * web-platform-tests/xhr/xmlhttprequest-sync-default-feature-policy.sub.html:
+
+2019-09-23  Alex Christensen  <achristensen@webkit.org>
+
+        Fix WPT test html/browsers/offline/application-cache-api/api_swapcache_error.https.html
+        https://bugs.webkit.org/show_bug.cgi?id=202056
+        <rdar://problem/55523986>
+
+        Reviewed by Youenn Fablet.
+
+        * web-platform-tests/html/browsers/offline/application-cache-api/api_swapcache_error.https-expected.txt:
+
+2019-09-23  Antoine Quint  <graouts@apple.com>
+
+        [Web Animations] Update WPT tests
+        https://bugs.webkit.org/show_bug.cgi?id=202110
+
+        Reviewed by Dean Jackson.
+
+        * web-platform-tests/web-animations/README.md:
+        * web-platform-tests/web-animations/animation-model/animation-types/accumulation-per-property-expected.txt:
+        * web-platform-tests/web-animations/animation-model/animation-types/addition-per-property-expected.txt:
+        * web-platform-tests/web-animations/animation-model/animation-types/interpolation-per-property-expected.txt:
+        * web-platform-tests/web-animations/animation-model/animation-types/property-list.js:
+        * web-platform-tests/web-animations/animation-model/animation-types/property-types.js:
+        * web-platform-tests/web-animations/animation-model/combining-effects/effect-composition-expected.txt:
+        * web-platform-tests/web-animations/animation-model/combining-effects/effect-composition.html:
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/computed-keyframes-shorthands-expected.txt: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/computed-keyframes-shorthands.html: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-context-filling-expected.txt: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-context-filling.html: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-iteration-composite-operation.html:
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-replaced-animations-expected.txt: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-replaced-animations.html: Added.
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-transformed-distance-expected.txt:
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-transformed-distance.html:
+        * web-platform-tests/web-animations/interfaces/Animatable/animate-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Animatable/animate.html:
+        * web-platform-tests/web-animations/interfaces/Animatable/getAnimations-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Animatable/getAnimations.html:
+        * web-platform-tests/web-animations/interfaces/Animation/commitStyles-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/Animation/commitStyles.html: Added.
+        * web-platform-tests/web-animations/interfaces/Animation/persist-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/Animation/persist.html: Added.
+        * web-platform-tests/web-animations/interfaces/Animation/style-change-events-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/Animation/style-change-events.html: Added.
+        * web-platform-tests/web-animations/interfaces/AnimationEffect/updateTiming-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Document/getAnimations-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Document/getAnimations.html:
+        * web-platform-tests/web-animations/interfaces/DocumentTimeline/constructor.html:
+        * web-platform-tests/web-animations/interfaces/DocumentTimeline/style-change-events-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/DocumentTimeline/style-change-events.html: Added.
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/constructor-expected.txt:
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/getKeyframes-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/getKeyframes.html: Added.
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/setKeyframes-expected.txt:
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/style-change-events-expected.txt: Added.
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/style-change-events.html: Added.
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/target-expected.txt:
+        * web-platform-tests/web-animations/interfaces/KeyframeEffect/target.html:
+        * web-platform-tests/web-animations/resources/easing-tests.js:
+        * web-platform-tests/web-animations/resources/keyframe-tests.js:
+        * web-platform-tests/web-animations/resources/timing-override.js: Added.
+        * web-platform-tests/web-animations/testcommon.js:
+        * web-platform-tests/web-animations/timing-model/animations/canceling-an-animation-expected.txt:
+        * web-platform-tests/web-animations/timing-model/animations/canceling-an-animation.html:
+        * web-platform-tests/web-animations/timing-model/animations/finishing-an-animation.html:
+        * web-platform-tests/web-animations/timing-model/animations/pausing-an-animation.html:
+        * web-platform-tests/web-animations/timing-model/animations/setting-the-start-time-of-an-animation.html:
+        * web-platform-tests/web-animations/timing-model/animations/the-current-time-of-an-animation.html:
+        * web-platform-tests/web-animations/timing-model/animations/updating-the-finished-state.html:
+        * web-platform-tests/web-animations/timing-model/time-transformations/transformed-progress-expected.txt:
+        * web-platform-tests/web-animations/timing-model/time-transformations/transformed-progress.html:
+        * web-platform-tests/web-animations/timing-model/timelines/document-timelines-expected.txt:
+        * web-platform-tests/web-animations/timing-model/timelines/document-timelines.html:
+        * web-platform-tests/web-animations/timing-model/timelines/update-and-send-events-expected.txt:
+        * web-platform-tests/web-animations/timing-model/timelines/update-and-send-events-replacement-expected.txt: Added.
+        * web-platform-tests/web-animations/timing-model/timelines/update-and-send-events-replacement.html: Added.
+        * web-platform-tests/web-animations/timing-model/timelines/update-and-send-events.html:
+
+2019-09-23  Daniel Bates  <dabates@apple.com>
+
+        Improve CSP inheritance semantics
+        https://bugs.webkit.org/show_bug.cgi?id=201884
+        <rdar://problem/50172407>
+
+        Reviewed by Brent Fulgham.
+
+        Update expected results now that we pass more sub-tests.
+
+        * web-platform-tests/content-security-policy/inheritance/iframe-all-local-schemes-inherit-self.sub-expected.txt:
+        * web-platform-tests/content-security-policy/inheritance/window-expected.txt:
+
+2019-09-23  Rob Buis  <rbuis@igalia.com>
+
+        Sync operator dictionary
+        https://bugs.webkit.org/show_bug.cgi?id=201974
+
+        Reviewed by Frédéric Wang.
+
+        Update improved test results.
+
+        * web-platform-tests/mathml/presentation-markup/operators/operator-dictionary-001-expected.txt:
+
+2019-09-20  Alex Christensen  <achristensen@webkit.org>
+
+        [resource-timing] Report performance entries with all HTTP status codes
+        https://bugs.webkit.org/show_bug.cgi?id=202040
+
+        Reviewed by Joseph Pecoraro.
+
+        * web-platform-tests/resource-timing/resource_ignore_failures-expected.txt: Removed.
+        * web-platform-tests/resource-timing/resource_ignore_failures.html: Removed.
+        This test is no longer in wpt and it would regress with this change, so we remove it.
+        * web-platform-tests/resource-timing/resources/status-code.py: Added.
+        (main):
+        * web-platform-tests/resource-timing/status-codes-create-entry-expected.txt: Added.
+        * web-platform-tests/resource-timing/status-codes-create-entry.html: Added.
+
+2019-09-20  Rob Buis  <rbuis@igalia.com>
+
+        Synchronize MathML WPT tests against upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201975
+
+        Reviewed by Frédéric Wang.
+
+        Sync is based on a3a4442b04c37155f81c4ad4ae9c06339f76ce14.
+
+        * resources/import-expectations.json:
+        * web-platform-tests/mathml/presentation-markup/direction/direction-006.html:
+        * web-platform-tests/mathml/presentation-markup/direction/direction-007.html:
+        * web-platform-tests/mathml/presentation-markup/direction/direction-008.html:
+        * web-platform-tests/mathml/presentation-markup/direction/direction-009.html:
+        * web-platform-tests/mathml/presentation-markup/direction/direction-010.html:
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-bar-002-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-bar-002.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-default-padding-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-default-padding.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-rendering-from-in-flow-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/frac-rendering-from-in-flow.html: Added.
+        * web-platform-tests/mathml/presentation-markup/fractions/w3c-import.log:
+        * web-platform-tests/mathml/presentation-markup/menclose/legacy-menclose-radical-notation-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/menclose/legacy-menclose-radical-notation.html: Added.
+        * web-platform-tests/mathml/presentation-markup/menclose/w3c-import.log: Copied from LayoutTests/imported/w3c/web-platform-tests/mathml/presentation-markup/mrow/w3c-import.log.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mrow-like-elements-001-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mrow-like-elements-001.html: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mrow-like-elements-002-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mrow-like-elements-002.html: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mstyle-attributes-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/legacy-mstyle-attributes.html: Added.
+        * web-platform-tests/mathml/presentation-markup/mrow/w3c-import.log:
+        * web-platform-tests/mathml/presentation-markup/operators/embellished-operator-001-expected.txt:
+        * web-platform-tests/mathml/presentation-markup/operators/embellished-operator-001.html:
+        * web-platform-tests/mathml/presentation-markup/operators/embellished-operator-002-expected.txt:
+        * web-platform-tests/mathml/presentation-markup/operators/embellished-operator-002.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-form-dynamic.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-form-fallback.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-form-minus-plus.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-form.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits-default.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits-dynamic.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits-from-in-flow-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits-from-in-flow.html: Added.
+        * web-platform-tests/mathml/presentation-markup/operators/mo-movablelimits.html:
+        * web-platform-tests/mathml/presentation-markup/operators/mo-paint-lspace-rspace.html:
+        * web-platform-tests/mathml/presentation-markup/operators/operator-dictionary-001-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/operators/operator-dictionary-001.html: Added.
+        * web-platform-tests/mathml/presentation-markup/operators/w3c-import.log:
+        * web-platform-tests/mathml/presentation-markup/radicals/radical-rendering-from-in-flow-expected.html: Added.
+        * web-platform-tests/mathml/presentation-markup/radicals/radical-rendering-from-in-flow.html: Added.
+        * web-platform-tests/mathml/presentation-markup/radicals/w3c-import.log:
+        * web-platform-tests/mathml/presentation-markup/scripts/cramped-001-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/scripts/cramped-001.html: Added.
+        * web-platform-tests/mathml/presentation-markup/scripts/w3c-import.log:
+        * web-platform-tests/mathml/presentation-markup/spaces/space-like-004-expected.txt:
+        * web-platform-tests/mathml/presentation-markup/spaces/space-like-004.html:
+        * web-platform-tests/mathml/presentation-markup/tables/table-001-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/tables/table-001.html: Added.
+        * web-platform-tests/mathml/presentation-markup/tables/table-002-expected.txt: Added.
+        * web-platform-tests/mathml/presentation-markup/tables/table-002.html: Added.
+        * web-platform-tests/mathml/presentation-markup/tables/w3c-import.log:
+        * web-platform-tests/mathml/relations/css-styling/attribute-mapping-001.html:
+        * web-platform-tests/mathml/relations/css-styling/displaystyle-011.html:
+        * web-platform-tests/mathml/relations/css-styling/displaystyle-012.html:
+        * web-platform-tests/mathml/relations/css-styling/displaystyle-013.html:
+        * web-platform-tests/mathml/relations/css-styling/displaystyle-014.html:
+        * web-platform-tests/mathml/relations/css-styling/displaystyle-015.html:
+        * web-platform-tests/mathml/relations/css-styling/ignored-properties-001-expected.txt: Added.
+        * web-platform-tests/mathml/relations/css-styling/ignored-properties-001.html: Added.
+        * web-platform-tests/mathml/relations/css-styling/mathsize-attribute-css-keywords.html:
+        * web-platform-tests/mathml/relations/css-styling/mathsize-attribute-legacy-values.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-auto.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-bold-fraktur.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-bold-italic.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-bold-sans-serif.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-bold-script.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-bold.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-double-struck.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-fraktur.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-initial.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-italic.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-looped.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-monospace.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-sans-serif-bold-italic.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-sans-serif-italic.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-sans-serif.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-script.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-stretched.html:
+        * web-platform-tests/mathml/relations/css-styling/mathvariant-tailed.html:
+        * web-platform-tests/mathml/relations/css-styling/not-participating-to-parent-layout.html:
+        * web-platform-tests/mathml/relations/css-styling/padding-border-margin/border-002.html:
+        * web-platform-tests/mathml/relations/css-styling/padding-border-margin/margin-002.html:
+        * web-platform-tests/mathml/relations/css-styling/padding-border-margin/padding-002.html:
+        * web-platform-tests/mathml/relations/css-styling/w3c-import.log:
+        * web-platform-tests/mathml/relations/css-styling/width-height-001.html:
+        * web-platform-tests/mathml/relations/html5-tree/clipboard-event-handlers.tentative-expected.txt:
+        * web-platform-tests/mathml/relations/html5-tree/clipboard-event-handlers.tentative.html:
+        * web-platform-tests/mathml/relations/html5-tree/css-inline-style-dynamic.tentative-expected.html:
+        * web-platform-tests/mathml/relations/html5-tree/display-2-expected.html: Added.
+        * web-platform-tests/mathml/relations/html5-tree/display-2.html: Added.
+        * web-platform-tests/mathml/relations/html5-tree/math-global-event-handlers.tentative-expected.txt:
+        * web-platform-tests/mathml/relations/html5-tree/math-global-event-handlers.tentative.html:
+        * web-platform-tests/mathml/relations/html5-tree/tabindex-001-expected.txt: Added.
+        * web-platform-tests/mathml/relations/html5-tree/tabindex-001.html: Added.
+        * web-platform-tests/mathml/relations/html5-tree/tabindex-002-expected.txt: Added.
+        * web-platform-tests/mathml/relations/html5-tree/tabindex-002.html: Added.
+        * web-platform-tests/mathml/relations/html5-tree/w3c-import.log:
+        * web-platform-tests/mathml/support/box-navigation.js: Added.
+        (IsInFlow):
+        (firstInFlowChild):
+        (nextInFlowSibling):
+        (previousInFlowSibling):
+        * web-platform-tests/mathml/support/feature-detection.js:
+        (MathMLFeatureDetection.string_appeared_here):
+        (MathMLFeatureDetection.has_mspace): Deleted.
+        (MathMLFeatureDetection.has_operator_spacing): Deleted.
+        (MathMLFeatureDetection.has_mfrac): Deleted.
+        (MathMLFeatureDetection.has_msqrt): Deleted.
+        (MathMLFeatureDetection.has_menclose): Deleted.
+        (MathMLFeatureDetection.has_dir): Deleted.
+        * web-platform-tests/mathml/support/mathml-fragments.js:
+        (FragmentHelper.createElement):
+        (FragmentHelper.forceNonEmptyElement):
+        (FragmentHelper.forceNonEmptyDescendants):
+        * web-platform-tests/mathml/support/operator-dictionary.js: Added.
+        (async.fetchOperatorDictionary):
+        (splitKey):
+        (spaceIndexToLength):
+        (defaultPropertyValue):
+        * web-platform-tests/mathml/support/operator-dictionary.json: Added.
+        * web-platform-tests/mathml/support/w3c-import.log:
+        * web-platform-tests/mathml/tools/mathvariant-transforms.py:
+        * web-platform-tests/mathml/tools/operator-dictionary.py: Added.
+        (parseHexaNumber):
+        (parseHexaSequence):
+        (parseSpaces):
+        (parseProperties):
+        (buildKeyAndValueFrom):
+        (createSizeVariants):
+        (createStretchy):
+        * web-platform-tests/mathml/tools/operator-dictionary.xsl: Added.
+        * web-platform-tests/mathml/tools/utils/misc.py:
+        * web-platform-tests/mathml/tools/utils/w3c-import.log:
+        * web-platform-tests/mathml/tools/w3c-import.log:
+
+2019-09-17  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, address flakiness of imported/w3c/web-platform-tests/html/browsers/offline/application-cache-api/api_update_error.https.html.
+
+        Stop logging console messages.
+
+        * web-platform-tests/html/browsers/offline/application-cache-api/api_update_error.https-expected.txt:
+
+2019-09-17  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, revert r249850 as the flakiness should be gone as of the testharness.js update in r249977.
+        https://bugs.webkit.org/show_bug.cgi?id=201661
+
+        * web-platform-tests/service-workers/service-worker/getregistrations.https.html:
+
+2019-09-17  Chris Dumez  <cdumez@apple.com>
+
+        Update testharness.js from upstream for web-platform-tests
+        https://bugs.webkit.org/show_bug.cgi?id=201843
+
+        Reviewed by Jiewen Tan.
+
+        Update testharness.js from upstream 6fd5e1e086ce590a4780a30d129 for web-platform-tests and
+        rebaseline tests accordingly.
+
+        * web-platform-tests/FileAPI/FileReader/workers-expected.txt:
+        * web-platform-tests/FileAPI/url/url-format.any.worker-expected.txt:
+        * web-platform-tests/WebCryptoAPI/derive_bits_keys/ecdh_bits.https.worker-expected.txt:
+        * web-platform-tests/WebCryptoAPI/derive_bits_keys/ecdh_keys.https.worker-expected.txt:
+        * web-platform-tests/WebIDL/ecmascript-binding/es-exceptions/DOMException-constants.any-expected.txt:
+        * web-platform-tests/WebIDL/ecmascript-binding/es-exceptions/DOMException-constants.any.worker-expected.txt:
+        * web-platform-tests/content-security-policy/inside-worker/shared-inheritance-expected.txt:
+        * web-platform-tests/content-security-policy/inside-worker/shared-script-expected.txt:
+        * web-platform-tests/content-security-policy/nonce-hiding/svgscript-nonces-hidden-meta.tentative.sub-expected.txt:
+        * web-platform-tests/content-security-policy/nonce-hiding/svgscript-nonces-hidden.tentative-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-001-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-002-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-003-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-004-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-005-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-006-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-007-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-008-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-009-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-010-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-011-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-012-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-013-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-014-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-015-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-016-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-017-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-018-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-019-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-020-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-021-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-022-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-023-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-024-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-025-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-026-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-027-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-028-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-029-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-030-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-031-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-032-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-033-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-034-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-035-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-implies-size-change-036-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-001-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-002-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-003-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-004-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-005-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-006-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-007-expected.txt:
+        * web-platform-tests/css/css-grid/alignment/grid-alignment-style-changes-008-expected.txt:
+        * web-platform-tests/css/css-grid/grid-definition/grid-change-fit-content-argument-001-expected.txt:
+        * web-platform-tests/css/css-properties-values-api/unit-cycles-expected.txt:
+        * web-platform-tests/css/css-properties-values-api/url-resolution-expected.txt:
+        * web-platform-tests/custom-elements/parser/parser-fallsback-to-unknown-element-expected.txt:
+        * web-platform-tests/dom/events/Event-dispatch-listener-order.window-expected.txt:
+        * web-platform-tests/dom/events/Event-isTrusted.any-expected.txt:
+        * web-platform-tests/dom/events/Event-isTrusted.any.worker-expected.txt:
+        * web-platform-tests/dom/nodes/Element-getElementsByTagName-change-document-HTMLNess-expected.txt:
+        * web-platform-tests/eventsource/eventsource-prototype-expected.txt:
+        * web-platform-tests/fetch/api/basic/stream-safe-creation.any.worker-expected.txt:
+        * web-platform-tests/fetch/api/cors/cors-preflight-cache.any-expected.txt:
+        * web-platform-tests/fetch/api/cors/cors-preflight-cache.any.worker-expected.txt:
+        * web-platform-tests/fetch/api/cors/cors-preflight-redirect.any-expected.txt:
+        * web-platform-tests/fetch/api/cors/cors-preflight-redirect.any.worker-expected.txt:
+        * web-platform-tests/fetch/api/policies/referrer-origin-when-cross-origin-service-worker.https-expected.txt:
+        * web-platform-tests/fetch/api/request/request-consume-empty-expected.txt:
+        * web-platform-tests/fetch/api/response/response-consume-empty-expected.txt:
+        * web-platform-tests/fetch/cross-origin-resource-policy/scheme-restriction.https.window-expected.txt:
+        * web-platform-tests/html/browsers/browsing-the-web/navigating-across-documents/javascript-url-global-scope-expected.txt:
+        * web-platform-tests/html/browsers/history/joint-session-history/joint-session-history-iframe-state-expected.txt:
+        * web-platform-tests/html/browsers/history/the-location-interface/location-protocol-setter-non-broken-expected.txt:
+        * web-platform-tests/html/browsers/origin/origin-of-data-document-expected.txt:
+        * web-platform-tests/html/browsers/origin/relaxing-the-same-origin-restriction/document_domain_setter-expected.txt:
+        * web-platform-tests/html/browsers/the-window-object/apis-for-creating-and-navigating-browsing-contexts-by-name/no_window_open_when_term_nesting_level_nonzero.window-expected.txt:
+        * web-platform-tests/html/browsers/the-window-object/focus.window-expected.txt:
+        * web-platform-tests/html/browsers/windows/document-access/document_access_parent_access.tentative-expected.txt:
+        * web-platform-tests/html/browsers/windows/targeting-cross-origin-nested-browsing-contexts-expected.txt:
+        * web-platform-tests/html/dom/documents/dom-tree-accessors/document.title-01-expected.txt:
+        * web-platform-tests/html/dom/documents/dom-tree-accessors/document.title-02-expected.txt:
+        * web-platform-tests/html/rendering/non-replaced-elements/flow-content-0/dialog-display-expected.txt:
+        * web-platform-tests/html/rendering/non-replaced-elements/tables/table-vspace-hspace-expected.txt:
+        * web-platform-tests/html/rendering/non-replaced-elements/tables/table-vspace-hspace-s-expected.txt:
+        * web-platform-tests/html/rendering/non-replaced-elements/the-page/iframe-marginwidth-marginheight-expected.txt:
+        * web-platform-tests/html/semantics/document-metadata/the-base-element/base_target_does_not_affect_iframe_src_navigation-expected.txt:
+        * web-platform-tests/html/semantics/document-metadata/the-base-element/base_target_does_not_affect_location_assignment-expected.txt:
+        * web-platform-tests/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/not-in-shadow-tree-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/media-elements/interfaces/HTMLElement/HTMLTrackElement/srclang-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/media-elements/interfaces/TextTrack/language-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-frame-element/document-getters-return-null-for-cross-origin-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-iframe-element/document-getters-return-null-for-cross-origin-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-iframe-element/iframe_sandbox_anchor_download_allow_downloads_without_user_activation.sub.tentative-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-iframe-element/iframe_sandbox_navigation_download_allow_downloads_without_user_activation.sub.tentative-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-iframe-element/sandbox_030-expected.txt:
+        * web-platform-tests/html/semantics/embedded-content/the-object-element/document-getters-return-null-for-cross-origin-expected.txt:
+        * web-platform-tests/html/semantics/links/links-created-by-a-and-area-elements/htmlanchorelement_noopener-expected.txt:
+        * web-platform-tests/html/semantics/scripting-1/the-script-element/execution-timing/084-expected.txt:
+        * web-platform-tests/html/semantics/scripting-1/the-script-element/module/charset-02-expected.txt:
+        * web-platform-tests/html/semantics/scripting-1/the-script-element/module/crossorigin-expected.txt:
+        * web-platform-tests/html/syntax/parsing/quotes-in-meta-expected.txt:
+        * web-platform-tests/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/document-open-cancels-javascript-url-navigation-expected.txt:
+        * web-platform-tests/html/webappapis/scripting/processing-model-2/window-onerror-parse-error-expected.txt:
+        * web-platform-tests/html/webappapis/scripting/processing-model-2/window-onerror-runtime-error-expected.txt:
+        * web-platform-tests/html/webappapis/scripting/processing-model-2/window-onerror-runtime-error-throw-expected.txt:
+        * web-platform-tests/html/webappapis/timers/negative-settimeout-expected.txt:
+        * web-platform-tests/infrastructure/server/context.any-expected.txt:
+        * web-platform-tests/infrastructure/server/context.any.serviceworker-expected.txt:
+        * web-platform-tests/infrastructure/server/context.any.worker-expected.txt:
+        * web-platform-tests/infrastructure/server/title.any.worker-expected.txt:
+        * web-platform-tests/mediacapture-streams/MediaStreamTrack-end-manual.https-expected.txt:
+        * web-platform-tests/pointerevents/pointerevent_root_computed_style-expected.txt:
+        * web-platform-tests/pointerevents/pointerevent_root_hit_test-expected.txt:
+        * web-platform-tests/preload/link-header-preload-nonce-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_match_origin-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_match_wildcard-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_multi-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_multi_wildcard-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_null-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_origin_uppercase-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_space-expected.txt:
+        * web-platform-tests/resource-timing/resource_TAO_wildcard-expected.txt:
+        * web-platform-tests/resources/testharness.css.headers:
+        * web-platform-tests/resources/testharness.js:
+        (WindowTestEnvironment.prototype._forEach_windows):
+        (WindowTestEnvironment.prototype.next_default_test_name):
+        (WorkerTestEnvironment.prototype.next_default_test_name):
+        (ShellTestEnvironment):
+        (ShellTestEnvironment.prototype.next_default_test_name):
+        (ShellTestEnvironment.prototype.on_new_harness_properties):
+        (ShellTestEnvironment.prototype.on_tests_ready):
+        (ShellTestEnvironment.prototype.add_on_loaded_callback):
+        (ShellTestEnvironment.prototype.test_timeout):
+        (create_test_environment):
+        (is_shared_worker):
+        (is_service_worker):
+        (test):
+        (promise_test):
+        (this.wait_for):
+        (EventWatcher):
+        (done):
+        * web-platform-tests/resources/testharness.js.headers:
+        * web-platform-tests/server-timing/resource_timing_idl-expected.txt:
+        * web-platform-tests/server-timing/resource_timing_idl.https-expected.txt:
+        * web-platform-tests/server-timing/service_worker_idl-expected.txt:
+        * web-platform-tests/service-workers/service-worker/clients-get-resultingClientId.https-expected.txt:
+        * web-platform-tests/streams/piping/general-expected.txt:
+        * web-platform-tests/visual-viewport/viewport-read-size-causes-layout-expected.txt:
+        * web-platform-tests/visual-viewport/viewport-read-size-in-iframe-causes-layout-expected.txt:
+        * web-platform-tests/wasm/jsapi/constructor/instantiate-bad-imports.any.worker-expected.txt:
+        * web-platform-tests/wasm/jsapi/instance/constructor-bad-imports.any.worker-expected.txt:
+        * web-platform-tests/web-animations/timing-model/animations/canceling-an-animation-expected.txt:
+        * web-platform-tests/webrtc/RTCRtpTransceiver-setCodecPreferences-expected.txt:
+        * web-platform-tests/websockets/Close-undefined.any.worker-expected.txt:
+        * web-platform-tests/websockets/opening-handshake/003-expected.txt:
+        * web-platform-tests/websockets/unload-a-document/001-expected.txt:
+        * web-platform-tests/websockets/unload-a-document/002-expected.txt:
+        * web-platform-tests/websockets/unload-a-document/003-expected.txt:
+        * web-platform-tests/websockets/unload-a-document/004-expected.txt:
+        * web-platform-tests/workers/WorkerGlobalScope_requestAnimationFrame.tentative.worker-expected.txt:
+        * web-platform-tests/workers/Worker_ErrorEvent_error-expected.txt:
+        * web-platform-tests/workers/baseurl/alpha/importScripts-in-worker-expected.txt:
+        * web-platform-tests/workers/baseurl/alpha/xhr-in-worker-expected.txt:
+        * web-platform-tests/workers/interfaces/WorkerUtils/importScripts/001.worker-expected.txt:
+        * web-platform-tests/workers/interfaces/WorkerUtils/importScripts/002.worker-expected.txt:
+        * web-platform-tests/xhr/overridemimetype-done-state.any-expected.txt:
+        * web-platform-tests/xhr/overridemimetype-done-state.any.worker-expected.txt:
+        * web-platform-tests/xhr/responsetype.any-expected.txt:
+        * web-platform-tests/xhr/timeout-sync-expected.txt:
+
+2019-09-17  Antti Koivisto  <antti@apple.com>
+
+        TextIterator should convert tabs to spaces
+        https://bugs.webkit.org/show_bug.cgi?id=201863
+
+        Reviewed by Zalan Bujtas.
+
+        * web-platform-tests/html/dom/elements/the-innertext-idl-attribute/getter-expected.txt:
+        * web-platform-tests/innerText/getter-expected.txt:
+
+2019-09-17  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, address flakiness of imported/w3c/web-platform-tests/IndexedDB/fire-error-event-exception.html
+
+        Do not log console messages.
+
+        * web-platform-tests/IndexedDB/fire-error-event-exception-expected.txt:
+
+2019-09-17  Rob Buis  <rbuis@igalia.com>
+
+        Access-Control-Expose-Headers parsed incorrectly
+        https://bugs.webkit.org/show_bug.cgi?id=172357
+
+        Reviewed by Youenn Fablet.
+
+        Import cors/access-control-expose-headers-parsing.window.js and adjust it
+        so it fetches a remote url, since subdomains do not work for localhost.
+
+        * web-platform-tests/cors/access-control-expose-headers-parsing.window-expected.txt: Added.
+        * web-platform-tests/cors/access-control-expose-headers-parsing.window.html: Added.
+        * web-platform-tests/cors/access-control-expose-headers-parsing.window.js:
+        (runTests):
+        (exposeTest): Deleted.
+        * web-platform-tests/cors/allow-headers-expected.txt: Removed.
+        * web-platform-tests/cors/allow-headers.htm: Removed.
+        * web-platform-tests/cors/resources/access-control-expose-headers-parsing-2.asis: Removed.
+        * web-platform-tests/cors/resources/access-control-expose-headers-parsing.asis: Removed.
+        * web-platform-tests/cors/resources/access-control-expose-headers.json: Added.
+        * web-platform-tests/cors/resources/expose-headers.py: Added.
+        (main):
+
+2019-09-17  Youenn Fablet  <youenn@apple.com>
+
+        Content-Type should be preserved on responses created from DOMCache
+        https://bugs.webkit.org/show_bug.cgi?id=201815
+
+        Reviewed by Alex Christensen.
+
+        Fixes one subtest.
+        Remaining failing test is failing consistently in other browsers.
+
+        * web-platform-tests/service-workers/cache-storage/serviceworker/cache-match.https-expected.txt:
+        * web-platform-tests/service-workers/cache-storage/window/cache-match.https-expected.txt:
+        * web-platform-tests/service-workers/cache-storage/worker/cache-match.https-expected.txt:
+
+2019-09-16  Alex Christensen  <achristensen@webkit.org>
+
+        Remove "gopher" from list of special schemes in URLParser
+        https://bugs.webkit.org/show_bug.cgi?id=201852
+
+        Reviewed by Simon Fraser.
+
+        * web-platform-tests/url/a-element-expected.txt:
+        * web-platform-tests/url/a-element-origin-expected.txt:
+        * web-platform-tests/url/a-element-origin-xhtml-expected.txt:
+        * web-platform-tests/url/a-element-xhtml-expected.txt:
+        * web-platform-tests/url/url-constructor-expected.txt:
+        * web-platform-tests/url/url-origin-expected.txt:
+        * web-platform-tests/url/url-setters-expected.txt:
+
+2019-09-16  Chris Dumez  <cdumez@apple.com>
+
+        Update testharness.js from upstream
+        https://bugs.webkit.org/show_bug.cgi?id=201808
+
+        Reviewed by Darin Adler.
+
+        Update existing layout tests so that they are compatible with this new version
+        of testharness.js.
+
+        * IndexedDB-private-browsing/idbdatabase_createObjectStore9-invalidparameters.html:
+        * IndexedDB-private-browsing/idbobjectstore_deleted.html:
+        * web-platform-tests/custom-elements/resources/custom-elements-helpers.js:
+        (create_window_in_test):
+
+2019-09-16  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, land expectations for imported/w3c/web-platform-tests/html/browsers/offline/application-cache-api/api_swapcache_error.https.html.
+
+        This test was imported in r249886.
+
+        * web-platform-tests/html/browsers/offline/application-cache-api/api_swapcache_error.https-expected.txt:
+
+2019-09-16  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed, address flakiness of imported/w3c/web-platform-tests/html/browsers/offline/application-cache-api/api_update.https.html
+
+        Flaky since r249886.
+
+        * web-platform-tests/html/browsers/offline/application-cache-api/api_update.https-expected.txt:
+
+2019-09-16  Antti Koivisto  <antti@apple.com>
+
+    Eliminate separate simple line layout path from TextIterator
+    https://bugs.webkit.org/show_bug.cgi?id=201760
+
+    Reviewed by Zalan Bujtas.
+
+    * web-platform-tests/css/css-grid/alignment/grid-row-axis-alignment-positioned-items-015-expected.txt:
+    * web-platform-tests/css/css-grid/alignment/grid-row-axis-alignment-positioned-items-016-expected.txt:
+    * web-platform-tests/innerText/getter-expected.txt:
+
+    Two '\t' subtests flip to FAIL because this was only supported on TextIterator simple line layout path.
+    This can now be fixed correctly for both paths.
+
 2019-09-15  Chris Dumez  <cdumez@apple.com>
 
         Re-sync HTML web-platform-tests from upstream

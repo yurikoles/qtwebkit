@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -143,11 +143,11 @@ bool ObjectPropertyConditionSet::needImpurePropertyWatchpoint() const
 
 bool ObjectPropertyConditionSet::areStillLive(VM& vm) const
 {
-    for (const ObjectPropertyCondition& condition : *this) {
-        if (!condition.isStillLive(vm))
-            return false;
-    }
-    return true;
+    bool stillLive = true;
+    forEachDependentCell([&](JSCell* cell) {
+        stillLive &= vm.heap.isMarked(cell);
+    });
+    return stillLive;
 }
 
 void ObjectPropertyConditionSet::dumpInContext(PrintStream& out, DumpContext* context) const
@@ -183,7 +183,7 @@ bool ObjectPropertyConditionSet::isValidAndWatchable() const
 namespace {
 
 namespace ObjectPropertyConditionSetInternal {
-static const bool verbose = false;
+static constexpr bool verbose = false;
 }
 
 ObjectPropertyCondition generateCondition(

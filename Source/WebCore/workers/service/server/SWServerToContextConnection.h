@@ -33,10 +33,6 @@
 #include "ServiceWorkerIdentifier.h"
 #include "ServiceWorkerTypes.h"
 
-namespace PAL {
-class SessionID;
-}
-
 namespace WebCore {
 
 class SWServer;
@@ -53,7 +49,7 @@ public:
     SWServerToContextConnectionIdentifier identifier() const { return m_identifier; }
 
     // Messages to the SW host process
-    virtual void installServiceWorkerContext(const ServiceWorkerContextData&, PAL::SessionID, const String& userAgent) = 0;
+    virtual void installServiceWorkerContext(const ServiceWorkerContextData&, const String& userAgent) = 0;
     virtual void fireInstallEvent(ServiceWorkerIdentifier) = 0;
     virtual void fireActivateEvent(ServiceWorkerIdentifier) = 0;
     virtual void softUpdate(ServiceWorkerIdentifier) = 0;

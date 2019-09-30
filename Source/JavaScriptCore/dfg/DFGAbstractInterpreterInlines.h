@@ -37,6 +37,7 @@
 #include "GetterSetter.h"
 #include "HashMapImpl.h"
 #include "JITOperations.h"
+#include "JSGenerator.h"
 #include "JSImmutableButterfly.h"
 #include "JSInternalPromise.h"
 #include "JSInternalPromiseConstructor.h"
@@ -260,7 +261,8 @@ bool AbstractInterpreter<AbstractStateType>::handleConstantBinaryBitwiseOp(Node*
         case ArithBitXor:
             setConstant(node, JSValue(a ^ b));
             break;
-        case BitRShift:
+        case ArithBitRShift:
+        case ValueBitRShift:
             setConstant(node, JSValue(a >> (static_cast<uint32_t>(b) & 0x1f)));
             break;
         case ValueBitLShift:
@@ -511,6 +513,7 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
     case ValueBitXor:
     case ValueBitAnd:
     case ValueBitOr:
+    case ValueBitRShift:
     case ValueBitLShift: {
         if (handleConstantBinaryBitwiseOp(node))
             break;
@@ -527,7 +530,7 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
     case ArithBitAnd:
     case ArithBitOr:
     case ArithBitXor:
-    case BitRShift:
+    case ArithBitRShift:
     case ArithBitLShift:
     case BitURShift: {
         if (node->child1().useKind() == UntypedUse || node->child2().useKind() == UntypedUse) {
@@ -1564,18 +1567,27 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
             }
             break;
 
-        case IsCellWithType:
-            if (!(child.m_type & ~node->speculatedTypeForQuery())) {
+        case IsCellWithType: {
+            Optional<SpeculatedType> filter = node->speculatedTypeForQuery();
+            if (!filter) {
+                if (!(child.m_type & SpecCell)) {
+                    setConstant(node, jsBoolean(false));
+                    constantWasSet = true;
+                }
+                break;
+            }
+            if (!(child.m_type & ~filter.value())) {
                 setConstant(node, jsBoolean(true));
                 constantWasSet = true;
                 break;
             }
-            if (!(child.m_type & node->speculatedTypeForQuery())) {
+            if (!(child.m_type & filter.value())) {
                 setConstant(node, jsBoolean(false));
                 constantWasSet = true;
                 break;
             }
             break;
+        }
 
         case IsTypedArrayView:
             if (!(child.m_type & ~SpecTypedArrayView)) {
@@ -2676,7 +2688,39 @@ bool AbstractInterpreter<AbstractStateType>::executeEffects(unsigned clobberLimi
         break;
     }
 
+    case CreateGenerator: {
+        JSGlobalObject* globalObject = m_graph.globalObjectFor(node->origin.semantic);
+        if (JSValue base = forNode(node->child1()).m_value) {
+            if (auto* function = jsDynamicCast<JSFunction*>(m_graph.m_vm, base)) {
+                if (FunctionRareData* rareData = function->rareData()) {
+                    if (rareData->allocationProfileWatchpointSet().isStillValid()) {
+                        Structure* structure = rareData->internalFunctionAllocationStructure();
+                        if (structure
+                            && structure->classInfo() == JSGenerator::info()
+                            && structure->globalObject() == globalObject
+                            && rareData->allocationProfileWatchpointSet().isStillValid()) {
+                            m_graph.freeze(rareData);
+                            m_graph.watchpoints().addLazily(rareData->allocationProfileWatchpointSet());
+                            m_state.setFoundConstants(true);
+                            didFoldClobberWorld();
+                            setForNode(node, structure);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        clobberWorld();
+        setTypeForNode(node, SpecObjectOther);
+        break;
+    }
+
     case NewPromise:
+        ASSERT(!!node->structure().get());
+        setForNode(node, node->structure());
+        break;
+
+    case NewGenerator:
         ASSERT(!!node->structure().get());
         setForNode(node, node->structure());
         break;

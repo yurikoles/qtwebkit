@@ -34,6 +34,11 @@
 #include <wtf/Optional.h>
 
 namespace WebCore {
+
+namespace Display {
+class Box;
+}
+
 namespace Layout {
 
 struct Position {
@@ -138,29 +143,55 @@ struct VerticalGeometry {
 };
 
 struct UsedHorizontalValues {
-    explicit UsedHorizontalValues()
+    struct Constraints {
+        explicit Constraints(const Display::Box& containingBlockGeometry);
+        explicit Constraints(LayoutUnit contentBoxLeft, LayoutUnit horizontalConstraint)
+            : contentBoxLeft(contentBoxLeft)
+            , width(horizontalConstraint)
         {
         }
 
-    explicit UsedHorizontalValues(LayoutUnit containingBlockWidth)
-        : containingBlockWidth(containingBlockWidth)
-        {
-        }
+        LayoutUnit contentBoxLeft;
+        LayoutUnit width;
+    };
 
-    explicit UsedHorizontalValues(Optional<LayoutUnit> containingBlockWidth, Optional<LayoutUnit> width, Optional<UsedHorizontalMargin> margin)
-        : containingBlockWidth(containingBlockWidth)
+    explicit UsedHorizontalValues(Constraints constraints)
+        : constraints(constraints)
+    {
+    }
+
+    explicit UsedHorizontalValues(Constraints constraints, Optional<LayoutUnit> width, Optional<UsedHorizontalMargin> margin)
+        : constraints(constraints)
         , width(width)
         , margin(margin)
-        {
-        }
+    {
+    }
 
-    Optional<LayoutUnit> containingBlockWidth;
+    Constraints constraints;
     Optional<LayoutUnit> width;
     Optional<UsedHorizontalMargin> margin;
 };
 
 struct UsedVerticalValues {
-    Optional<LayoutUnit> containingBlockHeight;
+    struct Constraints {
+        explicit Constraints(const Display::Box& containingBlockGeometry);
+        explicit Constraints(LayoutUnit contentBoxTop, Optional<LayoutUnit> verticalConstraint = WTF::nullopt)
+            : contentBoxTop(contentBoxTop)
+            , height(verticalConstraint)
+        {
+        }
+
+        LayoutUnit contentBoxTop;
+        Optional<LayoutUnit> height;
+    };
+
+    explicit UsedVerticalValues(Constraints constraints, Optional<LayoutUnit> height = { })
+        : constraints(constraints)
+        , height(height)
+    {
+    }
+
+    Constraints constraints;
     Optional<LayoutUnit> height;
 };
 

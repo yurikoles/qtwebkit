@@ -225,6 +225,10 @@ struct WKAutoCorrectionData {
 
 #if ENABLE(POINTER_EVENTS)
     RetainPtr<WKTouchActionGestureRecognizer> _touchActionGestureRecognizer;
+    RetainPtr<UISwipeGestureRecognizer> _touchActionLeftSwipeGestureRecognizer;
+    RetainPtr<UISwipeGestureRecognizer> _touchActionRightSwipeGestureRecognizer;
+    RetainPtr<UISwipeGestureRecognizer> _touchActionUpSwipeGestureRecognizer;
+    RetainPtr<UISwipeGestureRecognizer> _touchActionDownSwipeGestureRecognizer;
 #endif
 
 #if PLATFORM(MACCATALYST)
@@ -356,6 +360,7 @@ struct WKAutoCorrectionData {
 
     BOOL _focusRequiresStrongPasswordAssistance;
     BOOL _waitingForEditDragSnapshot;
+    NSInteger _dropAnimationCount;
 
     BOOL _hasSetUpInteractions;
     NSUInteger _ignoreSelectionCommandFadeCount;
@@ -550,6 +555,7 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(DECLARE_WKCONTENTVIEW_ACTION_FOR_WEB_VIEW)
 @property (nonatomic, readonly) BOOL _shouldUseContextMenus;
 @property (nonatomic, readonly) BOOL _shouldAvoidResizingWhenInputViewBoundsChange;
 @property (nonatomic, readonly) BOOL _shouldAvoidScrollingWhenFocusedContentIsVisible;
+@property (nonatomic, readonly) BOOL _shouldUseLegacySelectPopoverDismissalBehavior;
 
 - (void)_didChangeLinkPreviewAvailability;
 

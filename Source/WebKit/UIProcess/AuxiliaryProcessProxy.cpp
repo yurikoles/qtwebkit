@@ -30,6 +30,8 @@
 #include "LoadParameters.h"
 #include "Logging.h"
 #include "WebPageMessages.h"
+#include "WebPageProxy.h"
+#include "WebProcessProxy.h"
 #include <wtf/RunLoop.h>
 
 namespace WebKit {
@@ -109,34 +111,34 @@ AuxiliaryProcessProxy::State AuxiliaryProcessProxy::state() const
     if (m_processLauncher && m_processLauncher->isLaunching())
         return AuxiliaryProcessProxy::State::Launching;
 
-    // There is sometimes a delay until we get the notification from mach about the connection getting closed.
-    // To help detect terminated process earlier, we also check that the PID is for a valid running process.
-    if (!m_connection || !isRunningProcessPID(processIdentifier()))
+    if (!m_connection)
         return AuxiliaryProcessProxy::State::Terminated;
 
     return AuxiliaryProcessProxy::State::Running;
 }
 
-bool AuxiliaryProcessProxy::isRunningProcessPID(ProcessID pid)
+bool AuxiliaryProcessProxy::wasTerminated() const
 {
-    if (!pid)
+    switch (state()) {
+    case AuxiliaryProcessProxy::State::Launching:
         return false;
-
-#if PLATFORM(COCOA)
-    // Use kill() with a signal of 0 to check if there is actually still a process with the given PID.
-    if (!kill(pid, 0))
+    case AuxiliaryProcessProxy::State::Terminated:
         return true;
-
-    if (errno == ESRCH) {
-        // No process can be found corresponding to that specified by pid.
-        return false;
+    case AuxiliaryProcessProxy::State::Running:
+        break;
     }
 
-    RELEASE_LOG_ERROR(Process, "kill() returned unexpected error %d", errno);
-    return true;
+    auto pid = processIdentifier();
+    if (!pid)
+        return true;
+
+#if PLATFORM(COCOA)
+    // Use kill() with a signal of 0 to make sure there is indeed still a process with the given PID.
+    // This is needed because it sometimes takes a little bit of time for us to get notified that a process
+    // was terminated.
+    return kill(pid, 0) && errno == ESRCH;
 #else
-    UNUSED_PARAM(pid);
-    return true;
+    return false;
 #endif
 }
 
@@ -220,12 +222,16 @@ void AuxiliaryProcessProxy::didFinishLaunching(ProcessLauncher*, IPC::Connection
             auto bufferSize = encoder->bufferSize();
             std::unique_ptr<IPC::Decoder> decoder = makeUnique<IPC::Decoder>(buffer, bufferSize, nullptr, Vector<IPC::Attachment> { });
             LoadParameters loadParameters;
-            String sandboxExtensionPath;
-            if (decoder->decode(loadParameters) && decoder->decode(sandboxExtensionPath)) {
-                SandboxExtension::createHandleForReadByPid(sandboxExtensionPath, processIdentifier(), loadParameters.sandboxExtensionHandle);
-                send(Messages::WebPage::LoadRequest(loadParameters), decoder->destinationID());
-                continue;
-            }
+            URL resourceDirectoryURL;
+            WebPageProxyIdentifier pageID;
+            if (decoder->decode(loadParameters) && decoder->decode(resourceDirectoryURL) && decoder->decode(pageID)) {
+                if (auto* page = WebProcessProxy::webPage(pageID)) {
+                    page->maybeInitializeSandboxExtensionHandle(static_cast<WebProcessProxy&>(*this), loadParameters.request.url(), resourceDirectoryURL, loadParameters.sandboxExtensionHandle);
+                    send(Messages::WebPage::LoadRequest(loadParameters), decoder->destinationID());
+                }
+            } else
+                ASSERT_NOT_REACHED();
+            continue;
         }
 #endif
         if (pendingMessage.asyncReplyInfo)

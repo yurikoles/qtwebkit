@@ -410,6 +410,7 @@ public:
     bool isStatisticsHasHadUserInteraction(JSStringRef hostName);
     void setStatisticsGrandfathered(JSStringRef hostName, bool value);
     bool isStatisticsGrandfathered(JSStringRef hostName);
+    void setUseITPDatabase(bool value);
     void setStatisticsSubframeUnderTopFrameOrigin(JSStringRef hostName, JSStringRef topFrameHostName);
     void setStatisticsSubresourceUnderTopFrameOrigin(JSStringRef hostName, JSStringRef topFrameHostName);
     void setStatisticsSubresourceUniqueRedirectTo(JSStringRef hostName, JSStringRef hostNameRedirectedTo);
@@ -434,6 +435,8 @@ public:
     bool isStatisticsHasLocalStorage(JSStringRef hostName);
     void setStatisticsCacheMaxAgeCap(double seconds);
     bool hasStatisticsIsolatedSession(JSStringRef hostName);
+    void setStatisticsShouldDowngradeReferrer(bool, JSValueRef callback);
+    void statisticsCallDidSetShouldDowngradeReferrerCallback();
     void statisticsResetToConsistentState(JSValueRef completionHandler);
     void statisticsCallDidResetToConsistentStateCallback();
 
@@ -488,11 +491,9 @@ public:
     void setWebAuthenticationMockConfiguration(JSValueRef);
     // FIXME(189876)
     void addTestKeyToKeychain(JSStringRef privateKeyBase64, JSStringRef attrLabel, JSStringRef applicationTagBase64);
-    void cleanUpKeychain(JSStringRef attrLabel);
+    void cleanUpKeychain(JSStringRef attrLabel, JSStringRef applicationTagBase64);
     bool keyExistsInKeychain(JSStringRef attrLabel, JSStringRef applicationTagBase64);
 
-    void setCanHandleHTTPSServerTrustEvaluation(bool canHandle);
-    bool canDoServerTrustEvaluationInNetworkProcess();
     unsigned long serverTrustEvaluationCallbackCallsCount();
 
     // Ad Click Attribution.
@@ -567,6 +568,7 @@ private:
 
     bool m_userStyleSheetEnabled { false };
     bool m_dumpAllHTTPRedirectedResponseHeaders { false };
+    bool m_hasSetDowngradeReferrerCallback { false };
 };
 
 } // namespace WTR

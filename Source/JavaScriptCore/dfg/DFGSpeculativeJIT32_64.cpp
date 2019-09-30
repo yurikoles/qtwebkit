@@ -826,7 +826,7 @@ void SpeculativeJIT::emitCall(Node* node)
 
     if (isDirect) {
         info->setExecutableDuringCompilation(executable);
-        info->setMaxNumArguments(numAllocatedArgs);
+        info->setMaxArgumentCountIncludingThis(numAllocatedArgs);
 
         if (isTail) {
             RELEASE_ASSERT(node->op() == DirectTailCall);
@@ -2002,7 +2002,11 @@ void SpeculativeJIT::compile(Node* node)
         compileValueLShiftOp(node);
         break;
 
-    case BitRShift:
+    case ValueBitRShift:
+        compileValueBitRShift(node);
+        break;
+
+    case ArithBitRShift:
     case ArithBitLShift:
     case BitURShift:
         compileShiftOp(node);
@@ -3157,6 +3161,11 @@ void SpeculativeJIT::compile(Node* node)
         break;
     }
 
+    case CreateGenerator: {
+        compileCreateGenerator(node);
+        break;
+    }
+
     case NewObject: {
         compileNewObject(node);
         break;
@@ -3164,6 +3173,11 @@ void SpeculativeJIT::compile(Node* node)
 
     case NewPromise: {
         compileNewPromise(node);
+        break;
+    }
+
+    case NewGenerator: {
+        compileNewGenerator(node);
         break;
     }
 

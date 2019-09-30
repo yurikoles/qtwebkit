@@ -35,6 +35,7 @@
 #import "UIGamepadProvider.h"
 #import "WKObject.h"
 #import "WKWebViewInternal.h"
+#import "WKWebsiteDataStoreInternal.h"
 #import "WebCertificateInfo.h"
 #import "WebCookieManagerProxy.h"
 #import "WebProcessCache.h"
@@ -200,7 +201,6 @@ static WKProcessPool *sharedProcessPool;
 
 - (void)_setCanHandleHTTPSServerTrustEvaluation:(BOOL)value
 {
-    _processPool->setCanHandleHTTPSServerTrustEvaluation(value);
 }
 
 static WebKit::HTTPCookieAcceptPolicy toHTTPCookieAcceptPolicy(NSHTTPCookieAcceptPolicy policy)
@@ -373,7 +373,7 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
 - (void)_setDownloadDelegate:(id <_WKDownloadDelegate>)downloadDelegate
 {
     _downloadDelegate = downloadDelegate;
-    _processPool->setDownloadClient(makeUnique<WebKit::DownloadClient>(downloadDelegate));
+    _processPool->setDownloadClient(makeUniqueRef<WebKit::DownloadClient>(downloadDelegate));
 }
 
 - (id <_WKAutomationDelegate>)_automationDelegate
@@ -452,11 +452,6 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
     _processPool->terminateServiceWorkerProcesses();
 }
 
-- (void)_disableServiceWorkerProcessTerminationDelay
-{
-    _processPool->disableServiceWorkerProcessTerminationDelay();
-}
-
 - (pid_t)_networkProcessIdentifier
 {
     return _processPool->networkProcessIdentifier();
@@ -466,7 +461,6 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
 {
     return _processPool->prewarmedProcessIdentifier();
 }
-
 
 - (void)_syncNetworkProcessCookies
 {
@@ -615,12 +609,22 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
 
 - (_WKDownload *)_downloadURLRequest:(NSURLRequest *)request originatingWebView:(WKWebView *)webView
 {
-    return (_WKDownload *)_processPool->download([webView _page], request).wrapper();
+    return nil;
 }
 
 - (_WKDownload *)_resumeDownloadFromData:(NSData *)resumeData path:(NSString *)path originatingWebView:(WKWebView *)webView
 {
-    return wrapper(_processPool->resumeDownload([webView _page], API::Data::createWithoutCopying(resumeData).ptr(), path));
+    return nil;
+}
+
+- (_WKDownload *)_downloadURLRequest:(NSURLRequest *)request websiteDataStore:(WKWebsiteDataStore *)dataStore originatingWebView:(WKWebView *)webView
+{
+    return wrapper(_processPool->download(*dataStore->_websiteDataStore, [webView _page], request));
+}
+
+- (_WKDownload *)_resumeDownloadFromData:(NSData *)resumeData websiteDataStore:(WKWebsiteDataStore *)dataStore  path:(NSString *)path originatingWebView:(WKWebView *)webView
+{
+    return wrapper(_processPool->resumeDownload(*dataStore->_websiteDataStore, [webView _page], API::Data::createWithoutCopying(resumeData).get(), path));
 }
 
 - (void)_getActivePagesOriginsInWebProcessForTesting:(pid_t)pid completionHandler:(void(^)(NSArray<NSString *> *))completionHandler

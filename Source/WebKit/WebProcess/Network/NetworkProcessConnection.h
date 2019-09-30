@@ -38,10 +38,6 @@ namespace IPC {
 class DataReference;
 }
 
-namespace PAL {
-class SessionID;
-}
-
 namespace WebCore {
 class ResourceError;
 class ResourceRequest;
@@ -68,16 +64,16 @@ public:
 
     void didReceiveNetworkProcessConnectionMessage(IPC::Connection&, IPC::Decoder&);
 
-    void writeBlobsToTemporaryFiles(PAL::SessionID, const Vector<String>& blobURLs, CompletionHandler<void(Vector<String>&& filePaths)>&&);
+    void writeBlobsToTemporaryFiles(const Vector<String>& blobURLs, CompletionHandler<void(Vector<String>&& filePaths)>&&);
 
 #if ENABLE(INDEXED_DATABASE)
-    WebIDBConnectionToServer* existingIDBConnectionToServer(PAL::SessionID sessionID) const { return m_webIDBConnectionsBySession.get(sessionID.toUInt64()); };
-    WebIDBConnectionToServer& idbConnectionToServerForSession(PAL::SessionID);
+    WebIDBConnectionToServer* existingIDBConnectionToServer() const { return m_webIDBConnection.get(); };
+    WebIDBConnectionToServer& idbConnectionToServer();
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    WebSWClientConnection* existingServiceWorkerConnectionForSession(PAL::SessionID sessionID) { return m_swConnectionsBySession.get(sessionID); }
-    WebSWClientConnection& serviceWorkerConnectionForSession(PAL::SessionID);
+    WebSWClientConnection* existingServiceWorkerConnection() { return m_swConnection.get(); }
+    WebSWClientConnection& serviceWorkerConnection();
 #endif
 
 private:
@@ -98,19 +94,18 @@ private:
 
 #if ENABLE(SHAREABLE_RESOURCE)
     // Message handlers.
-    void didCacheResource(const WebCore::ResourceRequest&, const ShareableResource::Handle&, PAL::SessionID);
+    void didCacheResource(const WebCore::ResourceRequest&, const ShareableResource::Handle&);
 #endif
 
     // The connection from the web process to the network process.
     Ref<IPC::Connection> m_connection;
 
 #if ENABLE(INDEXED_DATABASE)
-    HashMap<uint64_t, RefPtr<WebIDBConnectionToServer>> m_webIDBConnectionsBySession;
+    RefPtr<WebIDBConnectionToServer> m_webIDBConnection;
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    // FIXME: This should be a single connection.
-    HashMap<PAL::SessionID, RefPtr<WebSWClientConnection>> m_swConnectionsBySession;
+    RefPtr<WebSWClientConnection> m_swConnection;
 #endif
 };
 

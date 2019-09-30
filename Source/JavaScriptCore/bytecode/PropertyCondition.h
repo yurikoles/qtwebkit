@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -295,9 +295,16 @@ public:
     {
         return !!*this && m_header.type() == Equivalence;
     }
-    
-    // This means that the objects involved in this are still live.
-    bool isStillLive(VM&) const;
+
+    template<typename Functor>
+    void forEachDependentCell(const Functor& functor) const
+    {
+        if (hasPrototype() && prototype())
+            functor(prototype());
+
+        if (hasRequiredValue() && requiredValue() && requiredValue().isCell())
+            functor(requiredValue().asCell());
+    }
     
     void validateReferences(const TrackedReferences&) const;
 
@@ -332,7 +339,7 @@ struct PropertyConditionHash {
     {
         return a == b;
     }
-    static const bool safeToCompareToEmptyOrDeleted = true;
+    static constexpr bool safeToCompareToEmptyOrDeleted = true;
 };
 
 } // namespace JSC

@@ -179,6 +179,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case ToThis:
     case CreateThis:
     case CreatePromise:
+    case CreateGenerator:
     case ObjectCreate:
     case ObjectKeys:
     case GetCallee:
@@ -206,7 +207,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case ArithBitOr:
     case ArithBitXor:
     case ArithBitLShift:
-    case BitRShift:
+    case ArithBitRShift:
     case BitURShift:
     case ValueToInt32:
     case UInt32ToNumber:
@@ -236,6 +237,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case ValueBitOr:
     case ValueBitNot:
     case ValueBitLShift:
+    case ValueBitRShift:
     case ValueNegate:
     case ValueAdd:
     case ValueSub:
@@ -321,6 +323,7 @@ bool safeToExecute(AbstractStateType& state, Graph& graph, Node* node, bool igno
     case ConstructForwardVarargs:
     case NewObject:
     case NewPromise:
+    case NewGenerator:
     case NewArray:
     case NewArrayWithSize:
     case NewArrayBuffer:

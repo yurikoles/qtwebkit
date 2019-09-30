@@ -63,7 +63,7 @@ inline CapabilityLevel canCompile(Node* node)
     case ArithBitAnd:
     case ArithBitOr:
     case ArithBitXor:
-    case BitRShift:
+    case ArithBitRShift:
     case ArithBitLShift:
     case BitURShift:
     case CheckStructure:
@@ -75,6 +75,7 @@ inline CapabilityLevel canCompile(Node* node)
     case GetButterfly:
     case NewObject:
     case NewPromise:
+    case NewGenerator:
     case NewStringObject:
     case NewSymbol:
     case NewArray:
@@ -95,6 +96,7 @@ inline CapabilityLevel canCompile(Node* node)
     case ValueBitOr:
     case ValueBitNot:
     case ValueBitLShift:
+    case ValueBitRShift:
     case ValueNegate:
     case ValueAdd:
     case ValueSub:
@@ -380,6 +382,7 @@ inline CapabilityLevel canCompile(Node* node)
     case FilterInByIdStatus:
     case CreateThis:
     case CreatePromise:
+    case CreateGenerator:
     case DataViewGetInt:
     case DataViewGetFloat:
     case DataViewSet:

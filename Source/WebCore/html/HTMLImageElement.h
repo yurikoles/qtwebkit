@@ -129,6 +129,9 @@ public:
 
     bool createdByParser() const { return m_createdByParser; }
 
+    bool isDroppedImagePlaceholder() const { return m_isDroppedImagePlaceholder; }
+    void setIsDroppedImagePlaceholder() { m_isDroppedImagePlaceholder = true; }
+
 protected:
     HTMLImageElement(const QualifiedName&, Document&, HTMLFormElement* = nullptr, bool createdByParser = false);
 
@@ -192,6 +195,7 @@ private:
     bool m_experimentalImageMenuEnabled;
     bool m_hadNameBeforeAttributeChanged { false }; // FIXME: We only need this because parseAttribute() can't see the old value.
     bool m_createdByParser { false };
+    bool m_isDroppedImagePlaceholder { false };
 
     RefPtr<EditableImageReference> m_editableImage;
     WeakPtr<HTMLPictureElement> m_pictureElement;

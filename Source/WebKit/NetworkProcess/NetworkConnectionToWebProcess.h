@@ -159,7 +159,7 @@ private:
     NetworkConnectionToWebProcess(NetworkProcess&, WebCore::ProcessIdentifier, PAL::SessionID, IPC::Connection::Identifier);
 
     void didFinishPreconnection(uint64_t preconnectionIdentifier, const WebCore::ResourceError&);
-    WebCore::NetworkStorageSession& storageSession();
+    WebCore::NetworkStorageSession* storageSession();
 
     // IPC::Connection::Client
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
@@ -240,7 +240,7 @@ private:
     void clearPageSpecificDataForResourceLoadStatistics(WebCore::PageIdentifier);
 
     void logUserInteraction(const RegistrableDomain&);
-    void resourceLoadStatisticsUpdated(WebResourceLoadObserver::PerSessionResourceLoadData&&);
+    void resourceLoadStatisticsUpdated(Vector<WebCore::ResourceLoadStatistics>&&);
     void hasStorageAccess(const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, WebCore::FrameIdentifier, WebCore::PageIdentifier, CompletionHandler<void(bool)>&&);
     void requestStorageAccess(const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, WebCore::FrameIdentifier, WebCore::PageIdentifier, WebPageProxyIdentifier, CompletionHandler<void(WebCore::StorageAccessWasGranted, WebCore::StorageAccessPromptWasShown)>&&);
     void requestStorageAccessUnderOpener(WebCore::RegistrableDomain&& domainInNeedOfStorageAccess, WebCore::PageIdentifier openerPageID, WebCore::RegistrableDomain&& openerDomain);
@@ -321,7 +321,7 @@ private:
     RefPtr<CacheStorageEngineConnection> m_cacheStorageConnection;
 
 #if ENABLE(INDEXED_DATABASE)
-    RefPtr<WebIDBConnectionToClient> m_webIDBConnection;
+    std::unique_ptr<WebIDBConnectionToClient> m_webIDBConnection;
 #endif
 
 #if ENABLE(SERVICE_WORKER)

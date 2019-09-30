@@ -1,3 +1,329 @@
+2019-09-27  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Keep JSString::value(ExecState*)'s result as String instead of `const String&`
+        https://bugs.webkit.org/show_bug.cgi?id=202330
+
+        Reviewed by Saam Barati.
+
+        * stress/to-lower-case-gc-stress.js: Added.
+
+2019-09-27  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        Non-standard Error properties should not be enumerable
+        https://bugs.webkit.org/show_bug.cgi?id=198975
+
+        Reviewed by Ross Kirsling.
+
+        * ChakraCore/test/Error/NativeErrors_v4.baseline-jsc: Adjust expectations.
+        * microbenchmarks/let-for-in.js: Adjust test.
+        * test262/expectations.yaml: Mark 6 test cases as passing.
+
+2019-09-26  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] DFG recursive-tail-call optimization should not emit jump to call-frame with varargs
+        https://bugs.webkit.org/show_bug.cgi?id=202299
+        <rdar://problem/52669116>
+
+        Reviewed by Saam Barati.
+
+        * stress/recursive-tail-call-optimization-should-not-jump-into-call-frame-with-varargs-simple.js: Added.
+        (foo):
+        (test):
+        * stress/recursive-tail-call-optimization-should-not-jump-into-call-frame-with-varargs.js: Added.
+        (foo):
+        (C1.prototype.baz):
+        (C1):
+        (bar):
+        (noInline.bar.goo):
+        (C2.prototype.baz):
+        (C2):
+        (test):
+
+2019-09-26  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        toExponential, toFixed, and toPrecision should allow arguments up to 100
+        https://bugs.webkit.org/show_bug.cgi?id=199163
+
+        Reviewed by Ross Kirsling.
+
+        * ChakraCore/test/Number/toString_3.baseline-jsc:
+        * ChakraCore/test/es5/exceptions3.baseline-jsc:
+        * test262/expectations.yaml: Mark 6 test cases as passing.
+
+2019-09-24  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        [ES6] Come up with a test for Proxy.[[GetOwnProperty]] that tests the isExtensible error when the  result of the trap is undefined
+        https://bugs.webkit.org/show_bug.cgi?id=154376
+
+        Reviewed by Ross Kirsling.
+
+        Adds 2 test cases:
+        1. If [[GetOwnProperty]] trap result is `undefined` and Proxy's target is non-extensible, TypeError is thrown.
+        2. If [[GetOwnProperty]] trap result is `undefined` and Proxy's target is another Proxy, its "isExtensible" trap is called.
+
+        * stress/proxy-get-own-property.js:
+
+2019-09-24  Caio Lima  <ticaiolima@gmail.com>
+
+        [BigInt] Add ValueBitRShift into DFG
+        https://bugs.webkit.org/show_bug.cgi?id=192663
+
+        Reviewed by Robin Morisset.
+
+        * stress/big-int-right-shift-jit-osr.js: Added.
+        * stress/big-int-right-shift-jit-untyped.js: Added.
+        * stress/big-int-right-shift-jit.js: Added.
+        * stress/value-rshift-ai-rule.js: Added.
+
+2019-09-23  Ross Kirsling  <ross.kirsling@sony.com>
+
+        Array methods should throw TypeError upon attempting to modify a string
+        https://bugs.webkit.org/show_bug.cgi?id=201910
+
+        Reviewed by Keith Miller.
+
+        * stress/array-methods-should-not-modify-string.js: Added.
+
+        * mozilla/js1_6/Array/regress-304828.js:
+        Fix test. Original copy was changed similarly seven years ago:
+        https://searchfox.org/mozilla-central/source/js/src/tests/non262/Array/regress-304828.js
+
+        * stress/phantom-insertion-live-range-should-agree-with-arguments-forwarding.js:
+        Fix test. `Object.__proto__ = []; Object.shift();` shouldn't be valid JS.
+
+2019-09-23  Mark Lam  <mark.lam@apple.com>
+
+        Lazy JSGlobalObject property materialization should not use putDirectWithoutTransition.
+        https://bugs.webkit.org/show_bug.cgi?id=202122
+        <rdar://problem/55535249>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/lazy-global-object-property-materialization-should-not-putDirectWithoutTransition.js: Added.
+
+2019-09-23  Caio Lima  <ticaiolima@gmail.com>
+
+        Skip stress/regexp-unicode-surrogate-pair-increment-should-involve-length-check.js into ARMv7 and MIPS
+        https://bugs.webkit.org/show_bug.cgi?id=202113
+
+        Unreviewed test gardening, skipped test in ARMv7 and MIPS.
+
+        It is going to be fixed in
+        https://bugs.webkit.org/show_bug.cgi?id=202041
+
+        * stress/regexp-unicode-surrogate-pair-increment-should-involve-length-check.js:
+
+2019-09-22  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Int52Rep(DoubleRepAnyIntUse) should not call operation function
+        https://bugs.webkit.org/show_bug.cgi?id=202072
+
+        Reviewed by Mark Lam.
+
+        * stress/int52rep-with-double-checks-int52-range.js: Added.
+        (shouldBe):
+        (test):
+
+2019-09-21  Caio Lima  <ticaiolima@gmail.com>
+
+        stress/test-out-of-memory.js is not throwing OOM into ARMv7 and MIPS
+        https://bugs.webkit.org/show_bug.cgi?id=202011
+
+        Reviewed by Mark Lam.
+
+        We are skipping this test into MIPS and ARMv7 because some of its assumptions
+        are not valid for them. The current behavior of the test in those architectures
+        is that it does not throw during `new ArrayBuffer(1000)` allocation site,
+        because eden collection keeps happening between iterations. The collection
+        is triggered on those architectures because the amount of stress 
+        `new Promise` generates into GC limits is not enough to avoid them
+        while loop is executing.
+
+        Changing the size of `UInt8Array` from `80000000` to `160000000` can
+        be an alternative fix to avoid collection happening during `ArrayBuffer`
+        allocation loop, but we can't guarantee this test is always going to execute
+        without error when Gigacage is disabled, given we can reach an OOM state in
+        some allocations that need to succeed, making this test flaky for those
+        architectures.
+
+        * stress/test-out-of-memory.js:
+
+2019-09-21  Tadeu Zagallo  <tzagallo@apple.com>
+
+        AccessCase should strongly visit its dependencies while on stack
+        https://bugs.webkit.org/show_bug.cgi?id=201986
+        <rdar://problem/55521953>
+
+        Reviewed by Saam Barati and Yusuke Suzuki.
+
+        * stress/ftl-put-by-id-setter-exception-interesting-live-state-2.js: Added.
+        (foo):
+        (warmup):
+
+2019-09-20  Saam Barati  <sbarati@apple.com>
+
+        Unreviewed. Make toctou-having-a-bad-time-new-array.js run for less time because it's timing out on the debug bots.
+
+        * stress/toctou-having-a-bad-time-new-array.js:
+
+2019-09-19  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] DFG op_call_varargs should not assume that one-previous-local of freeReg is usable
+        https://bugs.webkit.org/show_bug.cgi?id=202014
+
+        Reviewed by Saam Barati.
+
+        * stress/call-varargs-inlining-should-not-clobber-previous-to-free-register.js: Added.
+        (__v0):
+
+2019-09-19  Tadeu Zagallo  <tzagallo@apple.com>
+
+        Syntax checker should report duplicate __proto__ properties
+        https://bugs.webkit.org/show_bug.cgi?id=201897
+        <rdar://problem/53201788>
+
+        Reviewed by Mark Lam.
+
+        * stress/syntax-checker-duplicate-underscore-proto.js: Added.
+        (catch):
+
+2019-09-18  Saam Barati  <sbarati@apple.com>
+
+        TOCTOU bug in havingABadTime related assertion in DFGSpeculativeJIT
+        https://bugs.webkit.org/show_bug.cgi?id=201953
+        <rdar://problem/53803524>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/toctou-having-a-bad-time-new-array.js: Added.
+        (let.code):
+
+2019-09-18  Saam Barati  <sbarati@apple.com>
+
+        Phantom insertion phase may disagree with arguments forwarding about live ranges
+        https://bugs.webkit.org/show_bug.cgi?id=200715
+        <rdar://problem/54301717>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/phantom-insertion-live-range-should-agree-with-arguments-forwarding.js: Added.
+        (main.v23):
+        (main.try.v43):
+        (main.):
+        (main):
+
+2019-09-17  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Generator should have internal fields
+        https://bugs.webkit.org/show_bug.cgi?id=201159
+
+        Reviewed by Keith Miller.
+
+        * stress/create-generator.js: Added.
+        (shouldBe):
+        (test.generator):
+        (test):
+        * stress/generator-construct-failure.js: Added.
+        (shouldThrow):
+        (TypeError):
+        * stress/generator-prototype-change.js: Added.
+        (shouldBe):
+        (gen):
+        * stress/generator-prototype-closure.js: Added.
+        (shouldBe):
+        (test.gen):
+        (test):
+        * stress/object-assign-fast-path.js:
+
+2019-09-17  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        Follow-up after String.codePointAt optimization
+        https://bugs.webkit.org/show_bug.cgi?id=201889
+
+        Reviewed by Saam Barati.
+
+        * stress/string-char-at-bad-type.js: Added.
+        (shouldBe):
+        (object.toString):
+        (test):
+        * stress/string-char-code-at-bad-type.js: Added.
+        (shouldBe):
+        (object.toString):
+        (test):
+        * stress/string-code-point-at-bad-type.js: Added.
+        (shouldBe):
+        (object.toString):
+        (test):
+
+2019-09-17  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] CheckArray+NonArray is not filtering out Array in AI
+        https://bugs.webkit.org/show_bug.cgi?id=201857
+        <rdar://problem/54194820>
+
+        Reviewed by Keith Miller.
+
+        * stress/check-array-with-non-array-does-not-filter-arrays.js: Added.
+        (foo):
+
+2019-09-17  Saam Barati  <sbarati@apple.com>
+
+        CheckArray on DirectArguments/ScopedArguments does not filter out slow put array storage
+        https://bugs.webkit.org/show_bug.cgi?id=201853
+        <rdar://problem/53805461>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/direct-arguments-check-array-filter-type.js: Added.
+        (foo):
+
+2019-09-16  Tadeu Zagallo  <tzagallo@apple.com>
+
+        Wasm StreamingParser should validate that number of functions matches number of declarations
+        https://bugs.webkit.org/show_bug.cgi?id=201850
+        <rdar://problem/55290186>
+
+        Reviewed by Yusuke Suzuki.
+
+        * wasm/regress/validate-number-of-functions-match-declarations.js: Added.
+        (catch):
+
+2019-09-16  Michael Saboff  <msaboff@apple.com>
+
+        [JSC] Perform check again when we found non-BMP characters
+        https://bugs.webkit.org/show_bug.cgi?id=201647
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/regexp-unicode-surrogate-pair-increment-should-involve-length-check.js: Added.
+        * stress/regexp-unicode-within-string.js: Updated test to eliminate the bogus print().
+        (testRegExpInbounds):
+
+2019-09-16  Ross Kirsling  <ross.kirsling@sony.com>
+
+        [JSC] Add missing syntax errors for await in function parameter default expressions
+        https://bugs.webkit.org/show_bug.cgi?id=201615
+
+        Reviewed by Darin Adler.
+
+        * stress/async-await-reserved-word.js:
+        * stress/async-await-syntax.js:
+        Add test cases.
+
+        * test262/expectations.yaml:
+        Mark newly-passing test cases.
+
+2019-09-16  Saam Barati  <sbarati@apple.com>
+
+        JSObject::putInlineSlow should not ignore "__proto__" for Proxy
+        https://bugs.webkit.org/show_bug.cgi?id=200386
+        <rdar://problem/53854946>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/proxy-__proto__-in-prototype-chain.js: Added.
+        * stress/proxy-property-replace-structure-transition.js: Added.
+
 2019-09-13  Alexey Shvayka  <shvaikalesh@gmail.com>
 
         Date.prototype.toJSON does not execute steps 1-2

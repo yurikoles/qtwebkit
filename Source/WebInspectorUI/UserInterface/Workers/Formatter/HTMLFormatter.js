@@ -208,7 +208,7 @@ HTMLFormatter = class HTMLFormatter
                 this._builder.appendNonToken("/");
             this._builder.appendNonToken(">");
 
-            if (node.__shouldHaveNoChildren)
+            if (node.selfClose || node.__shouldHaveNoChildren)
                 this._builder.appendNewline();
 
             if (!node.__inlineContent) {
@@ -289,8 +289,9 @@ HTMLFormatter = class HTMLFormatter
                 this._builder.appendNewline();
             }
             if (!node.implicitClose) {
+                console.assert(node.closeTagName);
                 console.assert(node.closeTagPos);
-                this._builder.appendToken("</" + node.name + ">", node.closeTagPos);
+                this._builder.appendToken("</" + node.closeTagName + ">", node.closeTagPos);
             }
             this._builder.appendNewline();
             return;

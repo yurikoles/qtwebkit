@@ -2490,8 +2490,6 @@ ALLOW_DEPRECATED_DECLARATIONS_END
             return AXDetailsText();
         case AccessibilityRole::Feed:
             return AXFeedText();
-        case AccessibilityRole::Figure:
-            return AXFigureText();
         case AccessibilityRole::Footer:
             return AXFooterRoleDescriptionText();
         case AccessibilityRole::Mark:
@@ -2750,8 +2748,10 @@ ALLOW_DEPRECATED_IMPLEMENTATIONS_END
         if ([attributeName isEqualToString:NSAccessibilityCaretBrowsingEnabledAttribute])
             return [NSNumber numberWithBool:m_object->caretBrowsingEnabled()];
         if ([attributeName isEqualToString:NSAccessibilityWebSessionIDAttribute]) {
-            if (Document* doc = m_object->topDocument())
-                return [NSNumber numberWithUnsignedLongLong:doc->sessionID().toUInt64()];
+            if (auto* document = m_object->topDocument()) {
+                if (auto* page = document->page())
+                    return [NSNumber numberWithUnsignedLongLong:page->sessionID().toUInt64()];
+            }
         }
     }
     
@@ -3777,19 +3777,23 @@ ALLOW_DEPRECATED_DECLARATIONS_END
     IntRect rect = snappedIntRect(m_object->elementRect());
     FrameView* frameView = m_object->documentFrameView();
     
-    // On WK2, we need to account for the scroll position.
-    // On WK1, this isn't necessary, it's taken care of by the attachment views.
-    if (frameView && !frameView->platformWidget()) {
+    // On WK2, we need to account for the scroll position with regards to root view.
+    // On WK1, we need to convert rect to window space to match mouse clicking.
+    if (frameView) {
         // Find the appropriate scroll view to use to convert the contents to the window.
         for (AccessibilityObject* parent = m_object->parentObject(); parent; parent = parent->parentObject()) {
             if (is<AccessibilityScrollView>(*parent)) {
-                ScrollView* scrollView = downcast<AccessibilityScrollView>(*parent).scrollView();
-                rect = scrollView->contentsToRootView(rect);
+                if (auto scrollView = downcast<AccessibilityScrollView>(*parent).scrollView()) {
+                    if (!frameView->platformWidget())
+                        rect = scrollView->contentsToRootView(rect);
+                    else
+                        rect = scrollView->contentsToWindow(rect);
+                }
                 break;
             }
         }
     }
-    
+
     page->contextMenuController().showContextMenuAt(page->mainFrame(), rect.center());
 }
 
@@ -3849,7 +3853,7 @@ ALLOW_DEPRECATED_IMPLEMENTATIONS_END
     return m_object->replaceTextInRange(string, PlainTextRange(range));
 }
 
-- (BOOL)_accessibilityInsertText:(NSString *)text
+- (BOOL)accessibilityInsertText:(NSString *)text
 {
     if (![self updateObjectBackingStore])
         return NO;

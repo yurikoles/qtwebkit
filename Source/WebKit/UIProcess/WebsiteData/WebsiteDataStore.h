@@ -92,11 +92,17 @@ enum class StorageAccessPromptStatus;
 struct PluginModuleInfo;
 #endif
 
-class WebsiteDataStore : public RefCounted<WebsiteDataStore>, public Identified<WebsiteDataStore>, public CanMakeWeakPtr<WebsiteDataStore>  {
+class WebsiteDataStore : public API::ObjectImpl<API::Object::Type::WebsiteDataStore>, public Identified<WebsiteDataStore>, public CanMakeWeakPtr<WebsiteDataStore>  {
 public:
+    static Ref<WebsiteDataStore> defaultDataStore();
+    static bool defaultDataStoreExists();
+    static void deleteDefaultDataStoreForTesting();
+    
     static Ref<WebsiteDataStore> createNonPersistent();
     static Ref<WebsiteDataStore> create(Ref<WebsiteDataStoreConfiguration>&&, PAL::SessionID);
-    virtual ~WebsiteDataStore();
+
+    WebsiteDataStore(Ref<WebsiteDataStoreConfiguration>&&, PAL::SessionID);
+    ~WebsiteDataStore();
 
     static WebsiteDataStore* existingNonDefaultDataStoreForSessionID(PAL::SessionID);
 
@@ -116,7 +122,6 @@ public:
 
     uint64_t perOriginStorageQuota() const { return m_resolvedConfiguration->perOriginStorageQuota(); }
     uint64_t perThirdPartyOriginStorageQuota() const;
-    void setPerOriginStorageQuota(uint64_t quota) { m_resolvedConfiguration->setPerOriginStorageQuota(quota); }
     const String& cacheStorageDirectory() const { return m_resolvedConfiguration->cacheStorageDirectory(); }
     void setCacheStorageDirectory(String&& directory) { m_resolvedConfiguration->setCacheStorageDirectory(WTFMove(directory)); }
     const String& serviceWorkerRegistrationDirectory() const { return m_resolvedConfiguration->serviceWorkerRegistrationDirectory(); }
@@ -154,6 +159,7 @@ public:
     void scheduleStatisticsAndDataRecordsProcessing(CompletionHandler<void()>&&);
     void submitTelemetry();
     void setGrandfathered(const URL&, bool, CompletionHandler<void()>&&);
+    void setUseITPDatabase(bool);
     void setGrandfatheringTime(Seconds, CompletionHandler<void()>&&);
     void setLastSeen(const URL&, Seconds, CompletionHandler<void()>&&);
     void setNotifyPagesWhenDataRecordsWereScanned(bool, CompletionHandler<void()>&&);
@@ -181,6 +187,7 @@ public:
     void deleteCookiesForTesting(const URL&, bool includeHttpOnlyCookies, CompletionHandler<void()>&&);
     void hasLocalStorageForTesting(const URL&, CompletionHandler<void(bool)>&&) const;
     void hasIsolatedSessionForTesting(const URL&, CompletionHandler<void(bool)>&&) const;
+    void setResourceLoadStatisticsShouldDowngradeReferrerForTesting(bool, CompletionHandler<void()>&&);
 #endif
     void setCacheMaxAgeCapForPrevalentResources(Seconds, CompletionHandler<void()>&&);
     void resetCacheMaxAgeCapForPrevalentResources(CompletionHandler<void()>&&);
@@ -210,26 +217,23 @@ public:
     void removePendingCookie(const WebCore::Cookie&);
     void clearPendingCookies();
 
-    void setBoundInterfaceIdentifier(String&& identifier) { m_boundInterfaceIdentifier = WTFMove(identifier); }
-    const String& boundInterfaceIdentifier() { return m_boundInterfaceIdentifier; }
+    void setBoundInterfaceIdentifier(String&& identifier) { m_resolvedConfiguration->setBoundInterfaceIdentifier(WTFMove(identifier)); }
+    const String& boundInterfaceIdentifier() { return m_resolvedConfiguration->boundInterfaceIdentifier(); }
 
-    const String& sourceApplicationBundleIdentifier() const { return m_sourceApplicationBundleIdentifier; }
+    const String& sourceApplicationBundleIdentifier() const { return m_resolvedConfiguration->sourceApplicationBundleIdentifier(); }
     bool setSourceApplicationBundleIdentifier(String&&);
 
-    const String& sourceApplicationSecondaryIdentifier() const { return m_sourceApplicationSecondaryIdentifier; }
+    const String& sourceApplicationSecondaryIdentifier() const { return m_resolvedConfiguration->sourceApplicationSecondaryIdentifier(); }
     bool setSourceApplicationSecondaryIdentifier(String&&);
-
-    bool allowsTLSFallback() const { return m_allowsTLSFallback; }
-    bool setAllowsTLSFallback(bool);
 
     void networkingHasBegun() { m_networkingHasBegun = true; }
     
-    void setAllowsCellularAccess(AllowsCellularAccess allows) { m_allowsCellularAccess = allows; }
-    AllowsCellularAccess allowsCellularAccess() { return m_allowsCellularAccess; }
+    void setAllowsCellularAccess(AllowsCellularAccess allows) { m_resolvedConfiguration->setAllowsCellularAccess(allows == AllowsCellularAccess::Yes); }
+    AllowsCellularAccess allowsCellularAccess() { return m_resolvedConfiguration->allowsCellularAccess() ? AllowsCellularAccess::Yes : AllowsCellularAccess::No; }
 
 #if PLATFORM(COCOA)
-    void setProxyConfiguration(CFDictionaryRef configuration) { m_proxyConfiguration = configuration; }
-    CFDictionaryRef proxyConfiguration() { return m_proxyConfiguration.get(); }
+    void setProxyConfiguration(CFDictionaryRef configuration) { m_resolvedConfiguration->setProxyConfiguration(configuration); }
+    CFDictionaryRef proxyConfiguration() { return m_resolvedConfiguration->proxyConfiguration(); }
 #endif
 
 #if USE(CURL)
@@ -265,10 +269,23 @@ public:
     SOAuthorizationCoordinator& soAuthorizationCoordinator() { return m_soAuthorizationCoordinator.get(); }
 #endif
 
+    static WTF::String defaultServiceWorkerRegistrationDirectory();
+    static WTF::String defaultLocalStorageDirectory();
+    static WTF::String defaultResourceLoadStatisticsDirectory();
+    static WTF::String defaultNetworkCacheDirectory();
+    static WTF::String defaultApplicationCacheDirectory();
+    static WTF::String defaultWebSQLDatabaseDirectory();
+#if USE(GLIB)
+    static WTF::String defaultHSTSDirectory();
+#endif
+    static WTF::String defaultIndexedDBDatabaseDirectory();
+    static WTF::String defaultCacheStorageDirectory();
+    static WTF::String defaultMediaCacheDirectory();
+    static WTF::String defaultMediaKeysStorageDirectory();
+    static WTF::String defaultDeviceIdHashSaltsStorageDirectory();
+    static WTF::String defaultJavaScriptConfigurationDirectory();
+    
 private:
-    explicit WebsiteDataStore(PAL::SessionID);
-    explicit WebsiteDataStore(Ref<WebsiteDataStoreConfiguration>&&, PAL::SessionID);
-
     void fetchDataAndApply(OptionSet<WebsiteDataType>, OptionSet<WebsiteDataFetchOption>, RefPtr<WorkQueue>&&, Function<void(Vector<WebsiteDataRecord>)>&& apply);
 
     void platformInitialize();
@@ -278,6 +295,13 @@ private:
 #if USE(CURL) || USE(SOUP)
     void platformSetNetworkParameters(WebsiteDataStoreParameters&);
 #endif
+
+    WebsiteDataStore();
+
+    enum class ShouldCreateDirectory { No, Yes };
+    static WTF::String tempDirectoryFileSystemRepresentation(const WTF::String& directoryName, ShouldCreateDirectory = ShouldCreateDirectory::Yes);
+    static WTF::String cacheDirectoryFileSystemRepresentation(const WTF::String& directoryName);
+    static WTF::String websiteDataDirectoryFileSystemRepresentation(const WTF::String& directoryName);
 
     HashSet<RefPtr<WebProcessPool>> processPools(size_t count = std::numeric_limits<size_t>::max(), bool ensureAPoolExists = true) const;
 
@@ -311,7 +335,6 @@ private:
 #if PLATFORM(COCOA)
     Vector<uint8_t> m_uiProcessCookieStorageIdentifier;
     RetainPtr<CFHTTPCookieStorageRef> m_cfCookieStorage;
-    RetainPtr<CFDictionaryRef> m_proxyConfiguration;
 #endif
 
 #if USE(CURL)
@@ -322,11 +345,6 @@ private:
     
     WeakHashSet<WebProcessProxy> m_processes;
 
-    String m_boundInterfaceIdentifier;
-    AllowsCellularAccess m_allowsCellularAccess { AllowsCellularAccess::Yes };
-    String m_sourceApplicationBundleIdentifier;
-    String m_sourceApplicationSecondaryIdentifier;
-    bool m_allowsTLSFallback { true };
     bool m_networkingHasBegun { false };
 
 #if HAVE(SEC_KEY_PROXY)

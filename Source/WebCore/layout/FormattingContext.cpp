@@ -32,6 +32,7 @@
 #include "FormattingState.h"
 #include "LayoutBox.h"
 #include "LayoutContainer.h"
+#include "LayoutContext.h"
 #include "LayoutDescendantIterator.h"
 #include "LayoutState.h"
 #include "Logging.h"
@@ -42,6 +43,16 @@ namespace WebCore {
 namespace Layout {
 
 WTF_MAKE_ISO_ALLOCATED_IMPL(FormattingContext);
+
+static UsedHorizontalValues::Constraints outOfFlowHorizontalConstraints(const Display::Box& containingBlockGeometry)
+{
+    return UsedHorizontalValues::Constraints { containingBlockGeometry.paddingBoxLeft(), containingBlockGeometry.paddingBoxWidth() };
+}
+
+static UsedVerticalValues::Constraints outOfFlowVerticalConstraints(const Display::Box& containingBlockGeometry)
+{
+    return UsedVerticalValues::Constraints { containingBlockGeometry.paddingBoxTop(), containingBlockGeometry.paddingBoxHeight() };
+}
 
 FormattingContext::FormattingContext(const Container& formattingContextRoot, FormattingState& formattingState)
     : m_root(makeWeakPtr(formattingContextRoot))
@@ -66,11 +77,13 @@ LayoutState& FormattingContext::layoutState() const
 
 void FormattingContext::computeOutOfFlowHorizontalGeometry(const Box& layoutBox)
 {
-    auto containingBlockWidth = geometryForBox(*layoutBox.containingBlock()).paddingBoxWidth();
+    auto& containingBlockGeometry = geometryForBox(*layoutBox.containingBlock());
+    auto containingBlockWidth = containingBlockGeometry.paddingBoxWidth();
 
     auto compute = [&](Optional<LayoutUnit> usedWidth) {
-        auto usedValues = UsedHorizontalValues { containingBlockWidth, usedWidth, { } };
-        return geometry().outOfFlowHorizontalGeometry(layoutBox, usedValues);
+        auto usedHorizontalValues = UsedHorizontalValues { outOfFlowHorizontalConstraints(containingBlockGeometry), usedWidth, { } };
+        auto usedVerticalValues = UsedVerticalValues { outOfFlowVerticalConstraints(containingBlockGeometry), { } };
+        return geometry().outOfFlowHorizontalGeometry(layoutBox, usedHorizontalValues, usedVerticalValues);
     };
 
     auto horizontalGeometry = compute({ });
@@ -100,21 +113,20 @@ void FormattingContext::computeOutOfFlowVerticalGeometry(const Box& layoutBox)
     };
     auto& containingBlockGeometry = geometryForBox(*layoutBox.containingBlock());
     auto containingBlockHeight = containingBlockGeometry.paddingBoxHeight();
-    auto containingBlockWidth = containingBlockGeometry.paddingBoxHeight();
 
-    auto usedVerticalValuesForHeight = UsedVerticalValues { containingBlockHeight, { } };
-    auto usedHorizontalValues = UsedHorizontalValues { containingBlockWidth };
+    auto usedVerticalValuesForHeight = UsedVerticalValues { outOfFlowVerticalConstraints(containingBlockGeometry), { } };
+    auto usedHorizontalValues = UsedHorizontalValues { outOfFlowHorizontalConstraints(containingBlockGeometry) };
 
     auto verticalGeometry = compute(usedHorizontalValues, usedVerticalValuesForHeight);
-    if (auto maxHeight = geometry().computedMaxHeight(layoutBox, usedVerticalValuesForHeight)) {
-        auto usedValuesForMaxHeight = UsedVerticalValues { containingBlockHeight, maxHeight };
+    if (auto maxHeight = geometry().computedMaxHeight(layoutBox, containingBlockHeight)) {
+        auto usedValuesForMaxHeight = UsedVerticalValues { outOfFlowVerticalConstraints(containingBlockGeometry), maxHeight };
         auto maxVerticalGeometry = compute(usedHorizontalValues, usedValuesForMaxHeight);
         if (verticalGeometry.heightAndMargin.height > maxVerticalGeometry.heightAndMargin.height)
             verticalGeometry = maxVerticalGeometry;
     }
 
-    if (auto minHeight = geometry().computedMinHeight(layoutBox, usedVerticalValuesForHeight)) {
-        auto usedValuesForMinHeight = UsedVerticalValues { containingBlockHeight, minHeight };
+    if (auto minHeight = geometry().computedMinHeight(layoutBox, containingBlockHeight)) {
+        auto usedValuesForMinHeight = UsedVerticalValues { outOfFlowVerticalConstraints(containingBlockGeometry), minHeight };
         auto minVerticalGeometry = compute(usedHorizontalValues, usedValuesForMinHeight);
         if (verticalGeometry.heightAndMargin.height < minVerticalGeometry.heightAndMargin.height)
             verticalGeometry = minVerticalGeometry;
@@ -128,13 +140,13 @@ void FormattingContext::computeOutOfFlowVerticalGeometry(const Box& layoutBox)
     displayBox.setVerticalMargin({ nonCollapsedVerticalMargin, { } });
 }
 
-void FormattingContext::computeBorderAndPadding(const Box& layoutBox, Optional<UsedHorizontalValues> usedValues)
+void FormattingContext::computeBorderAndPadding(const Box& layoutBox, Optional<UsedHorizontalValues> usedHorizontalValues)
 {
-    if (!usedValues)
-        usedValues = UsedHorizontalValues { geometryForBox(*layoutBox.containingBlock()).contentBoxWidth() };
+    if (!usedHorizontalValues)
+        usedHorizontalValues = UsedHorizontalValues { UsedHorizontalValues::Constraints { geometryForBox(*layoutBox.containingBlock()) } };
     auto& displayBox = formattingState().displayBox(layoutBox);
     displayBox.setBorder(geometry().computedBorder(layoutBox));
-    displayBox.setPadding(geometry().computedPadding(layoutBox, *usedValues));
+    displayBox.setPadding(geometry().computedPadding(layoutBox, *usedHorizontalValues));
 }
 
 void FormattingContext::layoutOutOfFlowContent()
@@ -147,9 +159,10 @@ void FormattingContext::layoutOutOfFlowContent()
         computeBorderAndPadding(*outOfFlowBox);
         computeOutOfFlowHorizontalGeometry(*outOfFlowBox);
         if (is<Container>(*outOfFlowBox)) {
-            auto formattingContext = layoutState().createFormattingContext(downcast<Container>(*outOfFlowBox));
+            auto& outOfFlowRootContainer = downcast<Container>(*outOfFlowBox);
+            auto formattingContext = LayoutContext::createFormattingContext(outOfFlowRootContainer, layoutState());
             formattingContext->layoutInFlowContent();
-            computeOutOfFlowVerticalGeometry(*outOfFlowBox);
+            computeOutOfFlowVerticalGeometry(outOfFlowRootContainer);
             formattingContext->layoutOutOfFlowContent();            
         } else
             computeOutOfFlowVerticalGeometry(*outOfFlowBox);
