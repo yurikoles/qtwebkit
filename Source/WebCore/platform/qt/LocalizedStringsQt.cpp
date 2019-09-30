@@ -536,6 +536,12 @@ String AXAutoFillCreditCardLabel()
     return String();
 }
 
+String AXFigureText()
+{
+    notImplemented();
+    return String();
+}
+
 String autoFillStrongPasswordLabel()
 {
     notImplemented();
