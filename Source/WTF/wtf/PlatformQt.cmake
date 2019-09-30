@@ -173,6 +173,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
     )
     list(APPEND WTF_PUBLIC_HEADERS
         linux/CurrentProcessMemoryStatus.h
+        linux/ProcessMemoryFootprint.h
     )
 else ()
     list(APPEND WTF_SOURCES
