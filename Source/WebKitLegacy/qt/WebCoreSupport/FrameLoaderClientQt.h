@@ -81,7 +81,6 @@ public:
 
     Optional<PageIdentifier> pageID() const final;
     Optional<FrameIdentifier> frameID() const final;
-    PAL::SessionID sessionID() const final;
 
     void forceLayoutForNonHTML() override;
 

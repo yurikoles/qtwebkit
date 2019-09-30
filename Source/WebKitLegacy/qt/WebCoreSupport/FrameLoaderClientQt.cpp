@@ -242,11 +242,6 @@ Optional<FrameIdentifier> FrameLoaderClientQt::frameID() const
     return WTF::nullopt;
 }
 
-PAL::SessionID FrameLoaderClientQt::sessionID() const
-{
-    return m_frame && m_frame->page() ? m_frame->page()->sessionID() : PAL::SessionID::defaultSessionID();
-}
-
 void FrameLoaderClientQt::savePlatformDataToCachedFrame(CachedFrame*) 
 {
     notImplemented();
