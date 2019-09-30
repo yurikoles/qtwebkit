@@ -110,6 +110,7 @@ public:
     void didApplyStyle() override;
     void discardedComposition(Frame *) override;
     void overflowScrollPositionChanged() override;
+    void subFrameScrollPositionChanged() final { }
 
     void didEndUserTriggeredSelectionChanges() final;
     void updateEditorStateAfterLayoutIfEditabilityChanged() final;
