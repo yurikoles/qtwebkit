@@ -192,7 +192,7 @@ public:
     void dispatchDidBecomeFrameset(bool) override;
 
     bool canCachePage() const override;
-    void convertMainResourceLoadToDownload(DocumentLoader*, PAL::SessionID, const ResourceRequest&, const WebCore::ResourceResponse&) override;
+    void convertMainResourceLoadToDownload(DocumentLoader*, const ResourceRequest&, const WebCore::ResourceResponse&) override;
 
     RefPtr<Frame> createFrame(const URL&, const String& name, HTMLFrameOwnerElement&, const String& referrer) override;
     RefPtr<Widget> createPlugin(const IntSize&, HTMLPlugInElement&, const URL&, const Vector<String>&, const Vector<String>&, const String&, bool) override;

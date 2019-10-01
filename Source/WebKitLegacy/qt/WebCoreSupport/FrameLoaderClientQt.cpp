@@ -895,7 +895,7 @@ Ref<WebCore::DocumentLoader> FrameLoaderClientQt::createDocumentLoader(const Web
     return loader;
 }
 
-void FrameLoaderClientQt::convertMainResourceLoadToDownload(DocumentLoader* documentLoader, PAL::SessionID, const ResourceRequest& request, const ResourceResponse&)
+void FrameLoaderClientQt::convertMainResourceLoadToDownload(DocumentLoader* documentLoader, const ResourceRequest& request, const ResourceResponse&)
 {
     if (!m_webFrame)
         return;
