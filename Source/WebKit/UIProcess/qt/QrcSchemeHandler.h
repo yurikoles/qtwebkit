@@ -36,8 +36,8 @@ public:
 private:
     QrcSchemeHandler() = default;
 
-    void platformStartTask(WebPageProxy&, WebURLSchemeHandlerTask&) final;
-    void platformStopTask(WebPageProxy&, WebURLSchemeHandlerTask&) final;
+    void platformStartTask(WebPageProxy&, WebURLSchemeTask&) final;
+    void platformStopTask(WebPageProxy&, WebURLSchemeTask&) final;
 };
 
 } // namespace WebKit

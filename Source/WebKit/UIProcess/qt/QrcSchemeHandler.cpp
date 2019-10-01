@@ -44,27 +44,27 @@ Ref<QrcSchemeHandler> QrcSchemeHandler::create()
     return adoptRef(*new QrcSchemeHandler());
 }
 
-static void sendResponse(WebURLSchemeHandlerTask& task, const QString& fileName, const QByteArray& fileData)
+static void sendResponse(WebURLSchemeTask& task, const QString& fileName, const QByteArray& fileData)
 {
     QMimeDatabase mimeDb;
     QMimeType mimeType = mimeDb.mimeTypeForFileNameAndData(fileName, fileData);
 
     WebCore::ResourceResponse response(task.request().url(), mimeType.name(), fileData.size(), String());
     auto result = task.didReceiveResponse(response);
-    ASSERT_UNUSED(result, result == WebURLSchemeHandlerTask::ExceptionType::None);
+    ASSERT_UNUSED(result, result == WebURLSchemeTask::ExceptionType::None);
 }
 
-static void sendError(WebURLSchemeHandlerTask& task)
+static void sendError(WebURLSchemeTask& task)
 {
     // QTFIXME: Move error templates to ErrorsQt
     WebCore::ResourceError error("QtNetwork", QNetworkReply::ContentNotFoundError, task.request().url(),
         QCoreApplication::translate("QWebFrame", "File does not exist"));
 
     auto result = task.didComplete(error);
-    ASSERT_UNUSED(result, result == WebURLSchemeHandlerTask::ExceptionType::None);
+    ASSERT_UNUSED(result, result == WebURLSchemeTask::ExceptionType::None);
 }
 
-void QrcSchemeHandler::platformStartTask(WebPageProxy& page, WebURLSchemeHandlerTask& task)
+void QrcSchemeHandler::platformStartTask(WebPageProxy& page, WebURLSchemeTask& task)
 {
     QString fileName = ':' + QString(task.request().url().path());
     QByteArray fileData;
@@ -83,13 +83,13 @@ void QrcSchemeHandler::platformStartTask(WebPageProxy& page, WebURLSchemeHandler
 
     // TODO: Wrap SharedBuffer around QByteArray when it's possible
     auto result = task.didReceiveData(*SharedBuffer::create(fileData.data(), fileData.size()));
-    ASSERT_UNUSED(result, result == WebURLSchemeHandlerTask::ExceptionType::None);
+    ASSERT_UNUSED(result, result == WebURLSchemeTask::ExceptionType::None);
 
     result = task.didComplete(WebCore::ResourceError());
-    ASSERT_UNUSED(result, result == WebURLSchemeHandlerTask::ExceptionType::None);
+    ASSERT_UNUSED(result, result == WebURLSchemeTask::ExceptionType::None);
 }
 
-void QrcSchemeHandler::platformStopTask(WebPageProxy&, WebURLSchemeHandlerTask&)
+void QrcSchemeHandler::platformStopTask(WebPageProxy&, WebURLSchemeTask&)
 {
 }
 
