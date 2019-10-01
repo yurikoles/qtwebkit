@@ -238,7 +238,13 @@ void QWebPageAdapter::initializeWebCorePage()
     const bool useMock = QWebPageAdapter::drtRun;
 #endif
     auto storageProvider = WebKit::QWebPageStorageSessionProvider::create(*this);
+
+    // QTFIXME: Fix per-page configuration of immutable properties
+    bool isPrivateBrowsingEnabled = QWebSettings::globalSettings()->testAttribute(QWebSettings::PrivateBrowsingEnabled);
+    auto sessionID = isPrivateBrowsingEnabled ? PAL::SessionID::legacyPrivateSessionID() : PAL::SessionID::defaultSessionID();
+
     PageConfiguration pageConfiguration {
+        sessionID,
         makeUniqueRef<EditorClientQt>(this),
         SocketProvider::create(),
         LibWebRTCProvider::create(),

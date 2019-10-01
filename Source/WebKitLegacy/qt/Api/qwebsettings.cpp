@@ -202,10 +202,6 @@ void QWebSettingsPrivate::apply()
                                       global->attributes.value(QWebSettings::PluginsEnabled));
         settings->setPluginsEnabled(value);
 
-        value = attributes.value(QWebSettings::PrivateBrowsingEnabled,
-                                      global->attributes.value(QWebSettings::PrivateBrowsingEnabled));
-        page->setSessionID(value ? WebCore::SessionID::legacyPrivateSessionID() : WebCore::SessionID::defaultSessionID());
-
         value = attributes.value(QWebSettings::SpatialNavigationEnabled,
                                       global->attributes.value(QWebSettings::SpatialNavigationEnabled));
         settings->setSpatialNavigationEnabled(value);
