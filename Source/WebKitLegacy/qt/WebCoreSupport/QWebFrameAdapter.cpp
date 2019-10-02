@@ -185,9 +185,8 @@ QVariant QWebFrameAdapter::evaluateJavaScript(const QString &scriptSource)
     JSC::JSValue value = scriptController.executeScript(ScriptSourceCode(scriptSource));
     JSC::ExecState* exec = scriptController.globalObject(mainThreadNormalWorld())->globalExec();
     JSValueRef* ignoredException = 0;
-    exec->vm().apiLock().lock();
+    JSC::JSLockHolder lock(exec);
     JSValueRef valueRef = toRef(exec, value);
-    exec->vm().apiLock().unlock();
     rc = JSC::Bindings::convertValueToQVariant(toRef(exec), valueRef, QMetaType::Void, &distance, ignoredException);
     return rc;
 }
