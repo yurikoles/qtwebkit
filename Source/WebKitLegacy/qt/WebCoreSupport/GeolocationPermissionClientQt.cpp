@@ -30,11 +30,12 @@
 
 #include "GeolocationPermissionClientQt.h"
 
-#include "Frame.h"
-#include "Geolocation.h"
 #include "QWebFrameAdapter.h"
 #include "QWebPageAdapter.h"
 #include "qwebkitglobal.h"
+
+#include <WebCore/Frame.h>
+#include <WebCore/Geolocation.h>
 
 namespace WebCore {
 

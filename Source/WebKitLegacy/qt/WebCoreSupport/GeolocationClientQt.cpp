@@ -25,17 +25,16 @@
 
 #include "GeolocationClientQt.h"
 
-#include "Geolocation.h"
-#include "GeolocationController.h"
-#include "GeolocationError.h"
 #include "GeolocationPermissionClientQt.h"
-#include "GeolocationPosition.h"
-#include "HTMLFormElement.h"
-#include "Page.h"
 #include "QWebFrameAdapter.h"
 #include "QWebPageAdapter.h"
 
 #include <QtPositioning/QGeoPositionInfoSource>
+#include <WebCore/Geolocation.h>
+#include <WebCore/GeolocationController.h>
+#include <WebCore/GeolocationError.h>
+#include <WebCore/GeolocationPosition.h>
+#include <WebCore/Page.h>
 
 namespace WebCore {
 
@@ -43,7 +42,6 @@ static const char failedToStartServiceErrorMessage[] = "Failed to start Geolocat
 
 GeolocationClientQt::GeolocationClientQt(const QWebPageAdapter* page)
     : m_webPage(page)
-    , m_lastPosition(nullptr)
     , m_location(nullptr)
 {
 }
@@ -82,10 +80,18 @@ void GeolocationClientQt::positionUpdated(const QGeoPositionInfo& geoPosition)
 
     double timeStampInSeconds = geoPosition.timestamp().toMSecsSinceEpoch() / 1000;
 
-    m_lastPosition = GeolocationPosition::create(timeStampInSeconds, latitude, longitude, accuracy, providesAltitude, altitude, providesAltitudeAccuracy, altitudeAccuracy, providesHeading, heading, providesSpeed, speed);
+    m_lastPosition = GeolocationPositionData { timeStampInSeconds, latitude, longitude, accuracy };
+    if (providesAltitude)
+        m_lastPosition->altitude = altitude;
+    if (providesAltitudeAccuracy)
+        m_lastPosition->altitudeAccuracy = altitudeAccuracy;
+    if (providesHeading)
+        m_lastPosition->heading = heading;
+    if (providesSpeed)
+        m_lastPosition->speed = speed;
 
     WebCore::Page* page = m_webPage->page;
-    GeolocationController::from(page)->positionChanged(m_lastPosition.get());
+    GeolocationController::from(page)->positionChanged(m_lastPosition);
 }
 
 void GeolocationClientQt::startUpdating()
@@ -95,7 +101,7 @@ void GeolocationClientQt::startUpdating()
 
     if (!m_location) {
         WebCore::Page* page = m_webPage->page;
-        RefPtr<WebCore::GeolocationError> error = GeolocationError::create(GeolocationError::PositionUnavailable, failedToStartServiceErrorMessage);
+        auto error = GeolocationError::create(GeolocationError::PositionUnavailable, failedToStartServiceErrorMessage);
         GeolocationController::from(page)->errorOccurred(error.get());
         return;
     }
@@ -115,18 +121,16 @@ void GeolocationClientQt::setEnableHighAccuracy(bool)
     // qtmobility 1.0 supports only GPS as of now so high accuracy is enabled by default
 }
 
-void GeolocationClientQt::requestPermission(Geolocation* geolocation)
+void GeolocationClientQt::requestPermission(Geolocation& geolocation)
 {
-    ASSERT(geolocation);
-    QWebFrameAdapter* webFrame = QWebFrameAdapter::kit(geolocation->frame());
-    GeolocationPermissionClientQt::geolocationPermissionClient()->requestGeolocationPermissionForFrame(webFrame, geolocation);
+    QWebFrameAdapter* webFrame = QWebFrameAdapter::kit(geolocation.frame());
+    GeolocationPermissionClientQt::geolocationPermissionClient()->requestGeolocationPermissionForFrame(webFrame, &geolocation);
 }
 
-void GeolocationClientQt::cancelPermissionRequest(Geolocation* geolocation)
+void GeolocationClientQt::cancelPermissionRequest(Geolocation& geolocation)
 {
-    ASSERT(geolocation);
-    QWebFrameAdapter* webFrame = QWebFrameAdapter::kit(geolocation->frame());
-    GeolocationPermissionClientQt::geolocationPermissionClient()->cancelGeolocationPermissionRequestForFrame(webFrame, geolocation);
+    QWebFrameAdapter* webFrame = QWebFrameAdapter::kit(geolocation.frame());
+    GeolocationPermissionClientQt::geolocationPermissionClient()->cancelGeolocationPermissionRequestForFrame(webFrame, &geolocation);
 }
 
 } // namespace WebCore

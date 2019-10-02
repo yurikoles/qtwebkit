@@ -52,6 +52,8 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
 
     platform/graphics/qt/ImageBufferDataQt.h
 
+    platform/mock/GeolocationClientMock.h
+
     platform/network/HTTPStatusCodes.h
     platform/network/MIMESniffing.h
     platform/network/ResourceHandleInternal.h

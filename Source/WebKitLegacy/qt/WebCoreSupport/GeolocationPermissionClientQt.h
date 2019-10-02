@@ -33,9 +33,8 @@
 
 #if ENABLE(GEOLOCATION)
 
-#include "Geolocation.h"
-
 #include <QHash>
+#include <WebCore/Geolocation.h>
 
 class QWebFrameAdapter;
 class QWebPageAdapter;

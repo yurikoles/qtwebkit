@@ -113,8 +113,8 @@
 #endif
 
 #if ENABLE(GEOLOCATION)
-#include "GeolocationClientMock.h"
-#include "GeolocationController.h"
+#include <WebCore/GeolocationClientMock.h>
+#include <WebCore/GeolocationController.h>
 #if HAVE(QTPOSITIONING)
 #include "GeolocationClientQt.h"
 #endif
@@ -271,12 +271,12 @@ void QWebPageAdapter::initializeWebCorePage()
     if (useMock) {
         // In case running in DumpRenderTree mode set the controller to mock provider.
         GeolocationClientMock* mock = new GeolocationClientMock;
-        WebCore::provideGeolocationTo(page, mock);
+        WebCore::provideGeolocationTo(page, *mock);
         mock->setController(WebCore::GeolocationController::from(page));
     }
 #if HAVE(QTPOSITIONING)
     else
-        WebCore::provideGeolocationTo(page, new GeolocationClientQt(this));
+        WebCore::provideGeolocationTo(page, *new GeolocationClientQt(this));
 #endif
 #endif
 

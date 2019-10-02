@@ -26,16 +26,15 @@
 #ifndef GeolocationClientQt_h
 #define GeolocationClientQt_h
 
-#include "GeolocationClient.h"
-
 #include <QGeoPositionInfo>
 #include <QObject>
+#include <WebCore/GeolocationClient.h>
+#include <WebCore/GeolocationPositionData.h>
 #include <wtf/RefPtr.h>
 
 QT_BEGIN_NAMESPACE
 class QGeoPositionInfoSource;
 QT_END_NAMESPACE
-
 
 class QWebPageAdapter;
 
@@ -44,7 +43,6 @@ namespace WebCore {
 // This class provides an implementation of a GeolocationClient for QtWebkit.
 class GeolocationClientQt final : public QObject, public GeolocationClient {
     Q_OBJECT
-
 public:
     GeolocationClientQt(const QWebPageAdapter*);
     ~GeolocationClientQt() override;
@@ -54,17 +52,17 @@ public:
     void stopUpdating() override;
 
     void setEnableHighAccuracy(bool) override;
-    GeolocationPosition* lastPosition() override { return m_lastPosition.get(); }
+    Optional<GeolocationPositionData> lastPosition() override { return m_lastPosition; }
 
-    void requestPermission(Geolocation*) override;
-    void cancelPermissionRequest(Geolocation*) override;
+    void requestPermission(Geolocation&) override;
+    void cancelPermissionRequest(Geolocation&) override;
 
 private Q_SLOTS:
     void positionUpdated(const QGeoPositionInfo&);
 
 private:
     const QWebPageAdapter* m_webPage;
-    RefPtr<GeolocationPosition> m_lastPosition;
+    Optional<GeolocationPositionData> m_lastPosition;
     QGeoPositionInfoSource* m_location;
 };
 

@@ -63,6 +63,11 @@
 #include <WebCore/WebCoreTestSupport.h>
 #include <WebCore/qt_runtime.h>
 
+#if ENABLE(GEOLOCATION)
+#include <WebCore/GeolocationClientMock.h>
+#include <WebCore/GeolocationController.h>
+#endif
+
 #if ENABLE(VIDEO) && USE(QT_MULTIMEDIA)
 #include "HTMLVideoElement.h"
 #include "MediaPlayerPrivateQt.h"
@@ -511,7 +516,7 @@ void DumpRenderTreeSupportQt::setMockGeolocationPosition(QWebPageAdapter* adapte
 #if ENABLE(GEOLOCATION)
     Page* corePage = adapter->page;
     auto& mockClient = toGeolocationClientMock(GeolocationController::from(corePage)->client());
-    mockClient.setPosition(GeolocationPosition::create(WallTime::now(), latitude, longitude, accuracy));
+    mockClient.setPosition(GeolocationPositionData { WallTime::now().secondsSinceEpoch().seconds(), latitude, longitude, accuracy });
 #endif
 }
 
