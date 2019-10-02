@@ -846,6 +846,13 @@ CachedImage* HTMLImageElement::cachedImage() const
     return m_imageLoader->image();
 }
 
+#if PLATFORM(QT)
+void HTMLImageElement::setCachedImage(CachedImage* i)
+{
+    m_imageLoader->setImage(i);
+};
+#endif
+
 void HTMLImageElement::setLoadManually(bool loadManually)
 {
     m_imageLoader->setLoadManually(loadManually);
