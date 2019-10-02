@@ -1,3 +1,140 @@
+2019-10-02  Antoine Quint  <graouts@apple.com>
+
+        [Web Animations] Implement replaced animations
+        https://bugs.webkit.org/show_bug.cgi?id=202190
+        <rdar://55697719>
+
+        Reviewed by Dean Jackson.
+
+        Mark WPT progressions.
+
+        * web-platform-tests/web-animations/animation-model/keyframe-effects/effect-value-replaced-animations-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Animatable/getAnimations-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Animation/commitStyles-expected.txt:
+        * web-platform-tests/web-animations/interfaces/Animation/persist-expected.txt:
+        * web-platform-tests/web-animations/timing-model/timelines/update-and-send-events-replacement-expected.txt:
+
+2019-10-01  Antti Koivisto  <antti@apple.com>
+
+        [CSS Shadow Parts] Parse 'part' attribute
+        https://bugs.webkit.org/show_bug.cgi?id=202409
+
+        Reviewed by Ryosuke Niwa.
+
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-idl-domtokenlist-expected.txt:
+        * web-platform-tests/css/css-shadow-parts/part-name-idl-expected.txt:
+
+2019-10-01  Rob Buis  <rbuis@igalia.com>
+
+        [Mac] Layout Test imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location.any.html fails
+        https://bugs.webkit.org/show_bug.cgi?id=202350
+
+        Reviewed by Alex Christensen.
+
+        Update improved test results.
+
+        * web-platform-tests/fetch/api/redirect/redirect-empty-location.any-expected.txt:
+        * web-platform-tests/fetch/api/redirect/redirect-empty-location.any.worker-expected.txt:
+        * web-platform-tests/fetch/api/redirect/redirect-location-expected.txt: Removed.
+        * web-platform-tests/fetch/api/redirect/redirect-location.any-expected.txt:
+        * web-platform-tests/fetch/api/redirect/redirect-location.any.worker-expected.txt:
+
+2019-10-01  Antti Koivisto  <antti@apple.com>
+
+        Import WPT tests for CSS Shadow Parts
+        https://bugs.webkit.org/show_bug.cgi?id=202393
+
+        Reviewed by Antoine Quint.
+
+        From https://github.com/web-platform-tests/wpt/tree/master/css/css-shadow-parts
+
+        * resources/import-expectations.json:
+        * web-platform-tests/css/css-shadow-parts/META.yml: Added.
+        * web-platform-tests/css/css-shadow-parts/all-hosts-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/all-hosts.html: Added.
+        * web-platform-tests/css/css-shadow-parts/chaining-invalid-selector-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/chaining-invalid-selector.html: Added.
+        * web-platform-tests/css/css-shadow-parts/complex-matching-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/complex-matching.html: Added.
+        * web-platform-tests/css/css-shadow-parts/complex-non-matching-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/complex-non-matching.html: Added.
+        * web-platform-tests/css/css-shadow-parts/different-host-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/different-host.html: Added.
+        * web-platform-tests/css/css-shadow-parts/double-forward-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/double-forward.html: Added.
+        * web-platform-tests/css/css-shadow-parts/host-stylesheet-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/host-stylesheet.html: Added.
+        * web-platform-tests/css/css-shadow-parts/inner-host-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/inner-host.html: Added.
+        * web-platform-tests/css/css-shadow-parts/interaction-with-placeholder-expected.html: Added.
+        * web-platform-tests/css/css-shadow-parts/interaction-with-placeholder.html: Added.
+        * web-platform-tests/css/css-shadow-parts/interaction-with-pseudo-elements-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/interaction-with-pseudo-elements.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-exportparts-forward-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-exportparts-forward.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-forward-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-forward.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-idl-domtokenlist-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-idl-domtokenlist.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-idl-setter-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name-idl-setter.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-change-part-name.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-complex-selector-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-complex-selector-forward-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-complex-selector-forward.html: Added.
+        * web-platform-tests/css/css-shadow-parts/invalidation-complex-selector.html: Added.
+        * web-platform-tests/css/css-shadow-parts/multiple-parts-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/multiple-parts.html: Added.
+        * web-platform-tests/css/css-shadow-parts/part-name-idl-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/part-name-idl.html: Added.
+        * web-platform-tests/css/css-shadow-parts/precedence-part-vs-part-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/precedence-part-vs-part.html: Added.
+        * web-platform-tests/css/css-shadow-parts/simple-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/simple-forward-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/simple-forward-shorthand-expected.txt: Added.
+        * web-platform-tests/css/css-shadow-parts/simple-forward-shorthand.html: Added.
+        * web-platform-tests/css/css-shadow-parts/simple-forward.html: Added.
+        * web-platform-tests/css/css-shadow-parts/simple.html: Added.
+        * web-platform-tests/css/css-shadow-parts/support/shadow-helper.js: Added.
+        (getElementByShadowIds):
+        (ceClass.):
+        (installCustomElement):
+        * web-platform-tests/css/css-shadow-parts/support/w3c-import.log: Added.
+        * web-platform-tests/css/css-shadow-parts/w3c-import.log: Added.
+
+2019-10-01  Joonghun Park  <jh718.park@samsung.com>
+
+        Make table's clientWidth/Height include its border sizes.
+        https://bugs.webkit.org/show_bug.cgi?id=200974
+
+        WebKit doesn't have table wrapper box currently
+        while Gecko has it,
+        so this CL tries to mimic the behavior that
+        clientWidth/Height refers to table wrapper box
+        which doesn't have borders applied to itself
+        and table grid box has the borders.
+
+        This CL adds table's border sizes
+        to clientWidth/Height
+        at |LayoutBox::PixelSnappedClientWidth/Height|.
+
+        As a result of this CL, table's clientWidth/Height
+        and offsetWidth/Height are equal now, respectively.
+
+        The corresponding csswg discussion is
+        https://github.com/w3c/csswg-drafts/issues/4245.
+
+        Reviewed by Antti Koivisto.
+
+        * web-platform-tests/css/cssom-view/table-border-collapse-client-width-height-expected.txt: Added.
+        * web-platform-tests/css/cssom-view/table-border-collapse-client-width-height.html: Added.
+        * web-platform-tests/css/cssom-view/table-border-separate-client-width-height-expected.txt: Added.
+        * web-platform-tests/css/cssom-view/table-border-separate-client-width-height.html: Added.
+        * web-platform-tests/css/cssom-view/table-client-props-expected.txt:
+        * web-platform-tests/css/cssom-view/table-with-border-client-width-height-expected.txt: Added.
+        * web-platform-tests/css/cssom-view/table-with-border-client-width-height.html: Added.
+
 2019-09-30  Rob Buis  <rbuis@igalia.com>
 
         No-Cors check should take into account same-origin

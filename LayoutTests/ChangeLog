@@ -1,3 +1,154 @@
+2019-10-02  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        Unreviewed GTK gardening. Add missing results after r250276.
+
+        * platform/gtk/imported/w3c/web-platform-tests/svg/: Added.
+
+2019-10-01  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        [win-ews] No such file or directory: u'/cygdrive/C/cygwin/home/buildbot/WebKit/WebKitBuild/Release/bin32/layout-test-results/pywebsocket.ws.log-out.txt'
+        https://bugs.webkit.org/show_bug.cgi?id=188640
+
+        Reviewed by Alex Christensen.
+
+        WebSocket server is now fixed, tests should pass. 
+
+        Reverted changeset:
+
+        "Unreviewed test gardening"
+        https://bugs.webkit.org/show_bug.cgi?id=188640
+        https://trac.webkit.org/changeset/234933
+
+2019-10-01  John Wilander  <wilander@apple.com>
+
+        Storage Access API: document.hasStorageAccess() should return true when the cookie policy allows access
+        https://bugs.webkit.org/show_bug.cgi?id=202435
+        <rdar://problem/55718526>
+
+        Reviewed by Brent Fulgham.
+
+        WebKit's Storage Access API implementation has so far only looked at whether ITP is
+        blocking cookie access or not. However, the default cookie policy is still in
+        effect underneath ITP. document.hasStorageAccess() should return true if the
+        third-party:
+        a) is not classified by ITP, and
+        b) has cookies which implies it can use cookies as third-party according to the
+        default cookie policy.
+
+        * http/tests/storageAccess/has-storage-access-false-by-default-ephemeral-expected.txt: Added.
+        * http/tests/storageAccess/has-storage-access-false-by-default-ephemeral.html: Copied from LayoutTests/http/tests/storageAccess/has-storage-access-true-if-feature-off.html.
+        * http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral-expected.txt: Added.
+        * http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral.html: Copied from LayoutTests/http/tests/storageAccess/has-storage-access-true-if-feature-off.html.
+        * http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-expected.txt: Added.
+        * http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies.html: Renamed from LayoutTests/http/tests/storageAccess/has-storage-access-true-if-feature-off.html.
+        * platform/ios/TestExpectations:
+        * platform/mac-wk2/TestExpectations:
+
+2019-10-01  Rob Buis  <rbuis@igalia.com>
+
+        [Mac] Layout Test imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location.any.html fails
+        https://bugs.webkit.org/show_bug.cgi?id=202350
+
+        Reviewed by Alex Christensen.
+
+        Remove expectation for non-existing tests.
+
+        * platform/gtk/imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location-expected.txt: Removed.
+        * platform/gtk/imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location-worker-expected.txt: Removed.
+        * platform/wpe/imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location-worker-expected.txt: Removed.
+
+2019-10-01  Andres Gonzalez  <andresg_22@apple.com>
+
+        Support accessibility for <figure> element on iOS.
+        https://bugs.webkit.org/show_bug.cgi?id=202272
+
+        Reviewed by Aakash Jain.
+
+        Fix for WK1 test, rebasing.
+        * platform/mac/accessibility/roles-exposed-expected.txt:
+
+2019-10-01  Antti Koivisto  <antti@apple.com>
+
+        Import WPT tests for CSS Shadow Parts
+        https://bugs.webkit.org/show_bug.cgi?id=202393
+
+        Reviewed by Antoine Quint.
+
+        * TestExpectations:
+
+2019-10-01  Joonghun Park  <jh718.park@samsung.com>
+
+        Make table's clientWidth/Height include its border sizes.
+        https://bugs.webkit.org/show_bug.cgi?id=200974
+
+        WebKit doesn't have table wrapper box currently
+        while Gecko has it,
+        so this CL tries to mimic the behavior that
+        clientWidth/Height refers to table wrapper box
+        which doesn't have borders applied to itself
+        and table grid box has the borders.
+
+        This CL adds table's border sizes
+        to clientWidth/Height
+        at |LayoutBox::PixelSnappedClientWidth/Height|.
+
+        As a result of this CL, table's clientWidth/Height
+        and offsetWidth/Height are equal now, respectively.
+
+        The corresponding csswg discussion is
+        https://github.com/w3c/csswg-drafts/issues/4245.
+
+        Reviewed by Antti Koivisto.
+
+        * fast/table/border-collapsing/bug236727-expected.txt: Added.
+        * fast/table/border-collapsing/bug236727.html: Added.
+
+2019-09-30  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: JS Formatter: unexpected newlines added inside template string expression
+        https://bugs.webkit.org/show_bug.cgi?id=202374
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/formatting/resources/javascript-tests/template-strings.js:
+        * inspector/formatting/resources/javascript-tests/template-strings-expected.js:
+
+2019-09-30  Saam Barati  <sbarati@apple.com>
+
+        Inline caching is wrong for custom accessors and custom values
+        https://bugs.webkit.org/show_bug.cgi?id=201994
+        <rdar://problem/50850326>
+
+        Reviewed by Yusuke Suzuki.
+
+        * js/dom/custom-accessor-redefine-expected.txt: Added.
+        * js/dom/custom-accessor-redefine.html: Added.
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        IDBTransaction / IDBObjectStore should not prevent a page from entering the back / forward cache
+        https://bugs.webkit.org/show_bug.cgi?id=202291
+        <rdar://problem/55760106>
+
+        Reviewed by Geoffrey Garen.
+
+        Add layout test coverage.
+
+        * storage/indexeddb/IDBTransaction-page-cache.html: Added.
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        Pages with Web Workers cannot enter the back / forward cache
+        https://bugs.webkit.org/show_bug.cgi?id=202296
+        <rdar://problem/55764073>
+
+        Reviewed by Jer Noble.
+
+        Add layout test coverage.
+
+        * fast/workers/worker-page-cache-expected.txt: Added.
+        * fast/workers/worker-page-cache.html: Added.
+
 2019-09-28  Said Abou-Hallawa  <sabouhallawa@apple.com>
 
         Crash when removing the target element while animating its attributes

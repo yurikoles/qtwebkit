@@ -1,3 +1,859 @@
+2019-10-02  Antoine Quint  <graouts@apple.com>
+
+        [Web Animations] Implement replaced animations
+        https://bugs.webkit.org/show_bug.cgi?id=202190
+        <rdar://55697719>
+
+        Reviewed by Dean Jackson.
+
+        Implementing section "5.5 Replacing Animations" (https://drafts.csswg.org/web-animations/#replacing-animations) of the Web Animations
+        specification which allows for Web Animations to be destroyed when they are superseded by another animation and the developer doesn't
+        explicitly opt into persisting them using the persist() method.
+
+        An animation is marked as replaceable (to sum up) when it's finished and another animation for the same property takes precedence.
+        As part of DocumentTimeline::internalUpdateAnimationsAndSendEvents(), we'll go through all replaceable animations, dispatch a "remove"
+        DOM event, and remove them from our list of animations.
+
+        We also make a couple of fixes in this patch that were uncovered while working on the WPT tests for replaced animations:
+        
+        - we would incorrectly parse single values for a property that allows lists (change in KeyframeEffect's processKeyframeLikeObject())
+        - we didn't account for the position in the global animation list when sorted animations by composite order (AnimationTimeline::animationsForElement())
+
+        Finally, to get more readable results, we implement a stub of commitStyles(). Its full implementation is tracked by http://wkb.ug/202193.
+
+        * animation/AnimationTimeline.cpp:
+        (WebCore::AnimationTimeline::animationTimingDidChange): Mark the position of the animation in the global animation list, to which it may only be added once.
+        (WebCore::AnimationTimeline::animationsForElement const): Account for the animation's position in the global animation when sorting.
+        * animation/DeclarativeAnimation.cpp:
+        (WebCore::DeclarativeAnimation::bindingsReplaceState const): Flush pending styles when querying the ready state for a declarative animation.
+        * animation/DeclarativeAnimation.h:
+        * animation/DocumentTimeline.cpp:
+        (WebCore::DocumentTimeline::internalUpdateAnimationsAndSendEvents): Run the "remove replaced animations" procedure as the second step in the "update animations
+        and send events" procedure.
+        (WebCore::DocumentTimeline::animationCanBeRemoved): Determine whether a given animation may be removed based on its finished state, replace state and whether
+        it is fully superseded by another animation targeting the same property on the same target element.
+        (WebCore::DocumentTimeline::removeReplacedAnimations): Remove any removable animation and dispatch a "remove" DOM event for each removed animation. 
+        * animation/DocumentTimeline.h:
+        * animation/KeyframeEffect.cpp:
+        (WebCore::processKeyframeLikeObject): Fix an issue found in a replaced animations WPT test that showed that we didn't record the value of an animation that allows lists.
+        * animation/WebAnimation.cpp:
+        (WebCore::WebAnimation::isReplaceable const):
+        (WebCore::WebAnimation::persist): Mark the replace state as "persisted" and ensure the animation is set on the animation list for its target element in case it had already
+        been removed based on its persisted state.
+        (WebCore::WebAnimation::commitStyles): Stub for a new function.
+        * animation/WebAnimation.h:
+        (WebCore::WebAnimation::replaceState const):
+        (WebCore::WebAnimation::setReplaceState):
+        (WebCore::WebAnimation::bindingsReplaceState const):
+        (WebCore::WebAnimation::globalPosition const):
+        (WebCore::WebAnimation::setGlobalPosition):
+        * animation/WebAnimation.idl:
+        * dom/EventNames.h: Add the new "remove" event so that the "onremove" DOM property is available on Animation objects. 
+
+2019-10-02  Zan Dobersek  <zdobersek@igalia.com>
+
+        Unreviewed build fix in Nicosia's ScrollingTreePositionedNode class.
+
+        * page/scrolling/nicosia/ScrollingTreePositionedNode.cpp:
+        (WebCore::ScrollingTreePositionedNode::applyLayerPositions):
+        Fix the name of the variable included in the log call.
+
+2019-10-02  youenn fablet  <youenn@apple.com>
+
+        Use strongly typed identifiers for webrtc sockets
+        https://bugs.webkit.org/show_bug.cgi?id=202400
+
+        Reviewed by Chris Dumez.
+
+        No observable change of behavior.
+
+        * Headers.cmake:
+        * WebCore.xcodeproj/project.pbxproj:
+        * platform/mediastream/libwebrtc/LibWebRTCSocketIdentifier.h: Copied from Source/WebKit/NetworkProcess/webrtc/NetworkRTCSocket.h.
+
+2019-10-02  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK][WPE] Stop using legacy custom protocol implementation
+        https://bugs.webkit.org/show_bug.cgi?id=202407
+
+        Reviewed by Žan Doberšek.
+
+        Remove the code to setup custom protocols in soup session.
+
+        * platform/network/soup/SoupNetworkSession.cpp:
+        (WebCore::SoupNetworkSession::SoupNetworkSession):
+        * platform/network/soup/SoupNetworkSession.h:
+
+2019-10-02  Zan Dobersek  <zdobersek@igalia.com>
+
+        [Nicosia] Enable async scrolling at build-time for Nicosia-using ports
+        https://bugs.webkit.org/show_bug.cgi?id=202397
+
+        Reviewed by Carlos Garcia Campos.
+
+        * PlatformPlayStation.cmake: Add missing build targets.
+        * SourcesGTK.txt: Ditto.
+
+2019-10-01  Tim Horton  <timothy_horton@apple.com>
+
+        Clean up some includes to make the build a bit faster
+        https://bugs.webkit.org/show_bug.cgi?id=202444
+
+        Reviewed by Geoff Garen.
+
+        No new tests, just reorganizing.
+
+        Apply some profile-guided optimizations to our headers.
+
+        * bindings/js/CallTracerTypes.h:
+        * css/typedom/TypedOMCSSImageValue.h:
+        * html/canvas/WebGLObject.h:
+        * html/canvas/WebGLVertexArrayObjectBase.h:
+        * inspector/InspectorInstrumentation.cpp:
+        (WebCore::InspectorInstrumentation::instrumentingAgentsForWebGPUDevice):
+        (WebCore::InspectorInstrumentation::instrumentingAgentsForWorkerGlobalScope):
+        (WebCore::InspectorInstrumentation::instrumentingAgentsForPage):
+        (WebCore::InspectorInstrumentation::instrumentingAgentsForContext):
+        * inspector/InspectorInstrumentation.h:
+        (WebCore::InspectorInstrumentation::didCreateWebGPUDevice):
+        (WebCore::InspectorInstrumentation::willDestroyWebGPUDevice):
+        (WebCore::InspectorInstrumentation::didCreateWebGPUPipeline):
+        * platform/graphics/BitmapImage.cpp:
+        * platform/graphics/Font.h:
+        * platform/graphics/cg/GraphicsContextCG.cpp:
+        (WebCore::getUserToBaseCTM):
+        * platform/graphics/cg/GraphicsContextCG.h:
+        (WebCore::getUserToBaseCTM): Deleted.
+        * platform/graphics/cg/ImageBufferCG.cpp:
+        * platform/graphics/cocoa/IOSurface.h:
+        * platform/graphics/mac/PDFDocumentImageMac.mm:
+        InspectorInstrumentation.h is one of the most expensive headers in the entire project.
+        While not included in many places (70), it is fairly straightforward to reduce
+        its per-inclusion cost by rougly 80%.
+
+2019-10-01  Alex Christensen  <achristensen@webkit.org>
+
+        Progress towards a functioning CMake build on Mac
+        https://bugs.webkit.org/show_bug.cgi?id=202443
+
+        Rubber-stamped by Tim Horton.
+
+        * testing/Internals.mm:
+
+2019-10-01  John Wilander  <wilander@apple.com>
+
+        Storage Access API: document.hasStorageAccess() should return true when the cookie policy allows access
+        https://bugs.webkit.org/show_bug.cgi?id=202435
+        <rdar://problem/55718526>
+
+        Reviewed by Brent Fulgham.
+
+        WebKit's Storage Access API implementation has so far only looked at whether ITP is
+        blocking cookie access or not. However, the default cookie policy is still in
+        effect underneath ITP. document.hasStorageAccess() should return true if the
+        third-party:
+        a) is not classified by ITP, and
+        b) has cookies which implies it can use cookies as third-party according to the
+        default cookie policy.
+
+        Tests: http/tests/storageAccess/has-storage-access-false-by-default-ephemeral.html
+               http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral.html
+               http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies.html
+
+        * platform/network/NetworkStorageSession.h:
+        * platform/network/cocoa/NetworkStorageSessionCocoa.mm:
+        (WebCore::NetworkStorageSession::hasCookies const):
+        * platform/network/curl/NetworkStorageSessionCurl.cpp:
+        (WebCore::NetworkStorageSession::hasCookies const):
+            Not yet implemented. Always says false.
+        * platform/network/soup/NetworkStorageSessionSoup.cpp:
+        (WebCore::NetworkStorageSession::hasCookies const):
+            Not yet implemented. Always says false.
+
+2019-10-01  Tim Horton  <timothy_horton@apple.com>
+
+        Clean up some includes to make the build a bit faster
+        https://bugs.webkit.org/show_bug.cgi?id=202437
+
+        Reviewed by Jer Noble.
+
+        * Modules/webaudio/PannerNode.h:
+        * Modules/webaudio/RealtimeAnalyser.h:
+        * platform/audio/HRTFPanner.h:
+        FFTFrame includes Accelerate.h, which is quite expensive.
+
+2019-10-01  Antti Koivisto  <antti@apple.com>
+
+        [CSS Shadow Parts] Parse 'part' attribute
+        https://bugs.webkit.org/show_bug.cgi?id=202409
+
+        Reviewed by Ryosuke Niwa.
+
+        Add parsing for Element 'part' attribute and the IDL interface.
+        Also add a feature flag for CSS Shadow Parts.
+
+        * dom/Element.cpp:
+        (WebCore::Element::attributeChanged):
+        (WebCore::isNonEmptyTokenList):
+        (WebCore::Element::classAttributeChanged):
+        (WebCore::Element::partAttributeChanged):
+        (WebCore::Element::partNames const):
+        (WebCore::Element::part):
+        (WebCore::classStringHasClassName): Deleted.
+        * dom/Element.h:
+        * dom/Element.idl:
+        * dom/ElementRareData.cpp:
+        * dom/ElementRareData.h:
+        (WebCore::ElementRareData::partList const):
+        (WebCore::ElementRareData::setPartList):
+        (WebCore::ElementRareData::partNames const):
+        (WebCore::ElementRareData::setPartNames):
+        * html/HTMLAttributeNames.in:
+        * page/RuntimeEnabledFeatures.h:
+        (WebCore::RuntimeEnabledFeatures::setCSSShadowPartsEnabled):
+        (WebCore::RuntimeEnabledFeatures::cssShadowPartsEnabled const):
+
+2019-10-01  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Place VM* in TLS
+        https://bugs.webkit.org/show_bug.cgi?id=202391
+
+        Reviewed by Mark Lam.
+
+        Use JSLockHolder instead. It automatically puts VM* in TLS.
+
+        * bindings/js/IDBBindingUtilities.cpp:
+        (WebCore::toJS):
+        (WebCore::deserializeIDBValueToJSValue):
+
+2019-10-01  youenn fablet  <youenn@apple.com>
+
+        Queue events and promise resolution in RTCPeerConnection when suspended for page cache
+        https://bugs.webkit.org/show_bug.cgi?id=202396
+
+        Reviewed by Chris Dumez.
+
+        This patch prepares RTCPeerConnection to be suspendable to enter page cache.
+        For that purpose, we queue events and promise resolution/rejection tasks if the RTCPeerConnection m_shouldDelayTasks is set to true.
+        This queueing is enabled when RTCPeerConnection is asked to suspend itself.
+        The queued tasks are then executed at resume time.
+        Renamed fireEvent to dispatchEventWhenFeasible.
+        No change of behavior for now.
+
+        * Modules/mediastream/PeerConnectionBackend.cpp:
+        (WebCore::PeerConnectionBackend::createOfferSucceeded):
+        (WebCore::PeerConnectionBackend::createOfferFailed):
+        (WebCore::PeerConnectionBackend::createAnswerSucceeded):
+        (WebCore::PeerConnectionBackend::createAnswerFailed):
+        (WebCore::PeerConnectionBackend::setLocalDescriptionSucceeded):
+        (WebCore::PeerConnectionBackend::setLocalDescriptionFailed):
+        (WebCore::PeerConnectionBackend::setRemoteDescriptionSucceeded):
+        (WebCore::PeerConnectionBackend::setRemoteDescriptionFailed):
+        (WebCore::PeerConnectionBackend::addIceCandidateSucceeded):
+        (WebCore::PeerConnectionBackend::addIceCandidateFailed):
+        * Modules/mediastream/RTCPeerConnection.cpp:
+        (WebCore::RTCPeerConnection::doClose):
+        (WebCore::RTCPeerConnection::suspend):
+        (WebCore::RTCPeerConnection::resume):
+        (WebCore::RTCPeerConnection::updateIceGatheringState):
+        (WebCore::RTCPeerConnection::updateIceConnectionState):
+        (WebCore::RTCPeerConnection::updateConnectionState):
+        (WebCore::RTCPeerConnection::scheduleNegotiationNeededEvent):
+        (WebCore::RTCPeerConnection::doTask):
+        (WebCore::RTCPeerConnection::fireEvent):
+        * Modules/mediastream/RTCPeerConnection.h:
+
+2019-10-01  Brent Fulgham  <bfulgham@apple.com>
+
+        [FTW] Correct additional canvas test failures
+        https://bugs.webkit.org/show_bug.cgi?id=202388
+
+        Reviewed by Fujii Hironori.
+
+        This patch corrects a handful of errors in Direct2D's drawing code.
+
+        * platform/graphics/win/Direct2DOperations.cpp:
+        (WebCore::Direct2D::clearRect): Use the transformed dimensions of
+        rects to determine whether they intersect with the render target.
+        * platform/graphics/win/ImageBufferDataDirect2D.cpp:
+        (WebCore::ImageBufferData::copyRectFromData const):
+        (WebCore::ImageBufferData::loadDataToBitmapIfNeeded): It is not
+        necessary (or correct) to 'endDraw' when loading image data to the
+        Bitmap target.
+        * platform/graphics/win/PathDirect2D.cpp:
+        (WebCore::Path::strokeBoundingRect const): Provide an implementation.
+
+2019-10-01  Alex Christensen  <achristensen@webkit.org>
+
+        Progress towards successful CMake build on Mac
+        https://bugs.webkit.org/show_bug.cgi?id=202426
+
+        Rubber-stamped by Tim Horton.
+
+        * PlatformMac.cmake:
+
+2019-10-01  Tim Horton  <timothy_horton@apple.com>
+
+        Clean up some includes to make the build a bit faster
+        https://bugs.webkit.org/show_bug.cgi?id=202417
+
+        Reviewed by Jer Noble.
+
+        No new tests, just reorganizing.
+
+        Apply some profile-guided optimizations to our headers.
+
+        * Modules/mediasource/SourceBuffer.cpp:
+        * WebCorePrefix.h:
+        Add HashMap, which ends up included in all source files.
+
+        * html/HTMLImageElement.cpp:
+        (WebCore::HTMLImageElement::HTMLImageElement):
+        (WebCore::HTMLImageElement::selectImageSource):
+        (WebCore::HTMLImageElement::didAttachRenderers):
+        (WebCore::HTMLImageElement::insertedIntoAncestor):
+        (WebCore::HTMLImageElement::width):
+        (WebCore::HTMLImageElement::height):
+        (WebCore::HTMLImageElement::naturalWidth const):
+        (WebCore::HTMLImageElement::naturalHeight const):
+        (WebCore::HTMLImageElement::complete const):
+        (WebCore::HTMLImageElement::decode):
+        (WebCore::HTMLImageElement::didMoveToNewDocument):
+        (WebCore::HTMLImageElement::cachedImage const):
+        (WebCore::HTMLImageElement::setLoadManually):
+        (WebCore::HTMLImageElement::hasPendingActivity const):
+        (WebCore::HTMLImageElement::pendingDecodePromisesCountForTesting const):
+        * html/HTMLImageElement.h:
+        (WebCore::HTMLImageElement::cachedImage const): Deleted.
+        (WebCore::HTMLImageElement::setLoadManually): Deleted.
+        (WebCore::HTMLImageElement::hasPendingActivity const): Deleted.
+        (WebCore::HTMLImageElement::pendingDecodePromisesCountForTesting const): Deleted.
+        HTMLImageLoader brings in JSDOMPromiseDeferred, which is known to be horribly expensive.
+        Out-of-line m_imageLoader.
+
+        * platform/graphics/GraphicsLayer.h:
+        Swap Animation for TimingFunction, which is much smaller.
+
+        * platform/graphics/MediaPlayer.h:
+        InbandTextTrackPrivate brings in SerializedPlatformRepresentation.h,
+        which is very expensive. MediaPlayer.h is included in many places.
+        Break the link.
+
+        * platform/graphics/avfoundation/objc/MediaPlayerPrivateMediaSourceAVFObjC.h:
+
+2019-10-01  youenn fablet  <youenn@apple.com>
+
+        RTCDataChannel should not prevent entering page cache except if in open state
+        https://bugs.webkit.org/show_bug.cgi?id=202395
+
+        Reviewed by Chris Dumez.
+
+        Only prevent entering page cache in open state.
+        Enqueue message through the document event queue to handle suspension properly.
+
+        We cannot yet write page cache tests as a data channel requires a peer connection which
+        currently forbids entering page cache.
+
+        * Modules/mediastream/RTCDataChannel.cpp:
+        (WebCore::RTCDataChannel::RTCDataChannel):
+        (WebCore::RTCDataChannel::didReceiveStringData):
+        (WebCore::RTCDataChannel::didReceiveRawData):
+        (WebCore::RTCDataChannel::didDetectError):
+        (WebCore::RTCDataChannel::bufferedAmountIsDecreasing):
+        (WebCore::RTCDataChannel::scheduleDispatchEvent):
+        (WebCore::RTCDataChannel::scheduledEventTimerFired): Deleted.
+        * Modules/mediastream/RTCDataChannel.h:
+
+2019-10-01  Rob Buis  <rbuis@igalia.com>
+
+        [Mac] Layout Test imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location.any.html fails
+        https://bugs.webkit.org/show_bug.cgi?id=202350
+
+        Reviewed by Alex Christensen.
+
+        In some cases didReceiveResponse will deliver redirects (normally willSendRequestInternal will be used for redirects).
+        When this is done in manual redirect mode make sure the response type is opaque redirect.
+
+        Test: imported/w3c/web-platform-tests/fetch/api/redirect/redirect-location.any.html
+
+        * loader/SubresourceLoader.cpp:
+        (WebCore::SubresourceLoader::didReceiveResponse):
+
+2019-10-01  Keith Rollin  <krollin@apple.com>
+
+        Remove some support for < iOS 13
+        https://bugs.webkit.org/show_bug.cgi?id=202386
+        <rdar://problem/55863017>
+
+        Reviewed by Eric Carlson.
+
+        Remove some support for iOS versions less than 13.0.
+
+        Update conditionals that reference __IPHONE_OS_VERSION_MIN_REQUIRED
+        and __IPHONE_OS_VERSION_MAX_ALLOWED, assuming that they both have
+        values >= 130000. This means that expressions like
+        "__IPHONE_OS_VERSION_MIN_REQUIRED < 101300" are always False and
+        "__IPHONE_OS_VERSION_MIN_REQUIRED >= 101300" are always True.
+
+        This removal is part of a series of patches effecting the removal of
+        dead code for old versions of iOS. This particular pass involves
+        changes in which Jer Noble was involved. These changes are isolated
+        from other similar changes in order to facilitate the reviewing
+        process.
+
+        No new tests -- no new or changed functionality.
+
+        * platform/graphics/avfoundation/objc/MediaPlayerPrivateAVFoundationObjC.mm:
+        (WebCore::MediaPlayerPrivateAVFoundationObjC::seekableTimeRangesLastModifiedTime const):
+        (WebCore::MediaPlayerPrivateAVFoundationObjC::liveUpdateInterval const):
+
+2019-10-01  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed attempt to fix Windows build after r250527.
+
+        * dom/GenericEventQueue.cpp:
+        (WebCore::TaskQueueConstructor::construct):
+        (WebCore::TaskQueueConstructor<Timer>::construct):
+        (WebCore::GenericEventQueueBase<T>::enqueueEvent):
+        (WebCore::GenericEventQueueBase<T>::close):
+        (WebCore::GenericEventQueueBase<T>::cancelAllEvents):
+        (WebCore::GenericEventQueueBase<T>::setPaused):
+        (WebCore::GenericEventQueueBase<T>::suspend):
+        (WebCore::GenericEventQueueBase<T>::rescheduleAllEventsIfNeeded):
+        * dom/GenericEventQueue.h:
+        * platform/GenericTaskQueue.h:
+
+2019-10-01  Alex Christensen  <achristensen@webkit.org>
+
+        Fix internal build after r250549
+        https://bugs.webkit.org/show_bug.cgi?id=202390
+
+        There is an internal #define confirm on some systems, so rename DOMWindow::confirm to DOMWindow::confirmForBindings.
+
+        * page/DOMWindow.cpp:
+        (WebCore::DOMWindow::confirmForBindings):
+        (WebCore::DOMWindow::confirm): Deleted.
+        * page/DOMWindow.h:
+        * page/DOMWindow.idl:
+
+2019-10-01  Chris Dumez  <cdumez@apple.com>
+
+        Unreviewed attempt to fix Windows build after r250527.
+
+        * platform/GenericTaskQueue.h:
+
+2019-10-01  Zan Dobersek  <zdobersek@igalia.com>
+
+        [CoordGraphics] Implement sync methods for position, bounds origin
+        https://bugs.webkit.org/show_bug.cgi?id=202398
+
+        Reviewed by Carlos Garcia Campos.
+
+        Add the CoordinatedGraphicsLayer::syncPosition() and
+        CoordinatedGraphicsLayer::syncBoundsOrigin() method overrides, both
+        performing a synchronization of the given GraphicsLayer attribute.
+
+        These methods are used by the scrolling code to reflect changes in these
+        attributes without causing a layer flush (which is not necessary since
+        the changes have already been applied in an equivalent way).
+
+        * platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp:
+        (WebCore::CoordinatedGraphicsLayer::didChangeGeometry):
+        (WebCore::CoordinatedGraphicsLayer::syncPosition):
+        (WebCore::CoordinatedGraphicsLayer::syncBoundsOrigin):
+        * platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.h:
+
+2019-10-01  Joonghun Park  <jh718.park@samsung.com>
+
+        Make table's clientWidth/Height include its border sizes.
+        https://bugs.webkit.org/show_bug.cgi?id=200974
+
+        WebKit doesn't have table wrapper box currently
+        while Gecko has it,
+        so this CL tries to mimic the behavior that
+        clientWidth/Height refers to table wrapper box
+        which doesn't have borders applied to itself
+        and table grid box has the borders.
+
+        This CL adds table's border sizes
+        to clientWidth/Height
+        at |LayoutBox::PixelSnappedClientWidth/Height|.
+
+        As a result of this CL, table's clientWidth/Height
+        and offsetWidth/Height are equal now, respectively.
+
+        The corresponding csswg discussion is
+        https://github.com/w3c/csswg-drafts/issues/4245.
+
+        Reviewed by Antti Koivisto.
+
+        Tests: fast/table/border-collapsing/bug236727.html
+               imported/w3c/web-platform-tests/css/cssom-view/table-border-collapse-client-width-height.html
+               imported/w3c/web-platform-tests/css/cssom-view/table-border-separate-client-width-height.html
+               imported/w3c/web-platform-tests/css/cssom-view/table-with-border-client-width-height.html
+
+        * dom/Element.cpp:
+        (WebCore::Element::clientWidth):
+        (WebCore::Element::clientHeight):
+
+2019-10-01  youenn fablet  <youenn@apple.com>
+
+        Remove races condition when validating capture sandbox extension revocation
+        https://bugs.webkit.org/show_bug.cgi?id=202133
+        <rdar://problem/55660905>
+
+        Reviewed by Eric Carlson.
+
+        Covered by existing tests.
+
+        * Modules/mediastream/MediaStreamTrack.cpp:
+        (WebCore::MediaStreamTrack::endCapture):
+        Synchronously update document media state when capture is ended.
+        This allows to validate the fact that no document is capturing while we revoke sandbox extensions.
+
+2019-10-01  youenn fablet  <youenn@apple.com>
+
+        MediaDevices should be SecureContext
+        https://bugs.webkit.org/show_bug.cgi?id=202267
+
+        Reviewed by Eric Carlson.
+
+        Manually tested since 127.0.0.1/localhost are secure contexts.
+
+        * Modules/mediastream/MediaDevices.idl:
+        * bindings/js/WebCoreBuiltinNames.h:
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Resurrect Mac CMake build
+        https://bugs.webkit.org/show_bug.cgi?id=202384
+
+        Rubber-stamped by Tim Horton.
+
+        * PlatformMac.cmake:
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        Make GenericEventQueue an ActiveDOMObject
+        https://bugs.webkit.org/show_bug.cgi?id=202373
+
+        Reviewed by Eric Carlson.
+
+        Make GenericEventQueue an ActiveDOMObject so that it is guaranteed to never fire any events while
+        suspended without requiring the client to explicitly suspend/resume the event queue.
+
+        * Modules/encryptedmedia/MediaKeySession.cpp:
+        (WebCore::MediaKeySession::MediaKeySession):
+        (WebCore::MediaKeySession::enqueueMessage):
+        (WebCore::MediaKeySession::updateKeyStatuses):
+        * Modules/encryptedmedia/MediaKeySession.h:
+        * Modules/encryptedmedia/legacy/WebKitMediaKeySession.cpp:
+        (WebCore::WebKitMediaKeySession::WebKitMediaKeySession):
+        (WebCore::WebKitMediaKeySession::~WebKitMediaKeySession):
+        (WebCore::WebKitMediaKeySession::addKeyTimerFired):
+        (WebCore::WebKitMediaKeySession::sendMessage):
+        (WebCore::WebKitMediaKeySession::sendError):
+        (WebCore::WebKitMediaKeySession::hasPendingActivity const):
+        (WebCore::WebKitMediaKeySession::stop):
+        * Modules/encryptedmedia/legacy/WebKitMediaKeySession.h:
+        * Modules/mediasource/MediaSource.cpp:
+        (WebCore::MediaSource::MediaSource):
+        (WebCore::MediaSource::hasPendingActivity const):
+        (WebCore::MediaSource::stop):
+        (WebCore::MediaSource::canSuspendForDocumentSuspension const):
+        (WebCore::MediaSource::scheduleEvent):
+        * Modules/mediasource/MediaSource.h:
+        * Modules/mediasource/SourceBuffer.cpp:
+        (WebCore::SourceBuffer::SourceBuffer):
+        (WebCore::SourceBuffer::hasPendingActivity const):
+        (WebCore::SourceBuffer::stop):
+        (WebCore::SourceBuffer::scheduleEvent):
+        * Modules/mediasource/SourceBuffer.h:
+        * Modules/mediasource/SourceBufferList.cpp:
+        (WebCore::SourceBufferList::SourceBufferList):
+        (WebCore::SourceBufferList::scheduleEvent):
+        (WebCore::SourceBufferList::canSuspendForDocumentSuspension const):
+        * Modules/mediasource/SourceBufferList.h:
+        * Modules/webaudio/AudioContext.cpp:
+        (WebCore::AudioContext::AudioContext):
+        (WebCore::AudioContext::stop):
+        * Modules/webaudio/AudioContext.h:
+        * animation/DeclarativeAnimation.cpp:
+        (WebCore::DeclarativeAnimation::DeclarativeAnimation):
+        (WebCore::DeclarativeAnimation::tick):
+        (WebCore::DeclarativeAnimation::needsTick const):
+        (WebCore::DeclarativeAnimation::remove):
+        (WebCore::DeclarativeAnimation::enqueueDOMEvent):
+        (WebCore::DeclarativeAnimation::stop):
+        (WebCore::DeclarativeAnimation::suspend):
+        (WebCore::DeclarativeAnimation::resume):
+        * animation/DeclarativeAnimation.h:
+        * dom/GenericEventQueue.cpp:
+        (WebCore::GenericEventQueueBase<T>::GenericEventQueueBase):
+        (WebCore::GenericEventQueueBase<T>::setPaused):
+        (WebCore::GenericEventQueueBase<T>::canSuspendForDocumentSuspension const):
+        (WebCore::GenericEventQueueBase<T>::suspend):
+        (WebCore::GenericEventQueueBase<T>::resume):
+        (WebCore::GenericEventQueueBase<T>::rescheduleAllEventsIfNeeded):
+        (WebCore::GenericEventQueueBase<T>::stop):
+        (WebCore::GenericEventQueueBase<T>::activeDOMObjectName const):
+        (WebCore::GenericEventQueue::create):
+        (WebCore::MainThreadGenericEventQueue::create):
+        * dom/GenericEventQueue.h:
+        * dom/MessagePort.cpp:
+        (WebCore::MessagePort::MessagePort):
+        (WebCore::MessagePort::close):
+        (WebCore::MessagePort::dispatchMessages):
+        * dom/MessagePort.h:
+        * html/HTMLMediaElement.cpp:
+        (WebCore::HTMLMediaElement::HTMLMediaElement):
+        (WebCore::HTMLMediaElement::~HTMLMediaElement):
+        (WebCore::HTMLMediaElement::scheduleEvent):
+        (WebCore::HTMLMediaElement::updateActiveTextTrackCues):
+        (WebCore::HTMLMediaElement::cancelPendingEventsAndCallbacks):
+        (WebCore::HTMLMediaElement::mediaPlayerKeyNeeded):
+        (WebCore::HTMLMediaElement::mediaPlayerInitializationDataEncountered):
+        (WebCore::HTMLMediaElement::closeTaskQueues):
+        (WebCore::HTMLMediaElement::suspend):
+        (WebCore::HTMLMediaElement::resume):
+        (WebCore::HTMLMediaElement::hasPendingActivity const):
+        (WebCore::HTMLMediaElement::enqueuePlaybackTargetAvailabilityChangedEvent):
+        * html/HTMLMediaElement.h:
+        * html/track/TrackListBase.cpp:
+        (WebCore::TrackListBase::TrackListBase):
+        (WebCore::TrackListBase::scheduleTrackEvent):
+        (WebCore::TrackListBase::scheduleChangeEvent):
+        (WebCore::TrackListBase::isChangeEventScheduled const):
+        (WebCore::TrackListBase::canSuspendForDocumentSuspension const):
+        * html/track/TrackListBase.h:
+        * workers/Worker.cpp:
+        (WebCore::Worker::Worker):
+        (WebCore::Worker::terminate):
+        (WebCore::Worker::stop):
+        (WebCore::Worker::hasPendingActivity const):
+        (WebCore::Worker::enqueueEvent):
+        (WebCore::Worker::dispatchEvent):
+        * workers/Worker.h:
+        * workers/service/ServiceWorkerContainer.cpp:
+        (WebCore::ServiceWorkerContainer::ServiceWorkerContainer):
+        (WebCore::ServiceWorkerContainer::startMessages):
+        (WebCore::ServiceWorkerContainer::postMessage):
+        (WebCore::ServiceWorkerContainer::stop):
+        * workers/service/ServiceWorkerContainer.h:
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        IDBTransaction / IDBObjectStore should not prevent a page from entering the back / forward cache
+        https://bugs.webkit.org/show_bug.cgi?id=202291
+        <rdar://problem/55760106>
+
+        Reviewed by Geoffrey Garen.
+
+        IDBObjectStore does not fire any events and should therefore not cause any problem while in PageCache.
+        IDBTransaction can only fire abort/complete/error events, all of which are being enqueued to the
+        DocumentEventQueue. The DocumentEventQueue subclasses SuspendableTimer which will correctly suspend
+        while the document is in page cache. IDBTransaction will therefore not cause events to fire (and JS
+        to run) while in page cache.
+
+        Test: storage/indexeddb/IDBTransaction-page-cache.html
+
+        * Modules/indexeddb/IDBObjectStore.cpp:
+        (WebCore::IDBObjectStore::canSuspendForDocumentSuspension const):
+        * Modules/indexeddb/IDBTransaction.cpp:
+        (WebCore::IDBTransaction::canSuspendForDocumentSuspension const):
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        Refine restrictions for X-Temp-Tablet HTTP header experiment
+        https://bugs.webkit.org/show_bug.cgi?id=202367
+        <rdar://problem/55849139>
+
+        Reviewed by Geoffrey Garen.
+
+        Refine restrictions for X-Temp-Tablet HTTP header experiment:
+        1. Only send the header if the embedding application is MobileSafari.
+        2. Only send the header if the first party is google.com
+        3. Only send the header if the current date is before 2/1/2020
+        4. Send the header even if using an ephemeral session
+
+        * loader/cache/CachedResourceLoader.cpp:
+        (WebCore::isXTempTabletHeaderExperimentOver):
+        (WebCore::CachedResourceLoader::CachedResourceLoader):
+        (WebCore::isGoogleSearch):
+        (WebCore::CachedResourceLoader::shouldSendXTempTabletHeader const):
+        (WebCore::CachedResourceLoader::requestResource):
+        * loader/cache/CachedResourceLoader.h:
+
+2019-09-30  Chris Dumez  <cdumez@apple.com>
+
+        Pages with Web Workers cannot enter the back / forward cache
+        https://bugs.webkit.org/show_bug.cgi?id=202296
+        <rdar://problem/55764073>
+
+        Reviewed by Jer Noble.
+
+        Allow pages that use Web Workers to enter the back / forward cache.
+        This involves adding an EventQueue for all event firing on Woker
+        objects and suspending this EventQueue while in the page cache.
+
+        This was preventing some of the pages on weather.com to enter the
+        back / forward cache.
+
+        Test: fast/workers/worker-page-cache.html
+
+        * Modules/encryptedmedia/MediaKeySession.h:
+        * Modules/encryptedmedia/legacy/WebKitMediaKeySession.h:
+        * Modules/mediasource/MediaSource.h:
+        * Modules/mediasource/SourceBuffer.h:
+        * Modules/mediasource/SourceBufferList.h:
+        * Modules/webaudio/AudioContext.cpp:
+        (WebCore::AudioContext::AudioContext):
+        * Modules/webaudio/AudioContext.h:
+        * animation/DeclarativeAnimation.h:
+
+        * dom/GenericEventQueue.cpp:
+        (WebCore::TaskQueueConstructor::construct):
+        (WebCore::TaskQueueConstructor<Timer>::construct):
+        (WebCore::GenericEventQueueBase<T>::GenericEventQueueBase):
+        (WebCore::GenericEventQueueBase<T>::enqueueEvent):
+        (WebCore::GenericEventQueueBase<T>::dispatchOneEvent):
+        (WebCore::GenericEventQueueBase<T>::close):
+        (WebCore::GenericEventQueueBase<T>::cancelAllEvents):
+        (WebCore::GenericEventQueueBase<T>::hasPendingEvents const):
+        (WebCore::GenericEventQueueBase<T>::hasPendingEventsOfType const):
+        (WebCore::GenericEventQueueBase<T>::suspend):
+        (WebCore::GenericEventQueueBase<T>::resume):
+        * dom/GenericEventQueue.h:
+        (WebCore::GenericEventQueueBase::isSuspended const):
+        (WebCore::MainThreadGenericEventQueue::MainThreadGenericEventQueue):
+        (WebCore::GenericEventQueue::GenericEventQueue):
+        Rename GenericEventQueue to MainThreadGenericEventQueue since its implementation relies
+        on a global shared Timer to fire events. Introduce a new GenericEventQueue which can
+        actually be used from any thread. This is useful for MessagePort, which is used both
+        on the main thread and on worker threads.
+
+        * dom/MessagePort.cpp:
+        (WebCore::MessagePort::MessagePort):
+        (WebCore::MessagePort::close):
+        (WebCore::MessagePort::suspend):
+        (WebCore::MessagePort::resume):
+        (WebCore::MessagePort::dispatchMessages):
+        * dom/MessagePort.h:
+        Use an GenericEventQueue in MessagePort for consistency with Worker.
+        MessagePort is an ActiveDOMobject which returns true in canSuspend(),
+        we therefore need to make sure it suspends event firing while
+        suspended.
+
+        * html/HTMLMediaElement.h:
+        * html/track/TrackListBase.h:
+        * workers/Worker.cpp:
+        (WebCore::Worker::Worker):
+        (WebCore::Worker::terminate):
+        (WebCore::Worker::canSuspendForDocumentSuspension const):
+        (WebCore::Worker::suspend):
+        (WebCore::Worker::resume):
+        (WebCore::Worker::stop):
+        (WebCore::Worker::hasPendingActivity const):
+        (WebCore::Worker::notifyFinished):
+        (WebCore::Worker::enqueueEvent):
+        (WebCore::Worker::dispatchEvent):
+        * workers/Worker.h:
+        * workers/WorkerMessagingProxy.cpp:
+        (WebCore::WorkerMessagingProxy::postMessageToWorkerObject):
+        (WebCore::WorkerMessagingProxy::postExceptionToWorkerObject):
+
+2019-09-27  Keith Rollin  <krollin@apple.com>
+
+        Coalesce or remove PLATFORM(MAC) || PLATFORM(IOS_FAMILY)
+        https://bugs.webkit.org/show_bug.cgi?id=202119
+        <rdar://problem/55638792>
+
+        Unreviewed, address post landing review comments for r248533 from
+        Darin Adler.
+
+        No new tests -- no new or changed functionality.
+
+        * Modules/applepay/cocoa/PaymentContactCocoa.mm:
+        (WebCore::convert):
+        (WebCore::subLocality): Deleted.
+        (WebCore::setSubLocality): Deleted.
+        (WebCore::subAdministrativeArea): Deleted.
+        (WebCore::setSubAdministrativeArea): Deleted.
+
+2019-09-30  Antti Koivisto  <antti@apple.com>
+
+        RenderLineBreak should use LineLayoutTraversal
+        https://bugs.webkit.org/show_bug.cgi?id=202316
+
+        Reviewed by Zalan Bujtas.
+
+        Replace more path specific code with LineLayoutTraversal.
+
+        * Headers.cmake:
+        * rendering/RenderLineBreak.cpp:
+        (WebCore::RenderLineBreak::linesBoundingBox const):
+        (WebCore::RenderLineBreak::absoluteRects const):
+        (WebCore::RenderLineBreak::absoluteQuads const):
+        (WebCore::simpleLineLayout): Deleted.
+        * rendering/RenderTreeAsText.cpp:
+        (WebCore::RenderTreeAsText::writeRenderObject):
+        (WebCore::writeTextBox):
+        * rendering/SimpleLineLayoutFunctions.cpp:
+        (WebCore::SimpleLineLayout::computeBoundingBox): Deleted.
+        (WebCore::SimpleLineLayout::collectAbsoluteRects): Deleted.
+        (WebCore::SimpleLineLayout::rendererForPosition): Deleted.
+        * rendering/SimpleLineLayoutFunctions.h:
+        * rendering/line/LineLayoutTraversal.cpp:
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::ElementBoxIterator):
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::atEnd const):
+        (WebCore::LineLayoutTraversal::elementBoxFor):
+        (WebCore::LineLayoutTraversal::TextBox::rect const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::logicalRect const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::hasHyphen const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::isLeftToRightDirection const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::dirOverride const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::text const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::isLineBreak const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::localStartOffset const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::localEndOffset const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::length const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::isLastOnLine const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::isLast const): Deleted.
+        (WebCore::LineLayoutTraversal::TextBox::iterator const): Deleted.
+
+        Move to header as templates.
+
+        * rendering/line/LineLayoutTraversal.h:
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::ElementBoxIterator):
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::operator bool const):
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::operator* const):
+        (WebCore::LineLayoutTraversal::ElementBoxIterator::operator-> const):
+
+        Add a new iterator type for element boxes.
+        It doesn't currently really iterate, is just allows testing for end.
+
+        (WebCore::LineLayoutTraversal::Box<Iterator>::rect const):
+        (WebCore::LineLayoutTraversal::Box<Iterator>::logicalRect const):
+        (WebCore::LineLayoutTraversal::Box<Iterator>::isLeftToRightDirection const):
+        (WebCore::LineLayoutTraversal::Box<Iterator>::dirOverride const):
+        (WebCore::LineLayoutTraversal::Box<Iterator>::isLineBreak const):
+        (WebCore::LineLayoutTraversal::Box<Iterator>::iterator const):
+
+        Split properties that all inline boxes have out from TextBox.
+        Make it a template class.
+
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::hasHyphen const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::text const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::localStartOffset const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::localEndOffset const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::length const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::isLastOnLine const):
+        (WebCore::LineLayoutTraversal::TextBox<Iterator>::isLast const):
+
+        Make a template class.
+
+        (WebCore::LineLayoutTraversal::hasTextBoxes): Deleted.
+
 2019-09-30  Rob Buis  <rbuis@igalia.com>
 
         No-Cors check should take into account same-origin

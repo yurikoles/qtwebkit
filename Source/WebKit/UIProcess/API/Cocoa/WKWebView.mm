@@ -34,7 +34,6 @@
 #import "DiagnosticLoggingClient.h"
 #import "DynamicViewportSizeUpdate.h"
 #import "FindClient.h"
-#import "FrontBoardServicesSPI.h"
 #import "FullscreenClient.h"
 #import "GlobalFindInPageState.h"
 #import "IconLoadingDelegate.h"
@@ -60,7 +59,6 @@
 #import "WKBackForwardListInternal.h"
 #import "WKBackForwardListItemInternal.h"
 #import "WKBrowsingContextHandleInternal.h"
-#import "WKDragDestinationAction.h"
 #import "WKErrorInternal.h"
 #import "WKHistoryDelegatePrivate.h"
 #import "WKLayoutMode.h"
@@ -118,6 +116,7 @@
 #import <WebCore/ValidationBubble.h>
 #import <WebCore/ViewportArguments.h>
 #import <WebCore/WritingMode.h>
+#import <WebKit/WKDragDestinationAction.h>
 #import <pal/spi/cocoa/NSKeyedArchiverSPI.h>
 #import <pal/spi/mac/NSTextFinderSPI.h>
 #import <wtf/BlockPtr.h>
@@ -140,6 +139,7 @@
 #endif
 
 #if PLATFORM(IOS_FAMILY)
+#import "FrontBoardServicesSPI.h"
 #import "InteractionInformationAtPosition.h"
 #import "InteractionInformationRequest.h"
 #import "ProcessThrottler.h"

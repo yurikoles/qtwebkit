@@ -55,6 +55,7 @@
 #import <wtf/SoftLinking.h>
 #import <wtf/URL.h>
 #import <wtf/text/WTFString.h>
+#import <wtf/BlockPtr.h>
 
 #if USE(APPLE_INTERNAL_SDK)
 #include <WebKitAdditions/NetworkSessionCocoaAdditions.h>
@@ -668,6 +669,7 @@ static inline void processServerTrustEvaluation(NetworkSessionCocoa *session, NS
         networkLoadMetrics.markComplete();
         networkLoadMetrics.protocol = String(m.networkProtocolName);
 
+        ALLOW_DEPRECATED_DECLARATIONS_BEGIN
         if (networkDataTask->shouldCaptureExtraNetworkLoadMetrics()) {
             networkLoadMetrics.priority = toNetworkLoadPriority(task.priority);
 
@@ -703,6 +705,7 @@ static inline void processServerTrustEvaluation(NetworkSessionCocoa *session, NS
             networkLoadMetrics.responseBodyBytesReceived = responseBodyBytesReceived;
             networkLoadMetrics.responseBodyDecodedSize = responseBodyDecodedSize;
         }
+        ALLOW_DEPRECATED_DECLARATIONS_END
     }
 }
 
@@ -787,7 +790,7 @@ static inline void processServerTrustEvaluation(NetworkSessionCocoa *session, NS
         Ref<NetworkDataTaskCocoa> protectedNetworkDataTask(*networkDataTask);
         auto downloadID = networkDataTask->pendingDownloadID();
         auto& downloadManager = _session->networkProcess().downloadManager();
-        auto download = makeUnique<WebKit::Download>(downloadManager, downloadID, downloadTask, _session->sessionID(), networkDataTask->suggestedFilename());
+        auto download = makeUnique<WebKit::Download>(downloadManager, downloadID, downloadTask, *_session, networkDataTask->suggestedFilename());
         networkDataTask->transferSandboxExtensionToDownload(*download);
         ASSERT(FileSystem::fileExists(networkDataTask->pendingDownloadLocation()));
         download->didCreateDestination(networkDataTask->pendingDownloadLocation());

@@ -1,3 +1,173 @@
+2019-10-02  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK][WPE] Stop using legacy custom protocol implementation
+        https://bugs.webkit.org/show_bug.cgi?id=202407
+
+        Reviewed by Žan Doberšek.
+
+        Remove the tests to check failure after committed, because it's not possible to test it with current code.
+
+        * TestWebKitAPI/Tests/WebKitGLib/TestWebKitWebContext.cpp:
+        (testWebContextURIScheme):
+
+2019-10-01  Alexey Shvayka  <shvaikalesh@gmail.com>
+
+        [win-ews] No such file or directory: u'/cygdrive/C/cygwin/home/buildbot/WebKit/WebKitBuild/Release/bin32/layout-test-results/pywebsocket.ws.log-out.txt'
+        https://bugs.webkit.org/show_bug.cgi?id=188640
+
+        Reviewed by Alex Christensen.
+
+        1. Properly shutdown WebSocket server so that port 8880 is released.
+        2. Prevent failure of WebSocket tests when launched in freshly cloned repository.
+
+        * Scripts/new-run-webkit-websocketserver:
+        (main): Tweak import and use class constants of PyWebSocket directly.
+        * Scripts/webkitpy/layout_tests/servers/websocket_server.py:
+        (PyWebSocket._prepare_config): Create test output directory if it doesn't exist.
+
+2019-10-01  Alex Christensen  <achristensen@webkit.org>
+
+        Progress towards a functioning CMake build on Mac
+        https://bugs.webkit.org/show_bug.cgi?id=202443
+
+        Rubber-stamped by Tim Horton.
+
+        * DumpRenderTree/PlatformMac.cmake:
+        * MiniBrowser/mac/CMakeLists.txt:
+        * TestRunnerShared/cocoa/ClassMethodSwizzler.mm:
+        * TestWebKitAPI/CMakeLists.txt:
+        * TestWebKitAPI/PlatformMac.cmake:
+        * WebKitTestRunner/PlatformMac.cmake:
+
+2019-10-01  John Wilander  <wilander@apple.com>
+
+        Storage Access API: document.hasStorageAccess() should return true when the cookie policy allows access
+        https://bugs.webkit.org/show_bug.cgi?id=202435
+        <rdar://problem/55718526>
+
+        Reviewed by Brent Fulgham.
+
+        This change makes sure topPrivatelyControlledDomain() correctly handles domains
+        with leading dots, as often used in cookie domains.
+
+        * TestWebKitAPI/Tests/WebCore/PublicSuffix.cpp:
+        (TestWebKitAPI::TEST_F):
+
+2019-10-01  Jonathan Bedard  <jbedard@apple.com>
+
+        results.webkit.org: Standardize styles in the drawer
+        https://bugs.webkit.org/show_bug.cgi?id=202428
+
+        Rubber-stamped by Aakash Jain.
+
+        * resultsdbpy/resultsdbpy/view/static/css/search.css: Rename boldInverseColor.
+        * resultsdbpy/resultsdbpy/view/static/css/tooltip.css: Ditto.
+        * resultsdbpy/resultsdbpy/view/static/js/drawer.js: Move style specifications into webkit.css.
+        * resultsdbpy/resultsdbpy/view/static/js/timeline.js: Ditto.
+        * resultsdbpy/resultsdbpy/view/static/library/css/webkit.css:
+        (.input>label): Use the boldInverseColor instead of grey.
+        (.input>input[type="text"][required], .input>input[type="number"][required],): Darken the border,
+        decrease the font weight.
+        (.input>input[type="text"][required]~label, .input>input[type="number"][required]~label,): Use the inverseColor instead of grey.
+
+2019-10-01  Antti Koivisto  <antti@apple.com>
+
+        [CSS Shadow Parts] Parse 'part' attribute
+        https://bugs.webkit.org/show_bug.cgi?id=202409
+
+        Reviewed by Ryosuke Niwa.
+
+        * DumpRenderTree/mac/DumpRenderTree.mm:
+        (enableExperimentalFeatures):
+
+2019-10-01  Aakash Jain  <aakash_jain@apple.com>
+
+        Follow-up fix to r250572 to fix a typo.
+        [ews] Add method to retry a build using Buildbot API
+        https://bugs.webkit.org/show_bug.cgi?id=202408
+
+        Unreviewed follow-up fix.
+
+        * BuildSlaveSupport/ews-app/ews/common/buildbot.py:
+
+2019-10-01  Aakash Jain  <aakash_jain@apple.com>
+
+        [ews] Add method to retry a build using Buildbot API
+        https://bugs.webkit.org/show_bug.cgi?id=202408
+
+        Reviewed by Jonathan Bedard.
+
+        * BuildSlaveSupport/ews-app/ews/common/buildbot.py:
+        (Buildbot.retry_build): Method to retry given build using Buildbot API.
+
+2019-10-01  David Kilzer  <ddkilzer@apple.com>
+
+        clang-tidy: Fix unnecessary copying/ref churn of for loop variables in Tools
+        <https://webkit.org/b/202387>
+
+        Reviewed by Darin Adler.
+
+        * WebKitTestRunner/cocoa/TestControllerCocoa.mm:
+        (WTR::TestController::setAllowedMenuActions): Make loop variable
+        a reference to fix unnecessary copying/ref churn.
+
+2019-10-01  Nikolas Zimmermann  <nzimmermann@igalia.com>
+
+        Update my affiliation - since today I work for Igalia.
+
+        Unreviewed.
+
+        * Scripts/webkitpy/common/config/contributors.json:
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        Add support for the Wasm multi-value proposal
+        https://bugs.webkit.org/show_bug.cgi?id=202250
+
+        Reviewed by Saam Barati.
+
+        * Scripts/run-jsc-stress-tests:
+
+2019-10-01  youenn fablet  <youenn@apple.com>
+
+        Remove races condition when validating capture sandbox extension revocation
+        https://bugs.webkit.org/show_bug.cgi?id=202133
+        <rdar://problem/55660905>
+
+        Reviewed by Eric Carlson.
+
+        * TestWebKitAPI/Tests/WebKitCocoa/ProcessSwapOnNavigation.mm:
+        Updated test to not use page cache so that on going back, the page is reloaded and will call getUserMedia again.
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Resurrect Mac CMake build
+        https://bugs.webkit.org/show_bug.cgi?id=202384
+
+        Rubber-stamped by Tim Horton.
+
+        * DumpRenderTree/PlatformMac.cmake:
+        * TestWebKitAPI/PlatformMac.cmake:
+
+2019-09-30  Zhifei Fang  <zhifei_fang@apple.com>
+
+        [results.webkit.org Timeline] New axis style
+        https://bugs.webkit.org/show_bug.cgi?id=202292
+
+        Reviewed by Jonathan Bedard.
+
+        * resultsdbpy/resultsdbpy/view/static/library/js/components/TimelineComponents.js:
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Move DownloadMonitor test speed multiplier from WebProcessPool to WebsiteDataStoreConfiguration
+        https://bugs.webkit.org/show_bug.cgi?id=202339
+
+        Reviewed by Youenn Fablet.
+
+        * TestWebKitAPI/Tests/WebKitCocoa/Download.mm:
+        (TestWebKitAPI::webViewWithDownloadMonitorSpeedMultiplier):
+
 2019-09-30  Carlos Garcia Campos  <cgarcia@igalia.com>
 
         [GTK] IconDatabase is not thread-safe

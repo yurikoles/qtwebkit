@@ -1,3 +1,80 @@
+2019-10-02  Zan Dobersek  <zdobersek@igalia.com>
+
+        [Nicosia] Enable async scrolling at build-time for Nicosia-using ports
+        https://bugs.webkit.org/show_bug.cgi?id=202397
+
+        Reviewed by Carlos Garcia Campos.
+
+        * wtf/Platform.h:
+        Flip ENABLE_KINETIC_SCROLLING to 1 also for PlayStation and WPE ports
+        when ASYNC_SCROLLING is enabled.
+2019-10-01  Jonathan Bedard  <jbedard@apple.com>
+
+        WebKitTestRunner: Many tests timeout on macOS Catalina
+        https://bugs.webkit.org/show_bug.cgi?id=201616
+        <rdar://problem/55200897>
+
+        Reviewed by Alexey Proskuryakov.
+
+        * wtf/Platform.h: USE_SOURCE_APPLICATION_AUDIT_DATA should only be enabled on
+        builds which allow restricted entitlements.
+
+2019-10-01  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Place VM* in TLS
+        https://bugs.webkit.org/show_bug.cgi?id=202391
+
+        Reviewed by Mark Lam.
+
+        Changed FastTLS's key name from WTF_GC_TLC_KEY to WTF_VM_KEY.
+
+        * wtf/FastTLS.h:
+
+2019-10-01  Keith Rollin  <krollin@apple.com>
+
+        Remove some support for < iOS 13
+        https://bugs.webkit.org/show_bug.cgi?id=202386
+        <rdar://problem/55863017>
+
+        Reviewed by Eric Carlson.
+
+        Remove some support for iOS versions less than 13.0.
+
+        Update conditionals that reference __IPHONE_OS_VERSION_MIN_REQUIRED
+        and __IPHONE_OS_VERSION_MAX_ALLOWED, assuming that they both have
+        values >= 130000. This means that expressions like
+        "__IPHONE_OS_VERSION_MIN_REQUIRED < 101300" are always False and
+        "__IPHONE_OS_VERSION_MIN_REQUIRED >= 101300" are always True.
+
+        This removal is part of a series of patches effecting the removal of
+        dead code for old versions of iOS. This particular pass involves
+        changes in which Jer Noble was involved. These changes are isolated
+        from other similar changes in order to facilitate the reviewing
+        process.
+
+        * wtf/Platform.h:
+
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Resurrect Mac CMake build
+        https://bugs.webkit.org/show_bug.cgi?id=202384
+
+        Rubber-stamped by Tim Horton.
+
+        * wtf/PlatformMac.cmake:
+
+2019-09-30  Mark Lam  <mark.lam@apple.com>
+
+        Add some assertions to convertUTF8ToUTF16().
+        https://bugs.webkit.org/show_bug.cgi?id=202356
+        <rdar://problem/52846813>
+
+        Reviewed by Filip Pizlo.
+
+        * wtf/unicode/UTF8Conversion.cpp:
+        (WTF::Unicode::convertUTF8ToUTF16):
+
 2019-09-30  Guillaume Emont  <guijemont@igalia.com>
 
         Don't try to use backtrace() on MIPS

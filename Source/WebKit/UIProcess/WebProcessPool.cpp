@@ -118,6 +118,10 @@
 #include "VersionChecks.h"
 #endif
 
+#if PLATFORM(MAC)
+#include <pal/spi/cg/CoreGraphicsSPI.h>
+#endif
+
 #ifndef NDEBUG
 #include <wtf/RefCountedLeakCounter.h>
 #endif

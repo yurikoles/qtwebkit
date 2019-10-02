@@ -1,3 +1,582 @@
+2019-10-02  Paulo Matos  <pmatos@igalia.com>
+
+        Gardening build fix: Hide store64/load64 functions from 32bit
+        https://bugs.webkit.org/show_bug.cgi?id=202453
+
+        Unreviewed.
+
+        Prior patch for bug 202250 breaks 32bit builds because functions
+        store64 and load64 do not exist. ifdef these functions away from 32bits since
+        they are not used in 32bit code path.
+
+        * jit/AssemblyHelpers.h:
+
+2019-10-01  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        Unreviewed, fix incorrect assertion
+        https://bugs.webkit.org/show_bug.cgi?id=202391
+
+        * runtime/JSLock.cpp:
+        (JSC::JSLock::DropAllLocks::~DropAllLocks):
+
+2019-10-01  Saam Barati  <sbarati@apple.com>
+
+        ObjectAllocationSinkingPhase shouldn't insert hints for allocations which are no longer valid
+        https://bugs.webkit.org/show_bug.cgi?id=199361
+        <rdar://problem/52454940>
+
+        Reviewed by Yusuke Suzuki.
+
+        In a prior fix to the object allocation sinking phase, I added code where we
+        made sure to insert PutHints over Phis for fields of an object at control flow
+        merge points. However, that code didn't consider that the base of the PutHint
+        may no longer be a valid heap location. This could cause us to emit invalid
+        SSA code by referring to a node which does not dominate the PutHint location.
+        This patch fixes the bug to only emit the PutHints when valid.
+
+        This patch also makes it so that DFGValidate actually validates that the graph
+        is in valid SSA form. E.g, any use of a node N must be dominated by N.
+
+        * dfg/DFGObjectAllocationSinkingPhase.cpp:
+        * dfg/DFGValidate.cpp:
+
+2019-10-01  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Place VM* in TLS
+        https://bugs.webkit.org/show_bug.cgi?id=202391
+
+        Reviewed by Mark Lam.
+
+        This patch puts VM* in TLS mainly for debugging purpose. In JSLockHolder, we put VM* and save the old VM* in TLS.
+        And JSLockHolder's destructor restores it. It is possible that we have two VMs A and B. After locking A, we enter
+        B. In this case, when B's lock is released, we should restore TLS to A. We put the old VM* in JSLockHolder::m_previousVMInTLS
+        so that we can restore it in JSLockHolder's destructor.
+
+        This patch also cleans up Lock<JSLock> / std::lock_guard<JSLock> usage in JSRunLoopTimer and JSManagedValue by introducing
+        JSLockHolder with LockIfVMIsLive tag. Previously, we are intentionally use `std::lock_guard<JSLock>` since VM* can be dead
+        at these places. JSLockHolder with LockIfVMIsLive handles this case carefully: it locks JSLock when VM* is live.
+
+        * API/JSManagedValue.mm:
+        (-[JSManagedValue value]):
+        * API/glib/JSCWeakValue.cpp:
+        (jsc_weak_value_get_value):
+        * runtime/InitializeThreading.cpp:
+        (JSC::initializeThreading):
+        * runtime/JSLock.cpp:
+        (JSC::JSLockHolder::JSLockHolder):
+        (JSC::JSLockHolder::~JSLockHolder):
+        (JSC::JSLock::DropAllLocks::DropAllLocks):
+        (JSC::JSLock::DropAllLocks::~DropAllLocks):
+        * runtime/JSLock.h:
+        (JSC::JSLockHolder::vm):
+        * runtime/JSRunLoopTimer.cpp:
+        (JSC::JSRunLoopTimer::timerDidFire):
+        * runtime/VM.cpp:
+        (JSC::VM::initializeTLS):
+        * runtime/VM.h:
+        (JSC::VM::exchange):
+        (JSC::VM::current):
+
+2019-10-01  Michael Saboff  <msaboff@apple.com> and Paulo Matos  <pmatos@igalia.com>
+
+        [YARR] Properly handle surrogates when matching back references
+        https://bugs.webkit.org/show_bug.cgi?id=202041
+
+        Reviewed by Keith Miller.
+
+        This patch is based on a work in progress patch by Paulo Matos <pmatos@igalia.com>.
+
+        When handling back references in Unicode patterns, we can't match un-decoded surrogate characters,
+        instead we need to read and process surrogate pairs.  Changed matchBackreference() to do this,
+        including properly incrementing the back reference pattern and search indexes.
+
+        In support of this change, on X86_64 we needed to free up r10 to be used exclusively for
+        "patternIndex".  It was also used as a temp in tryReadUnicodeCharImpl().  Made a new named
+        temp register, called unicodeTemp, to take the place of regT2(r10) in tryReadUnicodeCharImpl.
+        This new temp is r14 on X86_64 and X5 on ARM64.  To free up r14 on X86_64, changed the
+        old leadingSurrogateTag to be a literal.
+
+        * yarr/YarrJIT.cpp:
+        (JSC::Yarr::YarrGenerator::tryReadUnicodeCharImpl):
+        (JSC::Yarr::YarrGenerator::matchBackreference):
+        (JSC::Yarr::YarrGenerator::generateEnter):
+        (JSC::Yarr::YarrGenerator::readCharacterDontDecodeSurrogates): Deleted.
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        Add support for the Wasm multi-value proposal
+        https://bugs.webkit.org/show_bug.cgi?id=202250
+
+        Reviewed by Saam Barati.
+
+        The wasm multi-value proposal makes two major changes to the
+        spec. The first is that functions may now return more than one
+        value across calls. When calling to/from JS, if there is more than
+        one return type we return/receive a JSArray/Iterable,
+        respectively. In the Wasm calls JS case, if the iteratable object
+        does not vend the exact number of objects expected by the
+        signature an error is thrown.
+
+        The second major change in the multi-value proposal allows blocks
+        to have any signature type. This works in a backwards compatible
+        way by exploiting the fact that the old value-type thunk signatures
+        (where the block takes no arguments and returns just the value
+        type i.e. [] -> [type]) were always encoded as a negative
+        number. If a block has a function signature, it is encoded as a
+        positive index into the type section. When a block has a function
+        signature type then the values from the enclosing stack are popped
+        off that stack and added to the new block's stack. In the case of
+        a br/br_if to a Loop block the "argument" values should be on the
+        brancher's stack.
+
+        The biggest change in this patch is stripping down the
+        WasmCallingConventions file into one simpler API that just tells
+        you where the each argument should be located. It also now handles
+        adding or subtracting sizeof(CallerFrameAndPC) depending on
+        whether you are caller or callee. Additionally, when computing
+        locations for the callee it returns a B3::ValueRep that has the
+        offsetFromFP rather than offsetFromSP. Since the code has been
+        cleaned up I tried to also reduce code duplication in the various
+        stubs for wasm code. This patch also removes the Air specific
+        calling convention code and moves that logic into the Air IR
+        generator.
+
+        Since blocks can now have arbitrary signatures the control entries
+        now use a const signature* rather than just the return
+        type. Additionally, what used to be the result phi is now the phis
+        for all the results for non-loop blocks and the arguments for a
+        loop block. Due to the control flow restrictions of wasm
+        conveniently we don't have to worry about generating non-optimal
+        SSA, thus we can just use phis directly rather than using a
+        variable.
+
+        Lastly, to help clean up some code in the IR generators new helper
+        methods were added to create call Patchpoints. These helpers do
+        most of the boiler-plate initialization.
+
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * assembler/AbstractMacroAssembler.h:
+        (JSC::AbstractMacroAssembler::ImplicitAddress::ImplicitAddress):
+        * assembler/LinkBuffer.cpp:
+        (JSC::shouldDumpDisassemblyFor):
+        * assembler/LinkBuffer.h:
+        * assembler/MacroAssemblerARM64.h:
+        (JSC::MacroAssemblerARM64::callOperation):
+        * assembler/MacroAssemblerX86_64.h:
+        (JSC::MacroAssemblerX86_64::callOperation):
+        * b3/B3LowerToAir.cpp:
+        * b3/B3PatchpointSpecial.cpp:
+        (JSC::B3::PatchpointSpecial::forEachArg):
+        (JSC::B3::PatchpointSpecial::isValid):
+        (JSC::B3::PatchpointSpecial::admitsStack):
+        (JSC::B3::PatchpointSpecial::generate):
+        * b3/B3Procedure.h:
+        (JSC::B3::Procedure::resultCount const):
+        (JSC::B3::Procedure::typeAtOffset const):
+        (JSC::B3::Procedure::returnCount const): Deleted.
+        * b3/B3StackmapGenerationParams.cpp:
+        (JSC::B3::StackmapGenerationParams::code const):
+        * b3/B3StackmapGenerationParams.h:
+        * b3/B3ValueRep.h:
+        * b3/air/AirHelpers.h: Added.
+        (JSC::B3::Air::moveForType):
+        (JSC::B3::Air::relaxedMoveForType):
+        * jit/AssemblyHelpers.h:
+        (JSC::AssemblyHelpers::store64FromReg):
+        (JSC::AssemblyHelpers::store32FromReg):
+        (JSC::AssemblyHelpers::load64ToReg):
+        (JSC::AssemblyHelpers::load32ToReg):
+        * runtime/JSCConfig.h:
+        * runtime/OptionsList.h:
+        * tools/JSDollarVM.cpp:
+        * tools/VMInspector.cpp:
+        (JSC::VMInspector::dumpValue):
+        * wasm/WasmAirIRGenerator.cpp:
+        (JSC::Wasm::ConstrainedTmp::operator bool const):
+        (JSC::Wasm::TypedTmp::dump const):
+        (JSC::Wasm::AirIRGenerator::ControlData::ControlData):
+        (JSC::Wasm::AirIRGenerator::ControlData::dump const):
+        (JSC::Wasm::AirIRGenerator::ControlData::blockType const):
+        (JSC::Wasm::AirIRGenerator::ControlData::signature const):
+        (JSC::Wasm::AirIRGenerator::ControlData::targetBlockForBranch):
+        (JSC::Wasm::AirIRGenerator::ControlData::convertIfToBlock):
+        (JSC::Wasm::AirIRGenerator::addEndToUnreachable):
+        (JSC::Wasm::AirIRGenerator::emitCallPatchpoint):
+        (JSC::Wasm::AirIRGenerator::validateInst):
+        (JSC::Wasm::AirIRGenerator::tmpsForSignature):
+        (JSC::Wasm::AirIRGenerator::emitPatchpoint):
+        (JSC::Wasm::AirIRGenerator::AirIRGenerator):
+        (JSC::Wasm::AirIRGenerator::toB3ResultType):
+        (JSC::Wasm::AirIRGenerator::addBottom):
+        (JSC::Wasm::AirIRGenerator::emitLoopTierUpCheck):
+        (JSC::Wasm::AirIRGenerator::addTopLevel):
+        (JSC::Wasm::AirIRGenerator::addLoop):
+        (JSC::Wasm::AirIRGenerator::addBlock):
+        (JSC::Wasm::AirIRGenerator::addIf):
+        (JSC::Wasm::AirIRGenerator::addElse):
+        (JSC::Wasm::AirIRGenerator::addElseToUnreachable):
+        (JSC::Wasm::AirIRGenerator::addReturn):
+        (JSC::Wasm::AirIRGenerator::addBranch):
+        (JSC::Wasm::AirIRGenerator::addSwitch):
+        (JSC::Wasm::AirIRGenerator::endBlock):
+        (JSC::Wasm::AirIRGenerator::addCall):
+        (JSC::Wasm::AirIRGenerator::addCallIndirect):
+        (JSC::Wasm::dumpExpressionStack):
+        (JSC::Wasm::AirIRGenerator::dump):
+        (JSC::Wasm::AirIRGenerator::addOp<OpType::I64TruncUF64>):
+        (JSC::Wasm::AirIRGenerator::addOp<OpType::I64TruncUF32>):
+        (JSC::Wasm::AirIRGenerator::ControlData::type const): Deleted.
+        (JSC::Wasm::AirIRGenerator::ControlData::hasNonVoidSignature const): Deleted.
+        (JSC::Wasm::AirIRGenerator::ControlData::resultForBranch const): Deleted.
+        * wasm/WasmB3IRGenerator.cpp:
+        (JSC::Wasm::B3IRGenerator::ControlData::ControlData):
+        (JSC::Wasm::B3IRGenerator::ControlData::dump const):
+        (JSC::Wasm::B3IRGenerator::ControlData::blockType const):
+        (JSC::Wasm::B3IRGenerator::ControlData::hasNonVoidresult const):
+        (JSC::Wasm::B3IRGenerator::ControlData::targetBlockForBranch):
+        (JSC::Wasm::B3IRGenerator::ControlData::convertIfToBlock):
+        (JSC::Wasm::B3IRGenerator::addEndToUnreachable):
+        (JSC::Wasm::B3IRGenerator::B3IRGenerator):
+        (JSC::Wasm::B3IRGenerator::framePointer):
+        (JSC::Wasm::B3IRGenerator::toB3ResultType):
+        (JSC::Wasm::B3IRGenerator::addArguments):
+        (JSC::Wasm::B3IRGenerator::addGrowMemory):
+        (JSC::Wasm::B3IRGenerator::addLoop):
+        (JSC::Wasm::B3IRGenerator::addTopLevel):
+        (JSC::Wasm::B3IRGenerator::addBlock):
+        (JSC::Wasm::B3IRGenerator::addIf):
+        (JSC::Wasm::B3IRGenerator::addElse):
+        (JSC::Wasm::B3IRGenerator::addElseToUnreachable):
+        (JSC::Wasm::B3IRGenerator::addReturn):
+        (JSC::Wasm::B3IRGenerator::addBranch):
+        (JSC::Wasm::B3IRGenerator::addSwitch):
+        (JSC::Wasm::B3IRGenerator::endBlock):
+        (JSC::Wasm::B3IRGenerator::createCallPatchpoint):
+        (JSC::Wasm::B3IRGenerator::addCall):
+        (JSC::Wasm::B3IRGenerator::addCallIndirect):
+        (JSC::Wasm::B3IRGenerator::ControlData::type const): Deleted.
+        (JSC::Wasm::B3IRGenerator::ControlData::hasNonVoidSignature const): Deleted.
+        (JSC::Wasm::B3IRGenerator::ControlData::resultForBranch const): Deleted.
+        (JSC::Wasm::B3IRGenerator::createStack): Deleted.
+        * wasm/WasmBBQPlan.cpp:
+        (JSC::Wasm::BBQPlan::didReceiveFunctionData):
+        (JSC::Wasm::BBQPlan::parseAndValidateModule):
+        (JSC::Wasm::BBQPlan::complete):
+        * wasm/WasmBBQPlan.h:
+        * wasm/WasmBinding.cpp:
+        (JSC::Wasm::wasmToWasm):
+        * wasm/WasmCallingConvention.cpp:
+        (JSC::Wasm::jsCallingConvention):
+        (JSC::Wasm::wasmCallingConvention):
+        (JSC::Wasm::jscCallingConvention): Deleted.
+        (JSC::Wasm::jscCallingConventionAir): Deleted.
+        (JSC::Wasm::wasmCallingConventionAir): Deleted.
+        * wasm/WasmCallingConvention.h:
+        (JSC::Wasm::CallInformation::CallInformation):
+        (JSC::Wasm::CallInformation::computeResultsOffsetList):
+        (JSC::Wasm::WasmCallingConvention::WasmCallingConvention):
+        (JSC::Wasm::WasmCallingConvention::marshallLocationImpl const):
+        (JSC::Wasm::WasmCallingConvention::marshallLocation const):
+        (JSC::Wasm::WasmCallingConvention::callInformationFor const):
+        (JSC::Wasm::JSCallingConvention::JSCallingConvention):
+        (JSC::Wasm::JSCallingConvention::marshallLocationImpl const):
+        (JSC::Wasm::JSCallingConvention::marshallLocation const):
+        (JSC::Wasm::JSCallingConvention::callInformationFor const):
+        (JSC::Wasm::CallingConvention::CallingConvention): Deleted.
+        (JSC::Wasm::CallingConvention::marshallArgumentImpl const): Deleted.
+        (JSC::Wasm::CallingConvention::marshallArgument const): Deleted.
+        (JSC::Wasm::CallingConvention::headerSizeInBytes): Deleted.
+        (JSC::Wasm::CallingConvention::setupFrameInPrologue const): Deleted.
+        (JSC::Wasm::CallingConvention::loadArguments const): Deleted.
+        (JSC::Wasm::CallingConvention::setupCall const): Deleted.
+        (JSC::Wasm::CallingConventionAir::CallingConventionAir): Deleted.
+        (JSC::Wasm::CallingConventionAir::prologueScratch const): Deleted.
+        (JSC::Wasm::CallingConventionAir::marshallArgumentImpl const): Deleted.
+        (JSC::Wasm::CallingConventionAir::marshallArgument const): Deleted.
+        (JSC::Wasm::CallingConventionAir::headerSizeInBytes): Deleted.
+        (JSC::Wasm::CallingConventionAir::loadArguments const): Deleted.
+        (JSC::Wasm::CallingConventionAir::setupCall const): Deleted.
+        (JSC::Wasm::nextJSCOffset): Deleted.
+        * wasm/WasmFormat.h:
+        * wasm/WasmFunctionParser.h:
+        (JSC::Wasm::splitStack):
+        (JSC::Wasm::FunctionParser::signature const):
+        (JSC::Wasm::FunctionParser<Context>::FunctionParser):
+        (JSC::Wasm::FunctionParser<Context>::parseBody):
+        (JSC::Wasm::FunctionParser<Context>::parseExpression):
+        (JSC::Wasm::FunctionParser<Context>::parseUnreachableExpression):
+        * wasm/WasmInstance.h:
+        * wasm/WasmMemoryInformation.cpp:
+        (JSC::Wasm::getPinnedRegisters):
+        * wasm/WasmOMGForOSREntryPlan.cpp:
+        (JSC::Wasm::OMGForOSREntryPlan::work):
+        * wasm/WasmOMGPlan.cpp:
+        (JSC::Wasm::OMGPlan::work):
+        * wasm/WasmParser.h:
+        (JSC::Wasm::FailureHelper::makeString):
+        (JSC::Wasm::Parser<SuccessType>::Parser):
+        (JSC::Wasm::Parser<SuccessType>::peekInt7):
+        (JSC::Wasm::Parser<SuccessType>::parseBlockSignature):
+        (JSC::Wasm::Parser<SuccessType>::parseValueType):
+        (JSC::Wasm::Parser<SuccessType>::parseResultType): Deleted.
+        * wasm/WasmSectionParser.cpp:
+        (JSC::Wasm::SectionParser::parseType):
+        (JSC::Wasm::SectionParser::parseStart):
+        * wasm/WasmSectionParser.h:
+        * wasm/WasmSignature.cpp:
+        (JSC::Wasm::Signature::toString const):
+        (JSC::Wasm::Signature::dump const):
+        (JSC::Wasm::computeHash):
+        (JSC::Wasm::Signature::hash const):
+        (JSC::Wasm::Signature::tryCreate):
+        (JSC::Wasm::SignatureInformation::SignatureInformation):
+        (JSC::Wasm::ParameterTypes::hash):
+        (JSC::Wasm::ParameterTypes::equal):
+        (JSC::Wasm::ParameterTypes::translate):
+        (JSC::Wasm::SignatureInformation::signatureFor):
+        (JSC::Wasm::SignatureInformation::adopt): Deleted.
+        * wasm/WasmSignature.h:
+        (JSC::Wasm::Signature::Signature):
+        (JSC::Wasm::Signature::allocatedSize):
+        (JSC::Wasm::Signature::returnCount const):
+        (JSC::Wasm::Signature::returnType const):
+        (JSC::Wasm::Signature::returnsVoid const):
+        (JSC::Wasm::Signature::argument const):
+        (JSC::Wasm::Signature::operator== const):
+        (JSC::Wasm::Signature::getReturnType):
+        (JSC::Wasm::Signature::getArgument):
+        (JSC::Wasm::SignatureHash::SignatureHash):
+        (JSC::Wasm::SignatureHash::equal):
+        (JSC::Wasm::SignatureInformation::thunkFor const):
+        (JSC::Wasm::Signature::returnType): Deleted.
+        (JSC::Wasm::Signature::argument): Deleted.
+        * wasm/WasmStreamingParser.cpp:
+        (JSC::Wasm::StreamingParser::parseCodeSectionSize):
+        (JSC::Wasm::StreamingParser::parseFunctionPayload):
+        (JSC::Wasm::StreamingParser::parseSectionPayload):
+        * wasm/WasmStreamingParser.h:
+        (JSC::Wasm::StreamingParserClient::didReceiveSectionData):
+        (JSC::Wasm::StreamingParser::reportError):
+        (JSC::Wasm::StreamingParserClient::didReceiveFunctionData): Deleted.
+        * wasm/WasmThunks.cpp:
+        (JSC::Wasm::throwExceptionFromWasmThunkGenerator):
+        (JSC::Wasm::throwStackOverflowFromWasmThunkGenerator):
+        (JSC::Wasm::triggerOMGEntryTierUpThunkGenerator):
+        * wasm/WasmValidate.cpp:
+        (JSC::Wasm::Validate::ControlData::ControlData):
+        (JSC::Wasm::Validate::ControlData::dump const):
+        (JSC::Wasm::Validate::ControlData::blockType const):
+        (JSC::Wasm::Validate::ControlData::signature const):
+        (JSC::Wasm::Validate::ControlData::branchTargetArity const):
+        (JSC::Wasm::Validate::ControlData::branchTargetType const):
+        (JSC::Wasm::Validate::fail const):
+        (JSC::Wasm::Validate::addTableGet):
+        (JSC::Wasm::Validate::addTableGrow):
+        (JSC::Wasm::Validate::addTableFill):
+        (JSC::Wasm::Validate::addRefIsNull):
+        (JSC::Wasm::Validate::addTopLevel):
+        (JSC::Wasm::splitStack):
+        (JSC::Wasm::Validate::addBlock):
+        (JSC::Wasm::Validate::addLoop):
+        (JSC::Wasm::Validate::addIf):
+        (JSC::Wasm::Validate::addElseToUnreachable):
+        (JSC::Wasm::Validate::addReturn):
+        (JSC::Wasm::Validate::checkBranchTarget):
+        (JSC::Wasm::Validate::addSwitch):
+        (JSC::Wasm::Validate::addGrowMemory):
+        (JSC::Wasm::Validate::addEndToUnreachable):
+        (JSC::Wasm::Validate::addCall):
+        (JSC::Wasm::Validate::addCallIndirect):
+        (JSC::Wasm::Validate::unify):
+        (JSC::Wasm::Validate::ControlData::hasNonVoidSignature const): Deleted.
+        (JSC::Wasm::Validate::ControlData::type const): Deleted.
+        (JSC::Wasm::Validate::ControlData::branchTargetSignature const): Deleted.
+        * wasm/generateWasmOpsHeader.py:
+        * wasm/js/JSToWasm.cpp:
+        (JSC::Wasm::boxWasmResult):
+        (JSC::Wasm::allocateResultsArray):
+        (JSC::Wasm::marshallJSResult):
+        (JSC::Wasm::createJSToWasmWrapper):
+        * wasm/js/JSToWasm.h:
+        * wasm/js/JSWebAssemblyCodeBlock.cpp:
+        (JSC::JSWebAssemblyCodeBlock::JSWebAssemblyCodeBlock):
+        * wasm/js/WasmToJS.cpp:
+        (JSC::Wasm::handleBadI64Use):
+        (JSC::Wasm::wasmToJS):
+        * wasm/js/WasmToJS.h:
+        * wasm/js/WebAssemblyFunction.cpp:
+        (JSC::callWebAssemblyFunction):
+        (JSC::WebAssemblyFunction::useTagRegisters const):
+        (JSC::WebAssemblyFunction::jsCallEntrypointSlow):
+        * wasm/js/WebAssemblyModuleRecord.cpp:
+        (JSC::WebAssemblyModuleRecord::link):
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Resurrect Mac CMake build
+        https://bugs.webkit.org/show_bug.cgi?id=202384
+
+        Rubber-stamped by Tim Horton.
+
+        * PlatformMac.cmake:
+
+2019-09-30  Alex Christensen  <achristensen@webkit.org>
+
+        Rename JSTokenType::EXPORT to EXPORT_ to avoid naming conflict with internal header
+        https://bugs.webkit.org/show_bug.cgi?id=202385
+
+        * parser/Keywords.table:
+        * parser/Parser.cpp:
+        (JSC::Parser<LexerType>::parseModuleSourceElements):
+        (JSC::Parser<LexerType>::parseExportDeclaration):
+        * parser/ParserTokens.h:
+
+2019-09-30  Tadeu Zagallo  <tzagallo@apple.com>
+
+        Make assertion in JSObject::putOwnDataProperty more precise
+        https://bugs.webkit.org/show_bug.cgi?id=202379
+        <rdar://problem/49515980>
+
+        Reviewed by Yusuke Suzuki.
+
+        Currently, we assert that the structure has no accessors/custom accessors, but that assertion is
+        too conservative. All we need to prove is that the property being inserted either does not exist
+        in the target object or is neither an accessor nor read-only.
+
+        * runtime/JSObject.h:
+        (JSC::JSObject::putOwnDataProperty): Deleted.
+        (JSC::JSObject::putOwnDataPropertyMayBeIndex): Deleted.
+        * runtime/JSObjectInlines.h:
+        (JSC::JSObject::validatePutOwnDataProperty):
+        (JSC::JSObject::putOwnDataProperty):
+        (JSC::JSObject::putOwnDataPropertyMayBeIndex):
+
+2019-09-30  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] HeapSnapshotBuilder m_rootData should be protected with a lock too
+        https://bugs.webkit.org/show_bug.cgi?id=202389
+        <rdar://problem/50717564>
+
+        Reviewed by Mark Lam.
+
+        While we are protecting HeapSnapshotBuilder::m_edges with a lock, we are not protecting m_rootData, which is also concurrently modified.
+        This patch protects it.
+
+        * heap/HeapSnapshotBuilder.cpp:
+        (JSC::HeapSnapshotBuilder::setOpaqueRootReachabilityReasonForCell):
+
+2019-09-30  Saam Barati  <sbarati@apple.com>
+
+        Inline caching is wrong for custom accessors and custom values
+        https://bugs.webkit.org/show_bug.cgi?id=201994
+        <rdar://problem/50850326>
+
+        Reviewed by Yusuke Suzuki.
+
+        There was an oversight in our inline caching code for custom accessors and
+        custom values. We used to assume that if an object O had a custom function for
+        property P, then O will forever respond to the same custom function for
+        property P.
+        
+        This assumption was very wrong. These custom accessors/values might be
+        properties in JS which are configurable, so they can be rewritten to be
+        other properties. Our inline caching code would be wrong in the scenarios
+        where these property descriptors got redefined.
+        
+        This patch makes it so that we now properly watchpoint for custom functions
+        being changed. If the custom accessor has been materialized, we place an
+        Equivalence watchpoint on the custom accessor. This patch also teaches
+        StructureStubInfo how to watchpoint on property value equivalence. Before,
+        we just watchpointed on structure transitions.
+        
+        This patch also adds a new property condition kind for when the custom function
+        exists inside the static property table. This case is really easy to test for
+        because we just need to see if the structure still has static properties and
+        the static property table has the entry for a particular property. This
+        property condition kind just needs to watch for structure transitions because
+        an entry in the static property table can't be mutated.
+        
+        This patch is neutral on the microbenchmarks I've added.
+
+        * bytecode/AccessCase.cpp:
+        (JSC::AccessCase::AccessCase):
+        (JSC::AccessCase::couldStillSucceed const):
+        (JSC::AccessCase::generateImpl):
+        * bytecode/AdaptiveInferredPropertyValueWatchpointBase.h:
+        * bytecode/ObjectPropertyCondition.cpp:
+        (JSC::ObjectPropertyCondition::structureEnsuresValidityAssumingImpurePropertyWatchpoint const):
+        * bytecode/ObjectPropertyCondition.h:
+        (JSC::ObjectPropertyCondition::customFunctionEquivalence):
+        * bytecode/ObjectPropertyConditionSet.cpp:
+        (JSC::ObjectPropertyConditionSet::hasOneSlotBaseCondition const):
+        (JSC::ObjectPropertyConditionSet::slotBaseCondition const):
+        (JSC::generateConditionsForPrototypePropertyHitCustom):
+        * bytecode/ObjectPropertyConditionSet.h:
+        * bytecode/PolyProtoAccessChain.cpp:
+        (JSC::PolyProtoAccessChain::create):
+        * bytecode/PolymorphicAccess.cpp:
+        (JSC::AccessGenerationState::installWatchpoint):
+        (JSC::PolymorphicAccess::commit):
+        (JSC::AccessGenerationState::addWatchpoint): Deleted.
+        * bytecode/PolymorphicAccess.h:
+        * bytecode/PropertyCondition.cpp:
+        (JSC::PropertyCondition::dumpInContext const):
+        (JSC::PropertyCondition::isStillValidAssumingImpurePropertyWatchpoint const):
+        (JSC::PropertyCondition::validityRequiresImpurePropertyWatchpoint const):
+        (JSC::PropertyCondition::isStillValid const):
+        (JSC::PropertyCondition::isWatchableWhenValid const):
+        (WTF::printInternal):
+        * bytecode/PropertyCondition.h:
+        (JSC::PropertyCondition::customFunctionEquivalence):
+        (JSC::PropertyCondition::hash const):
+        (JSC::PropertyCondition::operator== const):
+        * bytecode/StructureStubClearingWatchpoint.cpp:
+        (JSC::StructureTransitionStructureStubClearingWatchpoint::fireInternal):
+        (JSC::WatchpointsOnStructureStubInfo::addWatchpoint):
+        (JSC::WatchpointsOnStructureStubInfo::ensureReferenceAndInstallWatchpoint):
+        (JSC::WatchpointsOnStructureStubInfo::ensureReferenceAndAddWatchpoint):
+        (JSC::AdaptiveValueStructureStubClearingWatchpoint::handleFire):
+        (JSC::StructureStubClearingWatchpoint::fireInternal): Deleted.
+        * bytecode/StructureStubClearingWatchpoint.h:
+        * bytecode/Watchpoint.h:
+        * jit/Repatch.cpp:
+        (JSC::tryCacheGetByID):
+        (JSC::tryCachePutByID):
+        * runtime/ClassInfo.h:
+        * runtime/JSObject.cpp:
+        (JSC::JSObject::findPropertyHashEntry const):
+        * runtime/JSObject.h:
+        * runtime/ObjectPropertyChangeAdaptiveWatchpoint.h:
+        * runtime/Structure.cpp:
+        (JSC::Structure::findPropertyHashEntry const):
+        * runtime/Structure.h:
+        * tools/JSDollarVM.cpp:
+        (JSC::testStaticAccessorGetter):
+        (JSC::testStaticAccessorPutter):
+        (JSC::StaticCustomAccessor::StaticCustomAccessor):
+        (JSC::StaticCustomAccessor::createStructure):
+        (JSC::StaticCustomAccessor::create):
+        (JSC::StaticCustomAccessor::getOwnPropertySlot):
+        (JSC::functionCreateStaticCustomAccessor):
+        (JSC::JSDollarVM::finishCreation):
+
+2019-09-30  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] AI folds CompareEq wrongly when it sees proven Boolean and Number
+        https://bugs.webkit.org/show_bug.cgi?id=202382
+        <rdar://problem/52669112>
+
+        Reviewed by Saam Barati.
+
+        If CompareEq(Untyped, Untyped) finds that it gets proven Boolean and Number types on its arguments,
+        we fold it to constant False. But this is wrong since `false == 0` is true in JS.
+        This patch adds leastUpperBoundOfEquivalentSpeculations, which merges Number, BigInt, and Boolean types
+        if one of them are seen.
+
+        * bytecode/SpeculatedType.cpp:
+        (JSC::leastUpperBoundOfEquivalentSpeculations):
+        (JSC::valuesCouldBeEqual):
+
 2019-09-28  Adrian Perez de Castro  <aperez@igalia.com>
 
         [GTK][WPE] Fix non-unified build issue caused by r250440

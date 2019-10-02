@@ -1,3 +1,57 @@
+2019-10-01  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Sources: clicking on a breakpoint changes the path components to not match the script's path
+        https://bugs.webkit.org/show_bug.cgi?id=196450
+        <rdar://problem/49488100>
+
+        Reviewed by Matt Baker.
+
+        When selecting any tree element that isn't in the resources tree outline, attempt to find
+        the corresponding tree element in the resources tree outline and silently select that as
+        well so that the hierarchical path component shows the right breadcrumb trail.
+
+        If the tree element is for a `WI.Script` which has a corresponding `WI.Resource`, use the
+        `WI.Resource` instead.
+
+        * UserInterface/Views/SourcesNavigationSidebarPanel.js:
+        (WI.SourcesNavigationSidebarPanel.prototype._handleTreeSelectionDidChange):
+
+2019-09-30  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: JS Formatter: unexpected newlines added inside template string expression
+        https://bugs.webkit.org/show_bug.cgi?id=202374
+
+        Reviewed by Joseph Pecoraro.
+
+        Wrap every "add newline" with a check to see if the current node is inside a template
+        literal node. If so (and we aren't forcibly adding a newline), prevent the newline from
+        being added.
+
+        * UserInterface/Workers/Formatter/JSFormatter.js:
+        (JSFormatter.prototype._appendNewline): Added.
+        (JSFormatter.prototype._insertNewlinesBeforeToken):
+        (JSFormatter.prototype._insertComment):
+        (JSFormatter.prototype._insertSameLineTrailingComments):
+        (JSFormatter.prototype._insertCommentsAndNewlines):
+        (JSFormatter.prototype._before):
+        (JSFormatter.prototype._after):
+        (JSFormatter.prototype._handleTokenAtNode):
+        (JSFormatter.prototype._exitNode):
+        (JSFormatter.prototype._afterProgram):
+
+2019-09-30  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: Canvas: shader type header is white in dark mode
+        https://bugs.webkit.org/show_bug.cgi?id=202253
+
+        Reviewed by Matt Baker.
+
+        * UserInterface/Views/ShaderProgramContentView.css:
+        (.content-view.shader-program > .shader > header > .shader-type):
+        (@media (prefers-color-scheme: dark) .content-view.shader-program > .shader > header > .shader-type): Added.
+        (@media (prefers-color-scheme: dark) .content-view.shader-program > .shader > header): Deleted.
+        (.content-view.shader-program > .shader > header > *): Deleted.
+
 2019-09-26  Joseph Pecoraro  <pecoraro@apple.com>
 
         Web Inspector: Include LocalResourceOverrides in the Open Resource dialog

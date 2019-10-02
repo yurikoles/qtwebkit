@@ -1,3 +1,206 @@
+2019-10-01  Saam Barati  <sbarati@apple.com>
+
+        ObjectAllocationSinkingPhase shouldn't insert hints for allocations which are no longer valid
+        https://bugs.webkit.org/show_bug.cgi?id=199361
+        <rdar://problem/52454940>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/allocation-sinking-hints-are-valid-ssa-2.js: Added.
+        (main.fn):
+        (main.executor):
+        (main):
+        * stress/allocation-sinking-hints-are-valid-ssa.js: Added.
+        (main.fn):
+        (main.executor):
+        (main):
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        skip test until we figure out why it's timing out
+        https://bugs.webkit.org/show_bug.cgi?id=202423
+
+        Reviewed by Mark Lam.
+
+        new_array_with_spread-should-cap-array-size-to-MIN_ARRAY_STORAGE_CONSTRUCTION_LENGTH.js consistently times out on the bots.
+        Let's skip it until we figure out what's going on.
+
+        * stress/new_array_with_spread-should-cap-array-size-to-MIN_ARRAY_STORAGE_CONSTRUCTION_LENGTH.js:
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        Mark toctou test as skipped on debug builds
+        https://bugs.webkit.org/show_bug.cgi?id=202420
+
+        Reviewed by Saam Barati.
+
+        Keeps timing out... Let's just skip it.
+
+        * stress/toctou-having-a-bad-time-new-array.js:
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        Test262 update
+
+        Rubber-stamped by Michael Saboff.
+
+        Note, this was too big to effectivetly put on bugzilla as it's a 10MB patch...
+
+        * test262/*:
+
+2019-10-01  Michael Saboff  <msaboff@apple.com> and Paulo Matos  <pmatos@igalia.com>
+
+        [YARR] Properly handle surrogates when matching back references
+        https://bugs.webkit.org/show_bug.cgi?id=202041
+
+        Reviewed by Keith Miller.
+
+        Unchanged from the workin progress patch posted by Paulo Matos <pmatos@igalia.com>.
+
+        Updated test.
+
+        * stress/regexp-unicode-surrogate-pair-increment-should-involve-length-check.js:
+        (testRegExpNotMatch):
+
+2019-10-01  Keith Miller  <keith_miller@apple.com>
+
+        Add support for the Wasm multi-value proposal
+        https://bugs.webkit.org/show_bug.cgi?id=202250
+
+        Reviewed by Saam Barati.
+
+        This patch adds a new way to run stress tests via the .wat text
+        format. By attaching an asm.js compiled version of the wabt tool
+        we can easily create wat files programatically and convert them
+        into a wasm blob to compile. To make this easy there is a
+        wabt-wrapper.js module file that exports two useful functions that
+        correspond to WebAssembly.compile and WebAssembly.instantiate.
+
+        * wasm.yaml:
+        * wasm/function-tests/if-no-else-non-void.js:
+        * wasm/js-api/web-assembly-instantiate.js:
+        (assert.asyncTest.async.test):
+        (assert.asyncTest):
+        * wasm/libwabt.js: Added.
+        (WabtModule):
+        (set get if):
+        * wasm/references/func_ref.js:
+        * wasm/references/validation.js:
+        (assert.throws):
+        * wasm/spec-harness/index.js:
+        * wasm/spec-tests/block.wast.js:
+        * wasm/spec-tests/br.wast.js:
+        * wasm/spec-tests/br_if.wast.js:
+        * wasm/spec-tests/call.wast.js:
+        * wasm/spec-tests/call_indirect.wast.js:
+        * wasm/spec-tests/func.wast.js:
+        * wasm/spec-tests/if.wast.js:
+        * wasm/spec-tests/loop.wast.js:
+        * wasm/spec-tests/type.wast.js:
+        * wasm/stress/js-wasm-call-many-return-types-on-stack-no-args.js: Added.
+        (buildWat):
+        * wasm/stress/js-wasm-js-varying-arities.js: Added.
+        (paramForwarder):
+        * wasm/stress/wasm-js-call-many-return-types-on-stack-no-args.js: Added.
+        (buildWat):
+        * wasm/stress/wasm-js-multi-value-exception-in-iterator.js: Added.
+        (buildWat.throwError):
+        (buildWat.throwErrorInIterator):
+        (buildWat.tooManyValues):
+        (buildWat.tooFewValues):
+        (buildWat):
+        * wasm/stress/wasm-wasm-call-indirect-many-return-types-on-stack.js: Added.
+        (buildWat):
+        * wasm/stress/wasm-wasm-call-many-return-types-on-stack-no-args.js: Added.
+        (buildWat):
+        * wasm/wabt-wrapper.js: Added.
+        (export.compile):
+        * wasm/wast-tests/br-if-at-end-of-block.wasm: Added.
+        * wasm/wast-tests/br-if-at-end-of-block.wast: Added.
+        * wasm/wast-tests/harness.js:
+        (async.runWasmFile):
+        * wasm/wast-tests/single-param-loop-signature.wasm: Added.
+        * wasm/wast-tests/single-param-loop-signature.wast: Added.
+
+2019-09-30  Tadeu Zagallo  <tzagallo@apple.com>
+
+        Make assertion in JSObject::putOwnDataProperty more precise
+        https://bugs.webkit.org/show_bug.cgi?id=202379
+        <rdar://problem/49515980>
+
+        Reviewed by Yusuke Suzuki.
+
+        * stress/object-assign-target-proto-setter.js: Added.
+        (get Object):
+
+2019-09-30  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] HeapSnapshotBuilder m_rootData should be protected with a lock too
+        https://bugs.webkit.org/show_bug.cgi?id=202389
+        <rdar://problem/50717564>
+
+        Reviewed by Mark Lam.
+
+        * stress/heap-analyzer-taking-lock.js: Added.
+
+2019-09-30  Saam Barati  <sbarati@apple.com>
+
+        Inline caching is wrong for custom accessors and custom values
+        https://bugs.webkit.org/show_bug.cgi?id=201994
+        <rdar://problem/50850326>
+
+        Reviewed by Yusuke Suzuki.
+
+        * microbenchmarks/custom-accessor-materialized.js: Added.
+        (assert):
+        (test4.get const):
+        * microbenchmarks/custom-accessor-thin-air.js: Added.
+        (assert):
+        (test5.get const):
+        (test5.get proto):
+        * microbenchmarks/custom-accessor.js: Added.
+        (assert):
+        (test3.get const):
+        * microbenchmarks/custom-value-2.js: Added.
+        (assert):
+        (test1.getMultiline):
+        (test1):
+        * microbenchmarks/custom-value.js: Added.
+        (assert):
+        (test1.getMultiline):
+        (test1):
+        * stress/custom-accessor-delete-1.js: Added.
+        (assert):
+        (test3.get const):
+        * stress/custom-accessor-delete-2.js: Added.
+        (assert):
+        (test4.get const):
+        * stress/custom-accessor-delete-3.js: Added.
+        (assert):
+        (test5.get const):
+        (test5.get proto):
+        * stress/custom-value-delete-property-1.js: Added.
+        (assert):
+        (test1.getMultiline):
+        (test1):
+        * stress/custom-value-delete-property-2.js: Added.
+        (test2.foo):
+        (test2):
+        * stress/custom-value-delete-property-3.js: Added.
+        (test6.foo):
+        (test6):
+
+2019-09-30  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] AI folds CompareEq wrongly when it sees proven Boolean and Number
+        https://bugs.webkit.org/show_bug.cgi?id=202382
+        <rdar://problem/52669112>
+
+        Reviewed by Saam Barati.
+
+        * stress/compare-eq-bool-number-folding.js: Added.
+        (test):
+
 2019-09-27  Yusuke Suzuki  <ysuzuki@apple.com>
 
         [JSC] Keep JSString::value(ExecState*)'s result as String instead of `const String&`
