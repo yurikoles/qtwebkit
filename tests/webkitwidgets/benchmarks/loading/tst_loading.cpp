@@ -80,7 +80,7 @@ void tst_Loading::load()
 
 #ifndef QT_NO_BEARERMANAGEMENT
     if (!m_manager.isOnline())
-        W_QSKIP("This test requires an active network connection", SkipSingle);
+        QSKIP("This test requires an active network connection", SkipSingle);
 #endif
 
     QBENCHMARK {

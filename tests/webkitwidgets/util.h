@@ -77,5 +77,3 @@ public:
         return result;
     }
 };
-
-#define W_QSKIP(a, b) QSKIP(a)
