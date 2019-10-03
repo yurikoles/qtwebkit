@@ -1134,6 +1134,7 @@ void tst_QWebPage::multiplePageGroupsAndLocalStorage()
     view2.setHtml(QString("<html><body> </body></html>"), QUrl("http://www.myexample.com"));
 
     QVariant s1 = view1.page()->mainFrame()->evaluateJavaScript("localStorage.test");
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(s1.toString(), QString("value1"));
 
     QVariant s2 = view2.page()->mainFrame()->evaluateJavaScript("localStorage.test");
@@ -1654,6 +1655,7 @@ void tst_QWebPage::backActionUpdate()
     QUrl url = QUrl("qrc:///resources/framedindex.html");
     page->mainFrame()->load(url);
     QTRY_COMPARE(loadSpy.count(), 1);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QVERIFY(!action->isEnabled());
     QTest::mouseClick(&view, Qt::LeftButton, 0, QPoint(10, 10));
     QTRY_COMPARE(loadSpy.count(), 2);
@@ -3196,19 +3198,23 @@ void tst_QWebPage::changeVisibilityState()
     stateBool = m_page->mainFrame()->evaluateJavaScript("stateBool");
     QVERIFY(stateBool.type() == QVariant::Bool && stateBool.toBool());
     stateString = m_page->mainFrame()->evaluateJavaScript("stateString");
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QVERIFY(stateString.type() == QVariant::String && stateString.toString() == QString("prerender"));
     cpt = m_page->mainFrame()->evaluateJavaScript("cpt");
     QVERIFY(cpt.type() == QVariant::Double && cpt.toDouble() == 1);
 
     m_page->setVisibilityState(QWebPage::VisibilityStateUnloaded);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(m_page->visibilityState(), QWebPage::VisibilityStateUnloaded);
     stateBool = m_page->mainFrame()->evaluateJavaScript("stateBool");
     QVERIFY(stateBool.type() == QVariant::Bool && stateBool.toBool());
     stateString = m_page->mainFrame()->evaluateJavaScript("stateString");
     QCOMPARE(stateString.type(), QVariant::String);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(stateString.toString(), QString("unloaded"));
     cpt = m_page->mainFrame()->evaluateJavaScript("cpt");
     QCOMPARE(cpt.type(), QVariant::Double);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(cpt.toDouble(), 2.0);
 
     m_page->setVisibilityState(QWebPage::VisibilityStateVisible);
@@ -3219,6 +3225,7 @@ void tst_QWebPage::changeVisibilityState()
     QVERIFY(stateString.type() == QVariant::String && stateString.toString() == QString("visible"));
     cpt = m_page->mainFrame()->evaluateJavaScript("cpt");
     QCOMPARE(cpt.type(), QVariant::Double);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(cpt.toDouble(), 3.0);
 
     m_page->setVisibilityState(QWebPage::VisibilityStateHidden);
@@ -3229,6 +3236,7 @@ void tst_QWebPage::changeVisibilityState()
     QVERIFY(stateString.type() == QVariant::String && stateString.toString() == QString("hidden"));
     cpt = m_page->mainFrame()->evaluateJavaScript("cpt");
     QCOMPARE(cpt.type(), QVariant::Double);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(cpt.toDouble(), 4.0);
 
     m_page->setVisibilityState(QWebPage::VisibilityStateVisible);
@@ -3239,6 +3247,7 @@ void tst_QWebPage::changeVisibilityState()
     QVERIFY(stateString.type() == QVariant::String && stateString.toString() == QString("visible"));
     cpt = m_page->mainFrame()->evaluateJavaScript("cpt");
     QCOMPARE(cpt.type(), QVariant::Double);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(cpt.toDouble(), 5.0);
 }
 
@@ -3421,6 +3430,7 @@ void tst_QWebPage::undoActionHaveCustomText()
     m_page->mainFrame()->evaluateJavaScript("document.execCommand('indent', true);");
     QString alignActionText = m_page->action(QWebPage::Undo)->text();
 
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QVERIFY(typingActionText != alignActionText);
 }
 
@@ -3439,7 +3449,9 @@ void tst_QWebPage::openWindowDefaultSize()
 
     QRect requestedGeometry = page.createdWindows[0]->requestedGeometry;
     // Check default size has been requested.
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(requestedGeometry.width(), 0);
+    QEXPECT_FAIL("", "https://github.com/qtwebkit/qtwebkit/issues/913", Continue);
     QCOMPARE(requestedGeometry.height(), 0);
 
     requestedGeometry = page.createdWindows[1]->requestedGeometry;

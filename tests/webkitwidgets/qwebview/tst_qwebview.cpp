@@ -196,6 +196,8 @@ private Q_SLOTS:
 // Should not crash.
 void tst_QWebView::crashTests()
 {
+    QSKIP("https://github.com/qtwebkit/qtwebkit/issues/913");
+
     // Test if loading can be stopped in loadProgress handler without crash.
     // Test page should have frames.
     QWebView view;

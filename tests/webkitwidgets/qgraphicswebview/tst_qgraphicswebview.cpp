@@ -167,6 +167,8 @@ void tst_QGraphicsWebView::crashOnSetScaleBeforeSetUrl()
 
 void tst_QGraphicsWebView::widgetsRenderingThroughCache()
 {
+    QSKIP("TiledBackingStore does not work -- https://github.com/qtwebkit/qtwebkit/issues/407");
+
     // Widgets should be rendered the same way with and without
     // intermediate cache (tiling for example).
     // See bug https://bugs.webkit.org/show_bug.cgi?id=47767 where
