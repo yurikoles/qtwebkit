@@ -87,6 +87,29 @@ target_include_directories(WebKitWidgets INTERFACE
     $<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets>
 )
 
+if (QT_ORIGIN_RPATH)
+    set(WEBKIT_SHARED_LIBRARY_TARGETS WebKit)
+
+    if (TARGET WebKitWidgets)
+        list(APPEND WEBKIT_SHARED_LIBRARY_TARGETS WebKitWidgets)
+    endif ()
+
+    if (TARGET WebKit2)
+        set(WEBKIT2_EXECUTABLES WebProcess NetworkProcess)
+        if (ENABLE_PLUGIN_PROCESS)
+            list(APPEND WEBKIT2_EXECUTABLES PluginProcess)
+        endif ()
+        if (ENABLE_DATABASE_PROCESS)
+            list(APPEND WEBKIT2_EXECUTABLES DatabaseProcess)
+        endif ()
+        set_target_properties(${WEBKIT2_EXECUTABLES} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+        set_target_properties(qmlwebkitplugin PROPERTIES INSTALL_RPATH "\$ORIGIN/../../lib")
+        set_target_properties(qmlwebkitexperimentalplugin PROPERTIES INSTALL_RPATH "\$ORIGIN/../../../lib")
+    endif ()
+
+    set_target_properties(${WEBKIT_SHARED_LIBRARY_TARGETS} PROPERTIES INSTALL_RPATH "\$ORIGIN")
+endif ()
+
 set(QTWEBKIT_PACKAGE_INIT "
 macro(find_dependency_with_major_and_minor _dep _major _minor)
     find_dependency(\${_dep} \"\${_major}.\${_minor}\")
