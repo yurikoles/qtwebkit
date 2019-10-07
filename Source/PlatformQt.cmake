@@ -162,17 +162,18 @@ install(FILES
     COMPONENT Data
 )
 
+# We need to install separate config files for debug and release, so use "Code" component
 install(EXPORT WebKitTargets
     FILE WebKitTargets.cmake
     NAMESPACE Qt5::
     DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKit"
-    COMPONENT Data
+    COMPONENT Code
 )
 install(EXPORT Qt5WebKitWidgetsTargets
     FILE Qt5WebKitWidgetsTargets.cmake
     NAMESPACE Qt5::
     DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKitWidgets"
-    COMPONENT Data
+    COMPONENT Code
 )
 
 # Documentation
