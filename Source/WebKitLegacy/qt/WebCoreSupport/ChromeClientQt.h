@@ -197,6 +197,11 @@ public:
 
     void attachViewOverlayGraphicsLayer(GraphicsLayer*) final;
 
+#if ENABLE(WEB_CRYPTO)
+    bool wrapCryptoKey(const Vector<uint8_t>&, Vector<uint8_t>&) const final;
+    bool unwrapCryptoKey(const Vector<uint8_t>&, Vector<uint8_t>&) const final;
+#endif
+
     IntPoint accessibilityScreenToRootView(const IntPoint&) const;
     IntRect rootViewToAccessibilityScreen(const IntRect&) const;
     void didFinishLoadingImageForElement(HTMLImageElement&);

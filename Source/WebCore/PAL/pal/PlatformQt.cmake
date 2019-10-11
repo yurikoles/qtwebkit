@@ -1,6 +1,3 @@
-list(APPEND PAL_PUBLIC_HEADERS
-)
-
 list(APPEND PAL_SOURCES
     crypto/qt/CryptoDigestQt.cpp
 
@@ -10,3 +7,24 @@ list(APPEND PAL_SOURCES
 
     text/KillRing.cpp
 )
+
+if (USE_GCRYPT)
+    list(APPEND PAL_PUBLIC_HEADERS
+        crypto/gcrypt/Handle.h
+        crypto/gcrypt/Initialization.h
+        crypto/gcrypt/Utilities.h
+
+        crypto/tasn1/Utilities.h
+    )
+    list(APPEND PAL_SOURCES
+        crypto/tasn1/Utilities.cpp
+    )
+    list(APPEND PAL_LIBRARIES
+        ${LIBGCRYPT_LIBRARIES}
+        ${LIBTASN1_LIBRARIES}
+    )
+    list(APPEND PAL_SYSTEM_INCLUDE_DIRECTORIES
+        ${LIBGCRYPT_INCLUDE_DIRS}
+        ${LIBTASN1_INCLUDE_DIRS}
+    )
+endif ()
