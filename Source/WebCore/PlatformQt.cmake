@@ -398,6 +398,41 @@ if (ENABLE_VIDEO)
     set(WebCore_USER_AGENT_SCRIPTS_DEPENDENCIES ${WEBCORE_DIR}/platform/qt/RenderThemeQt.cpp)
 endif ()
 
+if (USE_GCRYPT)
+    include(platform/GCrypt.cmake)
+    list(APPEND WebCore_LIBRARIES
+        ${LIBTASN1_LIBRARIES}
+    )
+endif ()
+
+if (USE_COMMONCRYPTO)
+    list(APPEND WebCore_SOURCES
+        crypto/CommonCryptoUtilities.cpp
+
+        crypto/mac/CommonCryptoDERUtilities.cpp
+        crypto/mac/CryptoAlgorithmAES_CBCMac.cpp
+        crypto/mac/CryptoAlgorithmAES_CFBMac.cpp
+        crypto/mac/CryptoAlgorithmAES_CTRMac.cpp
+        crypto/mac/CryptoAlgorithmAES_GCMMac.cpp
+        crypto/mac/CryptoAlgorithmAES_KWMac.cpp
+        crypto/mac/CryptoAlgorithmECDHMac.cpp
+        crypto/mac/CryptoAlgorithmECDSAMac.cpp
+        crypto/mac/CryptoAlgorithmHKDFMac.cpp
+        crypto/mac/CryptoAlgorithmHMACMac.cpp
+        crypto/mac/CryptoAlgorithmPBKDF2Mac.cpp
+        crypto/mac/CryptoAlgorithmRSAES_PKCS1_v1_5Mac.cpp
+        crypto/mac/CryptoAlgorithmRSASSA_PKCS1_v1_5Mac.cpp
+        crypto/mac/CryptoAlgorithmRSA_OAEPMac.cpp
+        crypto/mac/CryptoAlgorithmRSA_PSSMac.cpp
+        crypto/mac/CryptoAlgorithmRegistryMac.cpp
+        crypto/mac/CryptoKeyECMac.cpp
+        crypto/mac/CryptoKeyMac.cpp
+        crypto/mac/CryptoKeyRSAMac.cpp
+
+        crypto/qt/SerializedCryptoKeyWrapNone.cpp
+    )
+endif ()
+
 # Build the include path with duplicates removed
 list(REMOVE_DUPLICATES WebCore_SYSTEM_INCLUDE_DIRECTORIES)
 
