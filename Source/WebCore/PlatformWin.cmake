@@ -34,6 +34,7 @@ list(APPEND WebCore_SOURCES
     platform/Cursor.cpp
     platform/LocalizedStrings.cpp
     platform/StaticPasteboard.cpp
+    platform/SuspendableTaskQueue.cpp
 
     platform/audio/PlatformMediaSessionManager.cpp
 
@@ -81,7 +82,6 @@ list(APPEND WebCore_SOURCES
     platform/win/DefWndProcWindowClass.cpp
     platform/win/DragDataWin.cpp
     platform/win/DragImageWin.cpp
-    platform/win/EventLoopWin.cpp
     platform/win/GDIObjectCounter.cpp
     platform/win/GDIUtilities.cpp
     platform/win/KeyEventWin.cpp

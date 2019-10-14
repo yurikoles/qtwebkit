@@ -147,6 +147,7 @@ WebsiteDataStoreParameters WebsiteDataStore::parameters()
         m_configuration->networkCacheSpeculativeValidationEnabled(),
         m_configuration->testingSessionEnabled(),
         m_configuration->testSpeedMultiplier(),
+        m_configuration->suppressesConnectionTerminationOnSystemChange(),
     };
     networkingHasBegun();
 
@@ -179,6 +180,7 @@ WebsiteDataStoreParameters WebsiteDataStore::parameters()
     if (!parameters.serviceWorkerRegistrationDirectory.isEmpty())
         SandboxExtension::createHandleForReadWriteDirectory(parameters.serviceWorkerRegistrationDirectory, parameters.serviceWorkerRegistrationDirectoryExtensionHandle);
     parameters.serviceWorkerProcessTerminationDelayEnabled = m_configuration->serviceWorkerProcessTerminationDelayEnabled();
+    parameters.serviceWorkerRegisteredSchemes = m_configuration->serviceWorkerRegisteredSchemes();
 #endif
 
     parameters.localStorageDirectory = resolvedLocalStorageDirectory();

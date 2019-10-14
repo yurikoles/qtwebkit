@@ -122,6 +122,12 @@ class CleanUpGitIndexLock(shell.ShellCommand):
     def __init__(self, **kwargs):
         super(CleanUpGitIndexLock, self).__init__(timeout=2 * 60, logEnviron=False, **kwargs)
 
+    def start(self):
+        platform = self.getProperty('platform', '*')
+        if platform == 'wincairo':
+            self.command = ['del', '.git\index.lock']
+        return shell.ShellCommand.start(self)
+
     def evaluateCommand(self, cmd):
         self.build.buildFinished(['Git issue, retrying build'], RETRY)
         return super(CleanUpGitIndexLock, self).evaluateCommand(cmd)
@@ -219,7 +225,9 @@ class CheckPatchRelevance(buildstep.BuildStep):
     ]
 
     services_paths = [
+        'Tools/BuildSlaveSupport/build.webkit.org-config',
         'Tools/BuildSlaveSupport/ews-build',
+        'Tools/BuildSlaveSupport/Shared',
     ]
 
     jsc_paths = [
@@ -596,6 +604,20 @@ class RunWebKitPerlTests(shell.ShellCommand):
         super(RunWebKitPerlTests, self).__init__(timeout=2 * 60, logEnviron=False, **kwargs)
 
 
+class RunBuildWebKitOrgUnitTests(shell.ShellCommand):
+    name = 'build-webkit-org-unit-tests'
+    description = ['build-webkit-unit-tests running']
+    command = ['python', 'steps_unittest.py']
+
+    def __init__(self, **kwargs):
+        shell.ShellCommand.__init__(self, workdir='build/Tools/BuildSlaveSupport/build.webkit.org-config', timeout=2 * 60, logEnviron=False, **kwargs)
+
+    def getResultSummary(self):
+        if self.results == SUCCESS:
+            return {u'step': u'Passed build.webkit.org unit tests'}
+        return {u'step': u'Failed build.webkit.org unit tests'}
+
+
 class RunEWSUnitTests(shell.ShellCommand):
     name = 'ews-unit-tests'
     description = ['ews-unit-tests running']
@@ -837,6 +859,9 @@ class RunJavaScriptCoreTests(shell.Test):
     jsonFileName = 'jsc_results.json'
     logfiles = {'json': jsonFileName}
     command = ['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(jsonFileName), WithProperties('--%(configuration)s')]
+
+    def __init__(self, **kwargs):
+        shell.Test.__init__(self, logEnviron=False, **kwargs)
 
     def start(self):
         appendCustomBuildFlags(self, self.getProperty('platform'), self.getProperty('fullPlatform'))
@@ -1502,7 +1527,7 @@ class ExtractTestResults(master.MasterShellCommand):
         self.resultDirectory = Interpolate('public_html/results/%(prop:buildername)s/r%(prop:patch_id)s-%(prop:buildnumber)s{}'.format(identifier))
         self.command = ['unzip', self.zipFile, '-d', self.resultDirectory]
 
-        super(ExtractTestResults, self).__init__(self.command)
+        master.MasterShellCommand.__init__(self, command=self.command, logEnviron=False)
 
     def resultDirectoryURL(self):
         return self.resultDirectory.replace('public_html/', '/') + '/'

@@ -1028,6 +1028,7 @@ static void setWebPreferencesForTestOptions(const TestOptions& options)
     preferences.adClickAttributionEnabled = options.adClickAttributionEnabled;
     preferences.resizeObserverEnabled = options.enableResizeObserver;
     preferences.coreMathMLEnabled = options.enableCoreMathML;
+    preferences.requestIdleCallbackEnabled = options.enableRequestIdleCallback;
     preferences.privateBrowsingEnabled = options.useEphemeralSession;
     preferences.usesPageCache = options.enablePageCache;
 }
@@ -1911,7 +1912,7 @@ static void resetWebViewToConsistentStateBeforeTesting(const TestOptions& option
 
 #if !PLATFORM(IOS_FAMILY)
     if (WebCore::Frame* frame = [webView _mainCoreFrame])
-        WebCoreTestSupport::clearWheelEventTestTrigger(*frame);
+        WebCoreTestSupport::clearWheelEventTestMonitor(*frame);
 #endif
 
 #if !PLATFORM(IOS_FAMILY)

@@ -33,6 +33,7 @@
 #import "CompletionHandlerCallChecker.h"
 #import "DiagnosticLoggingClient.h"
 #import "DynamicViewportSizeUpdate.h"
+#import "ElementContext.h"
 #import "FindClient.h"
 #import "FullscreenClient.h"
 #import "GlobalFindInPageState.h"
@@ -49,7 +50,6 @@
 #import "RemoteObjectRegistry.h"
 #import "RemoteObjectRegistryMessages.h"
 #import "SafeBrowsingWarning.h"
-#import "TextInputContext.h"
 #import "UIDelegate.h"
 #import "UserMediaProcessManager.h"
 #import "VersionChecks.h"
@@ -105,11 +105,11 @@
 #import <WebCore/IOSurface.h>
 #import <WebCore/JSDOMBinding.h>
 #import <WebCore/JSDOMExceptionHandling.h>
+#import <WebCore/LegacySchemeRegistry.h>
 #import <WebCore/MIMETypeRegistry.h>
 #import <WebCore/PlatformScreen.h>
 #import <WebCore/RuntimeApplicationChecks.h>
 #import <WebCore/SQLiteDatabaseTracker.h>
-#import <WebCore/SchemeRegistry.h>
 #import <WebCore/Settings.h>
 #import <WebCore/SharedBuffer.h>
 #import <WebCore/StringUtilities.h>
@@ -3640,6 +3640,11 @@ static void hardwareKeyboardAvailabilityChangedCallback(CFNotificationCenterRef,
     _impl->setFrameSize(NSSizeToCGSize(size));
 }
 
+- (void)_web_grantDOMPasteAccess
+{
+    _impl->handleDOMPasteRequestWithResult(WebCore::DOMPasteAccessResponse::GrantedForGesture);
+}
+
 ALLOW_DEPRECATED_IMPLEMENTATIONS_BEGIN
 - (void)renewGState
 ALLOW_DEPRECATED_IMPLEMENTATIONS_END
@@ -4651,7 +4656,7 @@ ALLOW_DEPRECATED_IMPLEMENTATIONS_END
 
 + (BOOL)handlesURLScheme:(NSString *)urlScheme
 {
-    return WebCore::SchemeRegistry::isBuiltinScheme(urlScheme);
+    return WebCore::LegacySchemeRegistry::isBuiltinScheme(urlScheme);
 }
 
 - (Optional<BOOL>)_resolutionForShareSheetImmediateCompletionForTesting
@@ -5054,12 +5059,12 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(FORWARD_ACTION_TO_WKCONTENTVIEW)
 
     CGRect rectInRootViewCoordinates = [self _convertRectToRootViewCoordinates:rectInWebViewCoordinates];
     auto weakSelf = WeakObjCPtr<WKWebView>(self);
-    _page->textInputContextsInRect(rectInRootViewCoordinates, [weakSelf, capturedCompletionHandler = makeBlockPtr(completionHandler)] (const Vector<WebKit::TextInputContext>& contexts) {
+    _page->textInputContextsInRect(rectInRootViewCoordinates, [weakSelf, capturedCompletionHandler = makeBlockPtr(completionHandler)] (const Vector<WebKit::ElementContext>& contexts) {
         RetainPtr<NSMutableArray> elements = adoptNS([[NSMutableArray alloc] initWithCapacity:contexts.size()]);
 
         auto strongSelf = weakSelf.get();
         for (const auto& context : contexts) {
-            WebKit::TextInputContext contextWithWebViewBoundingRect = context;
+            WebKit::ElementContext contextWithWebViewBoundingRect = context;
             contextWithWebViewBoundingRect.boundingRect = [strongSelf _convertRectFromRootViewCoordinates:context.boundingRect];
             [elements addObject:adoptNS([[_WKTextInputContext alloc] _initWithTextInputContext:contextWithWebViewBoundingRect]).get()];
         }
@@ -7312,6 +7317,13 @@ static WebCore::UserInterfaceLayoutDirection toUserInterfaceLayoutDirection(UISe
 - (void)_doAfterProcessingAllPendingMouseEvents:(dispatch_block_t)action
 {
     _impl->doAfterProcessingAllPendingMouseEvents(action);
+}
+
+- (NSMenu *)_activeMenu
+{
+    // FIXME: Only the DOM paste access menu is supported for now. In the future, it could be
+    // extended to recognize the regular context menu as well.
+    return _impl->domPasteMenu();
 }
 
 #endif // PLATFORM(MAC)

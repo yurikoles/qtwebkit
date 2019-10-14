@@ -55,6 +55,8 @@ namespace WebCore {
     macro(CacheStorage) \
     macro(Client) \
     macro(Clients) \
+    macro(Clipboard) \
+    macro(ClipboardItem) \
     macro(Credential) \
     macro(CredentialsContainer) \
     macro(CSSAnimation) \
@@ -130,6 +132,7 @@ namespace WebCore {
     macro(IDBVersionChangeEvent) \
     macro(ImageBitmap) \
     macro(ImageBitmapRenderingContext) \
+    macro(IdleDeadline) \
     macro(InputEvent) \
     macro(IntersectionObserver) \
     macro(IntersectionObserverEntry) \
@@ -243,6 +246,7 @@ namespace WebCore {
     macro(byobRequest) \
     macro(caches) \
     macro(cancel) \
+    macro(cancelIdleCallback) \
     macro(cloneArrayBuffer) \
     macro(close) \
     macro(closeRequested) \
@@ -317,6 +321,7 @@ namespace WebCore {
     macro(readableStreamController) \
     macro(reader) \
     macro(readyPromiseCapability) \
+    macro(requestIdleCallback) \
     macro(response) \
     macro(responseCacheIsValid) \
     macro(retrieveResponse) \

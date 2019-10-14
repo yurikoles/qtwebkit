@@ -1173,7 +1173,7 @@ media/track/track-in-band-cues-added-once.html [ Skip ] # Timeout
 ###### Pasteboard
 ###### These tests are very flaky.
 editing/pasteboard/ [ Pass Failure ]
-editing/pasteboard/ios [ Skip ]
+editing/pasteboard/dom-paste/ [ Skip ]
 [ Debug ] editing/pasteboard/copy-crash.html [ Skip ] # Debug Assertion
 [ Debug ] editing/pasteboard/copy-crash-with-extraneous-attribute.html [ Skip ] # Debug Assertion
 [ Debug ] editing/pasteboard/testcase-9507.html [ Skip ] # Debug Assertion
@@ -2417,6 +2417,7 @@ http/tests/xmlhttprequest/web-apps/012.html
 http/tests/xmlhttprequest/web-apps/013.html
 
 storage/indexeddb/storage-limit.html [ Skip ]
+storage/indexeddb/request-size-estimate.html [ Skip ]
 http/tests/IndexedDB/storage-limit.https.html [ Skip ]
 http/tests/IndexedDB/storage-limit-1.https.html [ Skip ]
 http/tests/IndexedDB/storage-limit-2.https.html [ Skip ]
@@ -3798,6 +3799,8 @@ webkit.org/b/93589 svg/dom/SVGScriptElement/script-change-externalResourcesRequi
 # No service worker implementation for WK1
 http/tests/appcache/main-resource-redirect-with-sw.html [ Skip ]
 http/tests/cache-storage [ Skip ]
+http/tests/navigation/page-cache-domcache-pending-promise.html [ Skip ]
+http/tests/navigation/page-cache-domcachestorage-pending-promise.html [ Skip ]
 http/tests/inspector/network/resource-response-service-worker.html [ Skip ]
 http/tests/workers/service [ Skip ]
 http/wpt/cache-storage [ Skip ]
@@ -4037,7 +4040,6 @@ webkit.org/b/183955 accessibility/row-with-aria-role-in-native-table.html [ Fail
 webkit.org/b/184133 transitions/opacity-transition-zindex.html [ Skip ]
 webkit.org/b/184133 legacy-animation-engine/transitions/opacity-transition-zindex.html [ Skip ]
 
-webkit.org/b/187762 http/tests/websocket/tests/hybi/websocket-allowed-setting-cookie-as-third-party.html [ Pass ]
 webkit.org/b/187762 http/tests/websocket/tests/hybi/websocket-cookie-overwrite-behavior.html [ Pass Failure ]
 
 webkit.org/b/184482 legacy-animation-engine/compositing/animation/animation-backing.html [ Failure ]
@@ -4267,6 +4269,7 @@ inspector/canvas/requestShaderSource-webgpu.html [ Skip ]
 inspector/canvas/resolveContext-webgpu.html [ Skip ]
 inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
 inspector/canvas/updateShader-webgpu.html [ Skip ]
+inspector/canvas/updateShader-webgpu-sharedVertexFragment.html [ Skip ]
 
 webkit.org/b/191194 fast/block/basic/inline-content-with-floating-image.html [ Failure ]
 webkit.org/b/191194 fast/block/basic/inline-content-with-floating-images2.html [ Failure ]
@@ -4460,3 +4463,5 @@ imported/w3c/web-platform-tests/wasm [ Skip ]
 webkit.org/b/220830 fast/text/emoji-variation-selector.html [ ImageOnlyFailure ]
 
 webkit.org/b/201491 fast/block/float/float-with-anonymous-previous-sibling.html [ Pass ImageOnlyFailure ]
+
+webkit.org/b/202460 imported/w3c/web-platform-tests/2dcontext/image-smoothing/imagesmoothing.html [ Failure ]

@@ -185,9 +185,6 @@ static void webKitSettingsConstructed(GObject* object)
     WebPreferences* prefs = settings->priv->preferences.get();
     prefs->setShouldRespectImageOrientation(true);
 
-    if (g_getenv("WEBKIT_WEBRTC_DISABLE_UNIFIED_PLAN"))
-        prefs->setWebRTCUnifiedPlanEnabled(FALSE);
-
     bool mediaStreamEnabled = prefs->mediaStreamEnabled();
     prefs->setMediaDevicesEnabled(mediaStreamEnabled);
     prefs->setPeerConnectionEnabled(mediaStreamEnabled);
@@ -3549,6 +3546,7 @@ void webkit_settings_set_hardware_acceleration_policy(WebKitSettings* settings, 
         }
         if (!priv->preferences->forceCompositingMode()) {
             priv->preferences->setForceCompositingMode(true);
+            priv->preferences->setThreadedScrollingEnabled(true);
             changed = true;
         }
         break;
@@ -3562,6 +3560,7 @@ void webkit_settings_set_hardware_acceleration_policy(WebKitSettings* settings, 
 
         if (priv->preferences->forceCompositingMode()) {
             priv->preferences->setForceCompositingMode(false);
+            priv->preferences->setThreadedScrollingEnabled(false);
             changed = true;
         }
         break;
@@ -3573,6 +3572,7 @@ void webkit_settings_set_hardware_acceleration_policy(WebKitSettings* settings, 
 
         if (priv->preferences->forceCompositingMode() && !HardwareAccelerationManager::singleton().forceHardwareAcceleration()) {
             priv->preferences->setForceCompositingMode(false);
+            priv->preferences->setThreadedScrollingEnabled(false);
             changed = true;
         }
         break;

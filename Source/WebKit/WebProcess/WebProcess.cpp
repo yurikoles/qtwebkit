@@ -38,6 +38,7 @@
 #include "Logging.h"
 #include "NetworkConnectionToWebProcessMessages.h"
 #include "NetworkProcessConnection.h"
+#include "NetworkProcessConnectionInfo.h"
 #include "NetworkSession.h"
 #include "NetworkSessionCreationParameters.h"
 #include "PluginProcessConnectionManager.h"
@@ -99,6 +100,7 @@
 #include <WebCore/GlyphPage.h>
 #include <WebCore/HTMLMediaElement.h>
 #include <WebCore/JSDOMWindow.h>
+#include <WebCore/LegacySchemeRegistry.h>
 #include <WebCore/MemoryCache.h>
 #include <WebCore/MemoryRelease.h>
 #include <WebCore/MessagePort.h>
@@ -114,7 +116,6 @@
 #include <WebCore/ResourceLoadStatistics.h>
 #include <WebCore/RuntimeApplicationChecks.h>
 #include <WebCore/RuntimeEnabledFeatures.h>
-#include <WebCore/SchemeRegistry.h>
 #include <WebCore/SecurityOrigin.h>
 #include <WebCore/ServiceWorkerContextData.h>
 #include <WebCore/Settings.h>
@@ -378,7 +379,7 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
         registerURLSchemeAsCachePartitioned(scheme);
 
     for (auto& scheme : parameters.urlSchemesServiceWorkersCanHandle)
-        registerURLSchemeServiceWorkersCanHandle(scheme);
+        WebCore::LegacySchemeRegistry::registerURLSchemeServiceWorkersCanHandle(scheme);
 
     for (auto& scheme : parameters.urlSchemesRegisteredAsCanDisplayOnlyIfCanRequest)
         registerURLSchemeAsCanDisplayOnlyIfCanRequest(scheme);
@@ -531,57 +532,57 @@ void WebProcess::prewarmWithDomainInformation(const WebCore::PrewarmInformation&
 
 void WebProcess::registerURLSchemeAsEmptyDocument(const String& urlScheme)
 {
-    SchemeRegistry::registerURLSchemeAsEmptyDocument(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsEmptyDocument(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsSecure(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsSecure(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsSecure(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsBypassingContentSecurityPolicy(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsBypassingContentSecurityPolicy(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsBypassingContentSecurityPolicy(urlScheme);
 }
 
 void WebProcess::setDomainRelaxationForbiddenForURLScheme(const String& urlScheme) const
 {
-    SchemeRegistry::setDomainRelaxationForbiddenForURLScheme(true, urlScheme);
+    LegacySchemeRegistry::setDomainRelaxationForbiddenForURLScheme(true, urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsLocal(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsLocal(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsLocal(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsNoAccess(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsNoAccess(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsNoAccess(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsDisplayIsolated(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsDisplayIsolated(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsDisplayIsolated(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsCORSEnabled(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsCORSEnabled(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsCORSEnabled(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsAlwaysRevalidated(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsAlwaysRevalidated(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsAlwaysRevalidated(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsCachePartitioned(const String& urlScheme) const
 {
-    SchemeRegistry::registerURLSchemeAsCachePartitioned(urlScheme);
+    LegacySchemeRegistry::registerURLSchemeAsCachePartitioned(urlScheme);
 }
 
 void WebProcess::registerURLSchemeAsCanDisplayOnlyIfCanRequest(const String& urlScheme) const
 {
-    SchemeRegistry::registerAsCanDisplayOnlyIfCanRequest(urlScheme);
+    LegacySchemeRegistry::registerAsCanDisplayOnlyIfCanRequest(urlScheme);
 }
 
 void WebProcess::setDefaultRequestTimeoutInterval(double timeoutInterval)
@@ -1137,10 +1138,10 @@ void WebProcess::setInjectedBundleParameters(const IPC::DataReference& value)
     injectedBundle->setBundleParameters(value);
 }
 
-static IPC::Connection::Identifier getNetworkProcessConnection(IPC::Connection& connection)
+static NetworkProcessConnectionInfo getNetworkProcessConnection(IPC::Connection& connection)
 {
-    IPC::Attachment encodedConnectionIdentifier;
-    if (!connection.sendSync(Messages::WebProcessProxy::GetNetworkProcessConnection(), Messages::WebProcessProxy::GetNetworkProcessConnection::Reply(encodedConnectionIdentifier), 0)) {
+    NetworkProcessConnectionInfo connectionInfo;
+    if (!connection.sendSync(Messages::WebProcessProxy::GetNetworkProcessConnection(), Messages::WebProcessProxy::GetNetworkProcessConnection::Reply(connectionInfo), 0)) {
 #if PLATFORM(GTK) || PLATFORM(WPE)
         // GTK+ and WPE ports don't exit on send sync message failure.
         // In this particular case, the network process can be terminated by the UI process while the
@@ -1153,16 +1154,7 @@ static IPC::Connection::Identifier getNetworkProcessConnection(IPC::Connection& 
 #endif
     }
 
-#if USE(UNIX_DOMAIN_SOCKETS)
-    return encodedConnectionIdentifier.releaseFileDescriptor();
-#elif OS(DARWIN)
-    return encodedConnectionIdentifier.port();
-#elif OS(WINDOWS)
-    return encodedConnectionIdentifier.handle();
-#else
-    ASSERT_NOT_REACHED();
-    return IPC::Connection::Identifier();
-#endif
+    return connectionInfo;
 }
 
 NetworkProcessConnection& WebProcess::ensureNetworkProcessConnection()
@@ -1172,17 +1164,20 @@ NetworkProcessConnection& WebProcess::ensureNetworkProcessConnection()
 
     // If we've lost our connection to the network process (e.g. it crashed) try to re-establish it.
     if (!m_networkProcessConnection) {
-        IPC::Connection::Identifier connectionIdentifier = getNetworkProcessConnection(*parentProcessConnection());
+        auto connectionInfo = getNetworkProcessConnection(*parentProcessConnection());
 
         // Retry once if the IPC to get the connectionIdentifier succeeded but the connectionIdentifier we received
         // is invalid. This may indicate that the network process has crashed.
-        if (!IPC::Connection::identifierIsValid(connectionIdentifier))
-            connectionIdentifier = getNetworkProcessConnection(*parentProcessConnection());
+        if (!IPC::Connection::identifierIsValid(connectionInfo.identifier()))
+            connectionInfo = getNetworkProcessConnection(*parentProcessConnection());
 
-        if (!IPC::Connection::identifierIsValid(connectionIdentifier))
+        if (!IPC::Connection::identifierIsValid(connectionInfo.identifier()))
             CRASH();
 
-        m_networkProcessConnection = NetworkProcessConnection::create(connectionIdentifier);
+        m_networkProcessConnection = NetworkProcessConnection::create(connectionInfo.releaseIdentifier());
+#if HAVE(AUDIT_TOKEN)
+        m_networkProcessConnection->setNetworkProcessAuditToken(WTFMove(connectionInfo.auditToken));
+#endif
     }
     
     return *m_networkProcessConnection;
@@ -1230,10 +1225,8 @@ void WebProcess::networkProcessConnectionClosed(NetworkProcessConnection* connec
 #endif
 
 #if ENABLE(SERVICE_WORKER)
-    if (SWContextManager::singleton().connection()) {
-        RELEASE_LOG(ServiceWorker, "Service worker process is exiting because network process is gone");
-        _exit(EXIT_SUCCESS);
-    }
+    if (SWContextManager::singleton().connection())
+        SWContextManager::singleton().stopAllServiceWorkers();
 #endif
 
     m_networkProcessConnection = nullptr;
@@ -1803,8 +1796,6 @@ void WebProcess::establishWorkerContextConnectionToNetworkProcess(uint64_t pageG
 
 void WebProcess::registerServiceWorkerClients()
 {
-    // We do not want to register service worker dummy documents.
-    ASSERT(!SWContextManager::singleton().connection());
     ServiceWorkerProvider::singleton().registerServiceWorkerClients();
 }
 

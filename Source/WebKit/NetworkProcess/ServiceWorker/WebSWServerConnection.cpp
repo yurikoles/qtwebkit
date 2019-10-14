@@ -174,13 +174,10 @@ void WebSWServerConnection::startFetch(ServiceWorkerRegistrationIdentifier servi
         }
 
         auto* worker = server().workerByID(serviceWorkerIdentifier);
-        if (!worker) {
+        if (!worker || worker->hasTimedOutAnyFetchTasks()) {
             m_contentConnection->send(Messages::ServiceWorkerClientFetch::DidNotHandle { }, fetchIdentifier);
             return;
         }
-
-        if (!worker->contextConnection())
-            server().createContextConnection(worker->registrableDomain());
 
         server().runServiceWorkerIfNecessary(serviceWorkerIdentifier, [weakThis = WTFMove(weakThis), this, fetchIdentifier, serviceWorkerIdentifier, request = WTFMove(request), options = WTFMove(options), formData = WTFMove(formData), referrer = WTFMove(referrer), shouldSkipFetchEvent = worker->shouldSkipFetchEvent()](auto* contextConnection) {
             if (!weakThis)
@@ -188,9 +185,9 @@ void WebSWServerConnection::startFetch(ServiceWorkerRegistrationIdentifier servi
 
             if (contextConnection) {
                 SWSERVERCONNECTION_RELEASE_LOG_IF_ALLOWED("startFetch: Starting fetch %s via service worker %s", fetchIdentifier.loggingString().utf8().data(), serviceWorkerIdentifier.loggingString().utf8().data());
-                static_cast<WebSWServerToContextConnection&>(*contextConnection).startFetch(sessionID(), m_contentConnection.get(), this->identifier(), fetchIdentifier, serviceWorkerIdentifier, request, options, formData, referrer);
+                static_cast<WebSWServerToContextConnection&>(*contextConnection).startFetch(sessionID(), *this, fetchIdentifier, serviceWorkerIdentifier, request, options, formData, referrer);
             } else {
-                SWSERVERCONNECTION_RELEASE_LOG_ERROR_IF_ALLOWED("startFetch: fetchIdentifier: %s DidNotHandle because failed to run service worker", fetchIdentifier.loggingString().utf8().data());
+                SWSERVERCONNECTION_RELEASE_LOG_ERROR_IF_ALLOWED("startFetch: fetchIdentifier: %s DidNotHandle because failed to run service worker, or service worker has had timed out fetch tasks", fetchIdentifier.loggingString().utf8().data());
                 m_contentConnection->send(Messages::ServiceWorkerClientFetch::DidNotHandle { }, fetchIdentifier);
             }
         });
@@ -230,9 +227,6 @@ void WebSWServerConnection::postMessageToServiceWorker(ServiceWorkerIdentifier d
     if (!sourceData)
         return;
 
-    if (!destinationWorker->contextConnection())
-        server().createContextConnection(destinationWorker->registrableDomain());
-
     // It's possible this specific worker cannot be re-run (e.g. its registration has been removed)
     server().runServiceWorkerIfNecessary(destinationIdentifier, [destinationIdentifier, message = WTFMove(message), sourceData = WTFMove(*sourceData)](auto* contextConnection) mutable {
         if (contextConnection)
@@ -242,10 +236,6 @@ void WebSWServerConnection::postMessageToServiceWorker(ServiceWorkerIdentifier d
 
 void WebSWServerConnection::scheduleJobInServer(ServiceWorkerJobData&& jobData)
 {
-    RegistrableDomain registrableDomain(jobData.scopeURL);
-    if (!server().contextConnectionForRegistrableDomain(registrableDomain))
-        server().createContextConnection(registrableDomain);
-
     SWSERVERCONNECTION_RELEASE_LOG_IF_ALLOWED("Scheduling ServiceWorker job %s in server", jobData.identifier().loggingString().utf8().data());
     ASSERT(identifier() == jobData.connectionIdentifier());
 

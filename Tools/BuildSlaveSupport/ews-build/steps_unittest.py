@@ -39,7 +39,7 @@ from steps import (AnalyzeAPITestsResults, AnalyzeCompileWebKitResults, AnalyzeL
                    CompileJSC, CompileJSCToT, CompileWebKit, CompileWebKitToT, ConfigureBuild,
                    DownloadBuiltProduct, ExtractBuiltProduct, ExtractTestResults, InstallGtkDependencies, InstallWpeDependencies, KillOldProcesses,
                    PrintConfiguration, ReRunAPITests, ReRunJavaScriptCoreTests, ReRunWebKitTests, RunAPITests, RunAPITestsWithoutPatch,
-                   RunBindingsTests, RunEWSBuildbotCheckConfig, RunEWSUnitTests, RunJavaScriptCoreTests, RunJavaScriptCoreTestsToT, RunWebKit1Tests,
+                   RunBindingsTests, RunBuildWebKitOrgUnitTests, RunEWSBuildbotCheckConfig, RunEWSUnitTests, RunJavaScriptCoreTests, RunJavaScriptCoreTestsToT, RunWebKit1Tests,
                    RunWebKitPerlTests, RunWebKitPyTests, RunWebKitTests, TestWithFailureCount, Trigger, TransferToS3, UnApplyPatchIfRequired,
                    UpdateWorkingDirectory, UploadBuiltProduct, UploadTestResults, ValidatePatch)
 
@@ -523,6 +523,42 @@ class TestRunEWSUnitTests(BuildStepMixinAdditions, unittest.TestCase):
         return self.runStep()
 
 
+class TestRunBuildWebKitOrgUnitTests(BuildStepMixinAdditions, unittest.TestCase):
+    def setUp(self):
+        self.longMessage = True
+        return self.setUpBuildStep()
+
+    def tearDown(self):
+        return self.tearDownBuildStep()
+
+    def test_success(self):
+        self.setupStep(RunBuildWebKitOrgUnitTests())
+        self.expectRemoteCommands(
+            ExpectShell(workdir='build/Tools/BuildSlaveSupport/build.webkit.org-config',
+                        timeout=120,
+                        logEnviron=False,
+                        command=['python', 'steps_unittest.py'],
+                        )
+            + 0,
+        )
+        self.expectOutcome(result=SUCCESS, state_string='Passed build.webkit.org unit tests')
+        return self.runStep()
+
+    def test_failure(self):
+        self.setupStep(RunBuildWebKitOrgUnitTests())
+        self.expectRemoteCommands(
+            ExpectShell(workdir='build/Tools/BuildSlaveSupport/build.webkit.org-config',
+                        timeout=120,
+                        logEnviron=False,
+                        command=['python', 'steps_unittest.py'],
+                        )
+            + ExpectShell.log('stdio', stdout='Unhandled Error. Traceback (most recent call last): Keys in cmd missing from expectation: [logfiles.json]')
+            + 2,
+        )
+        self.expectOutcome(result=FAILURE, state_string='Failed build.webkit.org unit tests')
+        return self.runStep()
+
+
 class TestKillOldProcesses(BuildStepMixinAdditions, unittest.TestCase):
     def setUp(self):
         self.longMessage = True
@@ -610,6 +646,34 @@ class TestCleanUpGitIndexLock(BuildStepMixinAdditions, unittest.TestCase):
                         timeout=120,
                         logEnviron=False,
                         command=['rm', '-f', '.git/index.lock'],
+                        )
+            + 0,
+        )
+        self.expectOutcome(result=SUCCESS, state_string='Deleted .git/index.lock')
+        return self.runStep()
+
+    def test_success_windows(self):
+        self.setupStep(CleanUpGitIndexLock())
+        self.setProperty('platform', 'win')
+        self.expectRemoteCommands(
+            ExpectShell(workdir='wkdir',
+                        timeout=120,
+                        logEnviron=False,
+                        command=['rm', '-f', '.git/index.lock'],
+                        )
+            + 0,
+        )
+        self.expectOutcome(result=SUCCESS, state_string='Deleted .git/index.lock')
+        return self.runStep()
+
+    def test_success_wincairo(self):
+        self.setupStep(CleanUpGitIndexLock())
+        self.setProperty('platform', 'wincairo')
+        self.expectRemoteCommands(
+            ExpectShell(workdir='wkdir',
+                        timeout=120,
+                        logEnviron=False,
+                        command=['del', '.git\index.lock'],
                         )
             + 0,
         )
@@ -938,6 +1002,7 @@ class TestRunJavaScriptCoreTests(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'release')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--release'],
                         logfiles={'json': self.jsonFileName},
                         )
@@ -952,6 +1017,7 @@ class TestRunJavaScriptCoreTests(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'debug')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--debug'],
                         logfiles={'json': self.jsonFileName},
                         )
@@ -977,6 +1043,7 @@ class TestReRunJavaScriptCoreTests(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'release')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--release'],
                         logfiles={'json': self.jsonFileName},
                         )
@@ -991,6 +1058,7 @@ class TestReRunJavaScriptCoreTests(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'debug')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--debug'],
                         logfiles={'json': self.jsonFileName},
                         )
@@ -1016,6 +1084,7 @@ class TestRunJavaScriptCoreTestsToT(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'release')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--release'],
                         logfiles={'json': self.jsonFileName},
                         )
@@ -1030,6 +1099,7 @@ class TestRunJavaScriptCoreTestsToT(BuildStepMixinAdditions, unittest.TestCase):
         self.setProperty('configuration', 'debug')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
+                        logEnviron=False,
                         command=['perl', 'Tools/Scripts/run-javascriptcore-tests', '--no-build', '--no-fail-fast', '--json-output={0}'.format(self.jsonFileName), '--debug'],
                         logfiles={'json': self.jsonFileName},
                         )

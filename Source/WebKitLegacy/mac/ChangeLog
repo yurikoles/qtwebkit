@@ -1,3 +1,89 @@
+2019-10-09  Wenson Hsieh  <wenson_hsieh@apple.com>
+
+        [Clipboard API] Refactor Pasteboard item reading functions to work on both iOS and macOS
+        https://bugs.webkit.org/show_bug.cgi?id=202647
+
+        Reviewed by Tim Horton.
+
+        Refactor iOS-specific pasteboard functions to be platform-agnostic. See WebCore ChangeLog for more details.
+
+        * WebCoreSupport/WebPlatformStrategies.h:
+        * WebCoreSupport/WebPlatformStrategies.mm:
+        (WebPlatformStrategies::informationForItemAtIndex):
+        (WebPlatformStrategies::allPasteboardItemInfo):
+        (WebPlatformStrategies::getPasteboardItemsCount):
+        (WebPlatformStrategies::readBufferFromPasteboard):
+        (WebPlatformStrategies::readURLFromPasteboard):
+        (WebPlatformStrategies::readStringFromPasteboard):
+        (WebPlatformStrategies::writeToPasteboard):
+        (WebPlatformStrategies::updateSupportedTypeIdentifiers):
+
+2019-10-08  Antti Koivisto  <antti@apple.com>
+
+        [CSS Shadow Parts] Enable by default
+        https://bugs.webkit.org/show_bug.cgi?id=202644
+
+        Reviewed by Ryosuke Niwa.
+
+        * WebView/WebPreferences.mm:
+        (+[WebPreferences initialize]):
+
+2019-10-07  Ryosuke Niwa  <rniwa@webkit.org>
+
+        Add IDL for requestIdleCallback
+        https://bugs.webkit.org/show_bug.cgi?id=202653
+
+        Reviewed by Geoffrey Garen.
+
+        * WebView/WebPreferenceKeysPrivate.h:
+        * WebView/WebPreferences.mm:
+        (+[WebPreferences initialize]):
+        * WebView/WebPreferencesPrivate.h:
+        * WebView/WebView.mm:
+        (-[WebView _preferencesChanged:]):
+
+2019-10-07  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] Change signature of HostFunction to (JSGlobalObject*, CallFrame*)
+        https://bugs.webkit.org/show_bug.cgi?id=202569
+
+        Reviewed by Saam Barati.
+
+        * WebView/WebScriptDebugger.h:
+
+2019-10-04  Alex Christensen  <achristensen@webkit.org>
+
+        Rename SchemeRegistry to LegacySchemeRegistry
+        https://bugs.webkit.org/show_bug.cgi?id=202586
+
+        Reviewed by Tim Horton.
+
+        * WebView/WebView.mm:
+        (+[WebView _setDomainRelaxationForbidden:forURLScheme:]):
+        (+[WebView _registerURLSchemeAsSecure:]):
+        (+[WebView _registerURLSchemeAsAllowingDatabaseAccessInPrivateBrowsing:]):
+        (+[WebView registerURLSchemeAsLocal:]):
+
+2019-10-04  Alex Christensen  <achristensen@webkit.org>
+
+        Simplify sandbox enabling macros
+        https://bugs.webkit.org/show_bug.cgi?id=202536
+
+        Reviewed by Brent Fulgham.
+
+        * Configurations/FeatureDefines.xcconfig:
+
+2019-10-02  Tim Horton  <timothy_horton@apple.com>
+
+        Provide TAPI the full target triple instead of just the arch
+        https://bugs.webkit.org/show_bug.cgi?id=202486
+
+        Reviewed by Simon Fraser.
+
+        * MigrateHeaders.make:
+        For accuracy and consistency's sake, pass the whole target identifier
+        instead of just one piece.
+
 2019-10-01  Tim Horton  <timothy_horton@apple.com>
 
         Clean up some includes to make the build a bit faster

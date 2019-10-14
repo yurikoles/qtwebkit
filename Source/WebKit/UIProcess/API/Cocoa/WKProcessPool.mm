@@ -36,6 +36,7 @@
 #import "WKObject.h"
 #import "WKWebViewInternal.h"
 #import "WKWebsiteDataStoreInternal.h"
+#import "WebBackForwardCache.h"
 #import "WebCertificateInfo.h"
 #import "WebCookieManagerProxy.h"
 #import "WebProcessCache.h"
@@ -189,11 +190,6 @@ static WKProcessPool *sharedProcessPool;
     _processPool->allowSpecificHTTPSCertificateForHost(WebKit::WebCertificateInfo::create(WebCore::CertificateInfo((__bridge CFArrayRef)certificateChain)).ptr(), host);
 }
 
-- (void)_registerURLSchemeServiceWorkersCanHandle:(NSString *)scheme
-{
-    _processPool->registerURLSchemeServiceWorkersCanHandle(scheme);
-}
-
 - (void)_registerURLSchemeAsCanDisplayOnlyIfCanRequest:(NSString *)scheme
 {
     _processPool->registerURLSchemeAsCanDisplayOnlyIfCanRequest(scheme);
@@ -222,7 +218,7 @@ static WebKit::HTTPCookieAcceptPolicy toHTTPCookieAcceptPolicy(NSHTTPCookieAccep
 
 - (void)_setCookieAcceptPolicy:(NSHTTPCookieAcceptPolicy)policy
 {
-    _processPool->supplement<WebKit::WebCookieManagerProxy>()->setHTTPCookieAcceptPolicy(PAL::SessionID::defaultSessionID(), toHTTPCookieAcceptPolicy(policy), [](WebKit::CallbackBase::Error){});
+    _processPool->supplement<WebKit::WebCookieManagerProxy>()->setHTTPCookieAcceptPolicy(PAL::SessionID::defaultSessionID(), toHTTPCookieAcceptPolicy(policy), []() { });
 }
 
 - (id)_objectForBundleParameter:(NSString *)parameter
@@ -452,6 +448,11 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
     _processPool->terminateServiceWorkerProcesses();
 }
 
+- (void)_setUseSeparateServiceWorkerProcess:(BOOL)useSeparateServiceWorkerProcess
+{
+    _processPool->setUseSeparateServiceWorkerProcess(useSeparateServiceWorkerProcess);
+}
+
 - (pid_t)_networkProcessIdentifier
 {
     return _processPool->networkProcessIdentifier();
@@ -508,12 +509,12 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
 
 - (size_t)_webPageContentProcessCount
 {
-    auto allWebProcesses = _processPool->processes();
+    auto result = _processPool->processes().size();
 #if ENABLE(SERVICE_WORKER)
-    return allWebProcesses.size() - _processPool->serviceWorkerProxiesCount();
-#else
-    return allWebProcesses.size();
+    if (_processPool->useSeparateServiceWorkerProcess())
+        result -= _processPool->serviceWorkerProxiesCount();
 #endif
+    return result;
 }
 
 - (void)_preconnectToServer:(NSURL *)serverURL
@@ -531,7 +532,7 @@ static NSDictionary *policiesHashMapToDictionary(const HashMap<String, HashMap<S
 
 - (NSUInteger)_maximumSuspendedPageCount
 {
-    return _processPool->maxSuspendedPageCount();
+    return _processPool->backForwardCache().capacity();
 }
 
 - (NSUInteger)_processCacheCapacity

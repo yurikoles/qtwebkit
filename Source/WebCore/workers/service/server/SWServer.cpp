@@ -299,10 +299,11 @@ void SWServer::Connection::syncTerminateWorker(ServiceWorkerIdentifier identifie
         m_server.syncTerminateWorker(*worker);
 }
 
-SWServer::SWServer(UniqueRef<SWOriginStore>&& originStore, bool processTerminationDelayEnabled, String&& registrationDatabaseDirectory, PAL::SessionID sessionID, CreateContextConnectionCallback&& callback)
+SWServer::SWServer(UniqueRef<SWOriginStore>&& originStore, HashSet<String>&& registeredSchemes, bool processTerminationDelayEnabled, String&& registrationDatabaseDirectory, PAL::SessionID sessionID, CreateContextConnectionCallback&& callback)
     : m_originStore(WTFMove(originStore))
     , m_sessionID(sessionID)
     , m_isProcessTerminationDelayEnabled(processTerminationDelayEnabled)
+    , m_registeredSchemes(WTFMove(registeredSchemes))
     , m_createContextConnectionCallback(WTFMove(callback))
 {
     ASSERT(!registrationDatabaseDirectory.isEmpty() || m_sessionID.isEphemeral());
@@ -539,9 +540,11 @@ void SWServer::tryInstallContextData(ServiceWorkerContextData&& data)
     RegistrableDomain registrableDomain(data.scriptURL);
     auto* connection = contextConnectionForRegistrableDomain(registrableDomain);
     if (!connection) {
-        m_pendingContextDatas.ensure(WTFMove(registrableDomain), [] {
+        m_pendingContextDatas.ensure(registrableDomain, [] {
             return Vector<ServiceWorkerContextData> { };
         }).iterator->value.append(WTFMove(data));
+
+        createContextConnection(registrableDomain);
         return;
     }
     
@@ -618,6 +621,8 @@ void SWServer::runServiceWorkerIfNecessary(ServiceWorkerIdentifier identifier, R
         serviceWorkerRunRequestsForOrigin.ensure(identifier, [&] {
             return Vector<RunServiceWorkerCallback> { };
         }).iterator->value.append(WTFMove(callback));
+
+        createContextConnection(worker->registrableDomain());
         return;
     }
 

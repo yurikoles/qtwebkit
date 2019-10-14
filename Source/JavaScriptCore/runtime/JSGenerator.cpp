@@ -53,11 +53,10 @@ JSGenerator::JSGenerator(VM& vm, Structure* structure)
 void JSGenerator::finishCreation(VM& vm)
 {
     Base::finishCreation(vm);
-    internalField(static_cast<unsigned>(Field::PolyProto)).set(vm, this, jsNull());
-    internalField(static_cast<unsigned>(Field::State)).set(vm, this, jsNumber(static_cast<int32_t>(GeneratorState::Init)));
-    internalField(static_cast<unsigned>(Field::Next)).set(vm, this, jsUndefined());
-    internalField(static_cast<unsigned>(Field::This)).set(vm, this, jsUndefined());
-    internalField(static_cast<unsigned>(Field::Frame)).set(vm, this, jsUndefined());
+    auto values = initialValues();
+    ASSERT(values.size() == numberOfInternalFields);
+    for (unsigned index = 0; index < values.size(); ++index)
+        internalField(index).set(vm, this, values[index]);
 }
 
 void JSGenerator::visitChildren(JSCell* cell, SlotVisitor& visitor)

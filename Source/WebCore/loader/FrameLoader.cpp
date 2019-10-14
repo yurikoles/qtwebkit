@@ -297,14 +297,19 @@ FrameLoader::FrameLoader(Frame& frame, FrameLoaderClient& client)
 FrameLoader::~FrameLoader()
 {
     setOpener(nullptr);
-
-    for (auto& frame : m_openedFrames)
-        frame->loader().m_opener = nullptr;
+    detachFromAllOpenedFrames();
 
     m_client.frameLoaderDestroyed();
 
     if (m_networkingContext)
         m_networkingContext->invalidate();
+}
+
+void FrameLoader::detachFromAllOpenedFrames()
+{
+    for (auto& frame : m_openedFrames)
+        frame->loader().m_opener = nullptr;
+    m_openedFrames.clear();
 }
 
 void FrameLoader::init()
@@ -395,8 +400,10 @@ void FrameLoader::urlSelected(FrameLoadRequest&& frameRequest, Event* triggering
 
     Ref<Frame> protect(m_frame);
 
-    if (m_frame.script().executeIfJavaScriptURL(frameRequest.resourceRequest().url(), frameRequest.shouldReplaceDocumentIfJavaScriptURL()))
+    if (m_frame.script().executeIfJavaScriptURL(frameRequest.resourceRequest().url(), frameRequest.shouldReplaceDocumentIfJavaScriptURL())) {
+        m_quickRedirectComing = false;
         return;
+    }
 
     if (frameRequest.frameName().isEmpty())
         frameRequest.setFrameName(m_frame.document()->baseTarget());
@@ -1843,6 +1850,28 @@ void FrameLoader::stopAllLoaders(ClearProvisionalItemPolicy clearProvisionalItem
     setProvisionalDocumentLoader(nullptr);
 
     m_inStopAllLoaders = false;    
+}
+
+void FrameLoader::stopForPageCache()
+{
+    // Stop provisional loads in subframes (The one in the main frame is about to be committed).
+    if (!m_frame.isMainFrame()) {
+        if (m_provisionalDocumentLoader)
+            m_provisionalDocumentLoader->stopLoading();
+        setProvisionalDocumentLoader(nullptr);
+    }
+
+    // Stop current loads.
+    if (m_documentLoader)
+        m_documentLoader->stopLoading();
+
+    for (RefPtr<Frame> child = m_frame.tree().firstChild(); child; child = child->tree().nextSibling())
+        child->loader().stopForPageCache();
+
+    // We cancel pending navigations & policy checks *after* cancelling loads because cancelling loads might end up
+    // running script, which could schedule new navigations.
+    policyChecker().stopCheck();
+    m_frame.navigationScheduler().cancel();
 }
 
 void FrameLoader::stopAllLoadersAndCheckCompleteness()

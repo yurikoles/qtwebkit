@@ -266,13 +266,13 @@ struct AttributedString;
 struct BackForwardListItemState;
 struct DataDetectionResult;
 struct EditorState;
+struct ElementContext;
 struct FontInfo;
 struct InsertTextOptions;
 struct InteractionInformationAtPosition;
 struct InteractionInformationRequest;
 struct LoadParameters;
 struct PrintInfo;
-struct TextInputContext;
 struct WebAutocorrectionData;
 struct WebAutocorrectionContext;
 struct WebPageCreationParameters;
@@ -624,8 +624,8 @@ public:
     void executeEditCommandWithCallback(const String&, const String& argument, CallbackID);
     void selectAll();
 
-    void textInputContextsInRect(WebCore::FloatRect, CompletionHandler<void(const Vector<WebKit::TextInputContext>&)>&&);
-    void focusTextInputContext(const TextInputContext&, CompletionHandler<void(bool)>&&);
+    void textInputContextsInRect(WebCore::FloatRect, CompletionHandler<void(const Vector<WebKit::ElementContext>&)>&&);
+    void focusTextInputContext(const ElementContext&, CompletionHandler<void(bool)>&&);
 
 #if PLATFORM(IOS_FAMILY)
     WebCore::FloatSize screenSize() const;
@@ -681,7 +681,7 @@ public:
     void requestAutocorrectionContext();
     void getPositionInformation(const InteractionInformationRequest&, CompletionHandler<void(InteractionInformationAtPosition&&)>&&);
     void requestPositionInformation(const InteractionInformationRequest&);
-    void startInteractionWithElementAtPosition(const WebCore::IntPoint&);
+    void startInteractionWithElementContextOrPosition(Optional<ElementContext>&&, WebCore::IntPoint&&);
     void stopInteraction();
     void performActionOnElement(uint32_t action);
     void focusNextFocusedElement(bool isForward, CallbackID);
@@ -1204,7 +1204,8 @@ public:
 
     void configureLoggingChannel(const String&, WTFLogChannelState, WTFLogLevel);
 
-    WebCore::Element* elementForTextInputContext(const TextInputContext&);
+    WebCore::Element* elementForContext(const ElementContext&) const;
+    Optional<ElementContext> contextForElement(WebCore::Element&) const;
 
 #if ENABLE(APPLE_PAY)
     WebPaymentCoordinator* paymentCoordinator();
@@ -1591,7 +1592,7 @@ private:
     void setShouldPlayToPlaybackTarget(uint64_t, bool);
 #endif
 
-    void clearWheelEventTestTrigger();
+    void clearWheelEventTestMonitor();
 
     void setShouldScaleViewToFitDocument(bool);
 

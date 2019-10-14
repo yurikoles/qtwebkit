@@ -95,6 +95,7 @@ struct MockMediaDevice;
 
 namespace WebKit {
 
+class WebBackForwardCache;
 class HighPerformanceGraphicsUsageSampler;
 class UIGamepad;
 class PerActivityStateCPUUsageSampler;
@@ -149,6 +150,8 @@ public:
     void addMessageReceiver(IPC::StringReference messageReceiverName, uint64_t destinationID, IPC::MessageReceiver&);
     void removeMessageReceiver(IPC::StringReference messageReceiverName);
     void removeMessageReceiver(IPC::StringReference messageReceiverName, uint64_t destinationID);
+
+    WebBackForwardCache& backForwardCache() { return m_backForwardCache.get(); }
     
     template <typename T>
     void addMessageReceiver(IPC::StringReference messageReceiverName, ObjectIdentifier<T> destinationID, IPC::MessageReceiver& receiver)
@@ -257,6 +260,8 @@ public:
     ProcessID prewarmedProcessIdentifier();
     void activePagesOriginsInWebProcessForTesting(ProcessID, CompletionHandler<void(Vector<String>&&)>&&);
     bool networkProcessHasEntitlementForTesting(const String&);
+    void setServiceWorkerTimeoutForTesting(Seconds);
+    void resetServiceWorkerTimeoutForTesting();
 
     WebPageGroup& defaultPageGroup() { return m_defaultPageGroup.get(); }
 
@@ -272,7 +277,6 @@ public:
     void registerURLSchemeAsDisplayIsolated(const String&);
     void registerURLSchemeAsCORSEnabled(const String&);
     void registerURLSchemeAsCachePartitioned(const String&);
-    void registerURLSchemeServiceWorkersCanHandle(const String&);
     void registerURLSchemeAsCanDisplayOnlyIfCanRequest(const String&);
 
     VisitedLinkStore& visitedLinkStore() { return m_visitedLinkStore.get(); }
@@ -383,6 +387,7 @@ public:
     bool isServiceWorkerPageID(WebPageProxyIdentifier) const;
 #if ENABLE(SERVICE_WORKER)
     void establishWorkerContextConnectionToNetworkProcess(NetworkProcessProxy&, WebCore::RegistrableDomain&&, PAL::SessionID);
+    void removeFromServiceWorkerProcesses(WebProcessProxy&);
     size_t serviceWorkerProxiesCount() const { return m_serviceWorkerProcesses.size(); }
     void setAllowsAnySSLCertificateForServiceWorker(bool allows) { m_allowsAnySSLCertificateForServiceWorker = allows; }
     bool allowsAnySSLCertificateForServiceWorker() const { return m_allowsAnySSLCertificateForServiceWorker; }
@@ -475,17 +480,6 @@ public:
 
     void processForNavigation(WebPageProxy&, const API::Navigation&, Ref<WebProcessProxy>&& sourceProcess, const URL& sourceURL, ProcessSwapRequestedByClient, Ref<WebsiteDataStore>&&, CompletionHandler<void(Ref<WebProcessProxy>&&, SuspendedPageProxy*, const String&)>&&);
 
-    // SuspendedPageProxy management.
-    void addSuspendedPage(std::unique_ptr<SuspendedPageProxy>&&);
-    void removeAllSuspendedPagesForPage(WebPageProxy&, WebProcessProxy* = nullptr);
-    std::unique_ptr<SuspendedPageProxy> takeSuspendedPage(SuspendedPageProxy&);
-    void removeSuspendedPage(SuspendedPageProxy&);
-    bool hasSuspendedPageFor(WebProcessProxy&, WebPageProxy&) const;
-    unsigned maxSuspendedPageCount() const { return m_maxSuspendedPageCount; }
-    RefPtr<WebProcessProxy> findReusableSuspendedPageProcess(const WebCore::RegistrableDomain&, WebPageProxy&, WebsiteDataStore&);
-
-    void clearSuspendedPages(AllowProcessCaching);
-
     void didReachGoodTimeToPrewarm();
 
     void didCollectPrewarmInformation(const WebCore::RegistrableDomain&, const WebCore::PrewarmInformation&);
@@ -526,6 +520,9 @@ public:
     
     PlugInAutoStartProvider& plugInAutoStartProvider() { return m_plugInAutoStartProvider; }
 
+    void setUseSeparateServiceWorkerProcess(bool);
+    bool useSeparateServiceWorkerProcess() const { return m_useSeparateServiceWorkerProcess; }
+
 private:
     void platformInitialize();
 
@@ -540,7 +537,6 @@ private:
     void initializeNewWebProcess(WebProcessProxy&, WebsiteDataStore*, WebProcessProxy::IsPrewarmed = WebProcessProxy::IsPrewarmed::No);
 
     void requestWebContentStatistics(StatisticsRequest&);
-    void requestNetworkingStatistics(StatisticsRequest&);
 
     void platformInitializeNetworkProcess(NetworkProcessCreationParameters&);
 
@@ -592,7 +588,7 @@ private:
 
     void tryPrewarmWithDomainInformation(WebProcessProxy&, const WebCore::RegistrableDomain&);
 
-    void updateMaxSuspendedPageCount();
+    void updateBackForwardCacheCapacity();
 
 #if PLATFORM(IOS)
     static float displayBrightness();
@@ -650,7 +646,6 @@ private:
     HashSet<String> m_schemesToRegisterAsCORSEnabled;
     HashSet<String> m_schemesToRegisterAsAlwaysRevalidated;
     HashSet<String> m_schemesToRegisterAsCachePartitioned;
-    HashSet<String> m_schemesServiceWorkersCanHandle;
     HashSet<String> m_schemesToRegisterAsCanDisplayOnlyIfCanRequest;
 
     bool m_alwaysUsesComplexTextCodePath { false };
@@ -774,8 +769,7 @@ private:
 #endif
 #endif
 
-    Deque<std::unique_ptr<SuspendedPageProxy>> m_suspendedPages;
-    unsigned m_maxSuspendedPageCount { 0 };
+    UniqueRef<WebBackForwardCache> m_backForwardCache;
 
     UniqueRef<WebProcessCache> m_webProcessCache;
     HashMap<WebCore::RegistrableDomain, RefPtr<WebProcessProxy>> m_swappedProcessesPerRegistrableDomain;
@@ -803,6 +797,7 @@ private:
 #else
     bool m_isDelayedWebProcessLaunchDisabled { false };
 #endif
+    bool m_useSeparateServiceWorkerProcess { false };
 };
 
 template<typename T>

@@ -94,8 +94,6 @@ typedef RefCounter<BackgroundWebProcessCounterType> BackgroundWebProcessCounter;
 typedef BackgroundWebProcessCounter::Token BackgroundWebProcessToken;
 #endif
 
-enum class AllowProcessCaching { No, Yes };
-
 class WebProcessProxy : public AuxiliaryProcessProxy, public ResponsivenessTimer::Client, public ThreadSafeRefCounted<WebProcessProxy>, public CanMakeWeakPtr<WebProcessProxy>, private ProcessThrottlerClient {
 public:
     typedef HashMap<WebCore::FrameIdentifier, RefPtr<WebFrameProxy>> WebFrameProxyMap;
@@ -125,9 +123,13 @@ public:
     WebProcessPool* processPoolIfExists() const;
     WebProcessPool& processPool() const;
 
+    bool isMatchingRegistrableDomain(const WebCore::RegistrableDomain& domain) const { return m_registrableDomain ? *m_registrableDomain == domain : false; }
     WebCore::RegistrableDomain registrableDomain() const { return m_registrableDomain.valueOr(WebCore::RegistrableDomain { }); }
     void setIsInProcessCache(bool);
     bool isInProcessCache() const { return m_isInProcessCache; }
+
+    void enableServiceWorkers();
+    void disableServiceWorkers();
 
     WebsiteDataStore& websiteDataStore() const { ASSERT(m_websiteDataStore); return *m_websiteDataStore; }
     void setWebsiteDataStore(WebsiteDataStore&);
@@ -272,7 +274,27 @@ public:
     // Called when the web process has crashed or we know that it will terminate soon.
     // Will potentially cause the WebProcessProxy object to be freed.
     void shutDown();
-    void maybeShutDown(AllowProcessCaching = AllowProcessCaching::Yes);
+
+    class ScopePreventingShutdown {
+    public:
+        explicit ScopePreventingShutdown(WebProcessProxy& process)
+            : m_process(process)
+        {
+            ++(m_process->m_shutdownPreventingScopeCount);
+        }
+
+        ~ScopePreventingShutdown()
+        {
+            ASSERT(m_process->m_shutdownPreventingScopeCount);
+            if (!--(m_process->m_shutdownPreventingScopeCount))
+                m_process->maybeShutDown();
+        }
+
+    private:
+        Ref<WebProcessProxy> m_process;
+    };
+
+    ScopePreventingShutdown makeScopePreventingShutdown() { return ScopePreventingShutdown { *this }; }
 
     void didStartProvisionalLoadForMainFrame(const URL&);
 
@@ -329,7 +351,8 @@ protected:
     void platformGetLaunchOptions(ProcessLauncher::LaunchOptions&) override;
     void connectionWillOpen(IPC::Connection&) override;
     void processWillShutDown(IPC::Connection&) override;
-
+    bool shouldSendPendingMessage(const PendingMessage&) final;
+    
     // ProcessLauncher::Client
     void didFinishLaunching(ProcessLauncher*, IPC::Connection::Identifier) override;
 
@@ -402,6 +425,8 @@ private:
     void logDiagnosticMessageForResourceLimitTermination(const String& limitKey);
     
     void updateRegistrationWithDataStore();
+
+    void maybeShutDown();
 
     enum class IsWeak { No, Yes };
     template<typename T> class WeakOrStrongPtr {
@@ -481,6 +506,7 @@ private:
 #endif
 
     unsigned m_suspendedPageCount { 0 };
+    unsigned m_shutdownPreventingScopeCount { 0 };
     bool m_hasCommittedAnyProvisionalLoads { false };
     bool m_isPrewarmed;
     bool m_hasAudibleWebPage { false };

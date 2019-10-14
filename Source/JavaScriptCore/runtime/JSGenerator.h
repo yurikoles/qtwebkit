@@ -72,6 +72,16 @@ public:
         Frame,
     };
     static_assert(numberOfInternalFields == 5);
+    static std::array<JSValue, numberOfInternalFields> initialValues()
+    {
+        return { {
+            jsNull(),
+            jsNumber(static_cast<int32_t>(GeneratorState::Init)),
+            jsUndefined(),
+            jsUndefined(),
+            jsUndefined(),
+        } };
+    }
 
     static JSGenerator* create(VM&, Structure*);
     static Structure* createStructure(VM&, JSGlobalObject*, JSValue);

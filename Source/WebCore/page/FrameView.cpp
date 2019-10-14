@@ -102,7 +102,7 @@
 #include "TiledBacking.h"
 #include "VelocityData.h"
 #include "VisualViewport.h"
-#include "WheelEventTestTrigger.h"
+#include "WheelEventTestMonitor.h"
 #include <wtf/text/TextStream.h>
 
 #include <wtf/IsoMallocInlines.h>
@@ -126,6 +126,10 @@
 
 #if PLATFORM(MAC)
 #include "LocalDefaultSystemAppearance.h"
+#endif
+
+#if ENABLE(LAYOUT_FORMATTING_CONTEXT)
+#include "LayoutContext.h"
 #endif
 
 #define RELEASE_LOG_IF_ALLOWED(fmt, ...) RELEASE_LOG_IF(frame().page() && frame().page()->isAlwaysOnLoggingAllowed(), Layout, "%p - FrameView::" fmt, this, ##__VA_ARGS__)
@@ -1192,8 +1196,8 @@ void FrameView::adjustScrollbarsForLayout(bool isFirstLayout)
         if (hMode == ScrollbarAuto)
             setHorizontalScrollbarMode(ScrollbarAlwaysOff); // This causes a horizontal scrollbar to disappear.
         ASSERT(frame().page());
-        if (frame().page()->expectsWheelEventTriggers())
-            scrollAnimator().setWheelEventTestTrigger(frame().page()->testTrigger());
+        if (frame().page()->isMonitoringWheelEvents())
+            scrollAnimator().setWheelEventTestMonitor(frame().page()->wheelEventTestMonitor());
         setScrollbarModes(hMode, vMode);
         setScrollbarsSuppressed(false, true);
     } else if (hMode != horizontalScrollbarMode() || vMode != verticalScrollbarMode())
@@ -2234,8 +2238,8 @@ void FrameView::setScrollPosition(const ScrollPosition& scrollPosition)
     m_shouldScrollToFocusedElement = false;
     m_delayedScrollToFocusedElementTimer.stop();
     Page* page = frame().page();
-    if (page && page->expectsWheelEventTriggers())
-        scrollAnimator().setWheelEventTestTrigger(page->testTrigger());
+    if (page && page->isMonitoringWheelEvents())
+        scrollAnimator().setWheelEventTestMonitor(page->wheelEventTestMonitor());
     ScrollView::setScrollPosition(scrollPosition);
 
     setCurrentScrollType(oldScrollType);
@@ -4127,6 +4131,13 @@ void FrameView::paintContents(GraphicsContext& context, const IntRect& dirtyRect
         return;
     }
 
+#if ENABLE(LAYOUT_FORMATTING_CONTEXT)
+    if (RuntimeEnabledFeatures::sharedFeatures().layoutFormattingContextEnabled()) {
+        Layout::LayoutContext::runLayoutAndPaint(*renderView, context);
+        return;
+    }
+#endif
+
     if (!layoutContext().inPaintableState())
         return;
 
@@ -5050,8 +5061,8 @@ void FrameView::didAddScrollbar(Scrollbar* scrollbar, ScrollbarOrientation orien
 {
     ScrollableArea::didAddScrollbar(scrollbar, orientation);
     Page* page = frame().page();
-    if (page && page->expectsWheelEventTriggers())
-        scrollAnimator().setWheelEventTestTrigger(page->testTrigger());
+    if (page && page->isMonitoringWheelEvents())
+        scrollAnimator().setWheelEventTestMonitor(page->wheelEventTestMonitor());
     if (AXObjectCache* cache = axObjectCache())
         cache->handleScrollbarUpdate(this);
 }

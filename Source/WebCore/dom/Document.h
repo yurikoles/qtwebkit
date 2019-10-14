@@ -81,8 +81,9 @@
 #endif
 
 namespace JSC {
-class ExecState;
+class CallFrame;
 class InputCursor;
+using ExecState = CallFrame;
 }
 
 namespace WebCore {
@@ -144,6 +145,8 @@ class HTMLScriptElement;
 class HitTestLocation;
 class HitTestRequest;
 class HitTestResult;
+class IdleCallbackController;
+class IdleRequestCallback;
 class ImageBitmapRenderingContext;
 class IntPoint;
 class JSNode;
@@ -201,6 +204,7 @@ class WebAnimation;
 class WebGL2RenderingContext;
 class WebGLRenderingContext;
 class GPUCanvasContext;
+class WindowEventLoop;
 class WindowProxy;
 class Worklet;
 class XPathEvaluator;
@@ -916,7 +920,7 @@ public:
     WEBCORE_EXPORT ExceptionOr<String> cookie();
     WEBCORE_EXPORT ExceptionOr<void> setCookie(const String&);
 
-    WEBCORE_EXPORT String referrer() const;
+    WEBCORE_EXPORT String referrer();
 
     WEBCORE_EXPORT String origin() const final;
 
@@ -1054,6 +1058,8 @@ public:
     void parseDNSPrefetchControlHeader(const String&);
 
     WEBCORE_EXPORT void postTask(Task&&) final; // Executes the task on context's thread asynchronously.
+
+    WindowEventLoop& eventLoop();
 
     ScriptedAnimationController* scriptedAnimationController() { return m_scriptedAnimationController.get(); }
     void suspendScriptedAnimationControllerCallbacks();
@@ -1204,6 +1210,10 @@ public:
 
     int requestAnimationFrame(Ref<RequestAnimationFrameCallback>&&);
     void cancelAnimationFrame(int id);
+
+    int requestIdleCallback(Ref<IdleRequestCallback>&&, Seconds timeout);
+    void cancelIdleCallback(int id);
+    IdleCallbackController* idleCallbackController() { return m_idleCallbackController.get(); }
 
     EventTarget* errorEventTarget() final;
     void logExceptionToConsole(const String& errorMessage, const String& sourceURL, int lineNumber, int columnNumber, RefPtr<Inspector::ScriptCallStack>&&) final;
@@ -1837,6 +1847,8 @@ private:
     void clearScriptedAnimationController();
     RefPtr<ScriptedAnimationController> m_scriptedAnimationController;
 
+    std::unique_ptr<IdleCallbackController> m_idleCallbackController;
+
     void notifyMediaCaptureOfVisibilityChanged();
 
     void didLogMessage(const WTFLogChannel&, WTFLogLevel, Vector<JSONLogValue>&&) final;
@@ -2023,6 +2035,8 @@ private:
     RefPtr<DocumentTimeline> m_timeline;
     DocumentIdentifier m_identifier;
 
+    RefPtr<WindowEventLoop> m_eventLoop;
+
 #if ENABLE(SERVICE_WORKER)
     RefPtr<SWClientConnection> m_serviceWorkerConnection;
 #endif
@@ -2094,11 +2108,6 @@ inline void Document::invalidateAccessKeyCache()
 inline ScriptExecutionContext* Node::scriptExecutionContext() const
 {
     return &document().contextDocument();
-}
-
-inline ActiveDOMObject::ActiveDOMObject(Document& document)
-    : ActiveDOMObject(static_cast<ScriptExecutionContext*>(&document.contextDocument()))
-{
 }
 
 } // namespace WebCore

@@ -1062,7 +1062,6 @@ webkit.org/b/181952 [ Debug ] inspector/debugger/tail-deleted-frames/tail-delete
 webkit.org/b/168387 [ Debug ] inspector/debugger/tail-recursion.html [ Pass Timeout ]
 webkit.org/b/170127 inspector/dom-debugger/dom-breakpoints.html [ Pass Timeout ]
 webkit.org/b/148636 inspector/dom/getAccessibilityPropertiesForNode.html [ Pass Timeout ]
-webkit.org/b/154610 inspector/dom-debugger/node-removed.html [ Pass Timeout ]
 webkit.org/b/153039 [ Debug ] inspector/heap/garbageCollected.html [ Pass Timeout ]
 webkit.org/b/167408 [ Debug ] inspector/heap/gc.html [ Slow ]
 webkit.org/b/167184 [ Debug ] inspector/indexeddb/clearObjectStore.html [ Pass Timeout ]
@@ -1623,9 +1622,6 @@ webkit.org/b/181565 imported/w3c/web-platform-tests/media-source/mediasource-con
 webkit.org/b/181565 imported/w3c/web-platform-tests/media-source/mediasource-config-change-mp4-v-bitrate.html [ Pass Failure ]
 webkit.org/b/181565 imported/w3c/web-platform-tests/media-source/mediasource-config-change-mp4-v-framesize.html [ Pass Failure ]
 
-webkit.org/b/181966 [ Debug ] media/W3C/audio/events/event_progress.html [ Pass Failure ]
-webkit.org/b/181966 media/W3C/video/events/event_order_loadstart_progress.html [ Pass Failure ]
-
 webkit.org/b/181969 fast/events/message-port.html [ Skip ]
 
 webkit.org/b/181831 [ HighSierra+ ] fast/forms/searchfield-heights.html [ Pass Failure ]
@@ -1783,6 +1779,7 @@ webkit.org/b/199275 [ HighSierra ] inspector/canvas/requestShaderSource-webgpu.h
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/resolveContext-webgpu.html [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
 webkit.org/b/199275 [ HighSierra ] inspector/canvas/updateShader-webgpu.html [ Skip ]
+webkit.org/b/199275 [ HighSierra ] inspector/canvas/updateShader-webgpu-sharedVertexFragment.html [ Skip ]
 
 webkit.org/b/189680 platform/mac/media/audio-session-category-video-paused.html [ Pass Timeout ]
 
@@ -1813,11 +1810,7 @@ imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/cramped-001.h
 
 webkit.org/b/19650 [ HighSierra+ ] accessibility/mac/press-not-work-for-disabled-menu-list.html [ Pass Failure ]
 
-webkit.org/b/196512 [ Mojave+ ] fast/text/complex-initial-advance.html [ ImageOnlyFailure ]
-
 webkit.org/b/196517 imported/w3c/web-platform-tests/mst-content-hint/MediaStreamTrack-contentHint.html [ Skip ]
-
-webkit.org/b/177663 media/W3C/video/events/event_progress_manual.html [ Pass Failure ]
 
 # Skip iOS-specific Pointer Events WPT tests.
 imported/w3c/web-platform-tests/pointerevents/pointerevent_change-touch-action-onpointerdown_touch.html [ Skip ]
@@ -1883,13 +1876,9 @@ imported/w3c/web-platform-tests/pointerevents/pointerlock/pointerevent_pointerlo
 imported/w3c/web-platform-tests/pointerevents/pointerlock/pointerevent_pointermove_in_pointerlock-manual.html [ Skip ]
 imported/w3c/web-platform-tests/pointerevents/pointerlock/pointerevent_pointermove_on_chorded_mouse_button_when_locked-manual.html [ Skip ]
 
-webkit.org/b/192501 [ Debug ] animations/play-state-in-shorthand.html [ Pass Failure ]
-
 webkit.org/b/197473 imported/w3c/web-platform-tests/resource-timing/resource-timing-level1.sub.html [ Pass Failure ]
 
 webkit.org/b/136627 [ Mojave+ ] media/track/track-cue-rendering-vertical.html [ Failure ]
-
-webkit.org/b/175678 media/W3C/video/events/event_progress.html [ Pass Failure ]
 
 # <rdar://problem/46000736>
 [ Mojave+ ] webgl/2.0.0/conformance/extensions/angle-instanced-arrays.html [ Failure ]
@@ -1981,9 +1970,6 @@ webkit.org/b/195635 scrollingcoordinator/mac/multiple-fixed.html [ Pass Timeout 
 
 webkit.org/b/200258 [ Debug ] imported/w3c/web-platform-tests/wasm/jsapi/interface.any.worker.html [ Pass Failure ]
 
-# rdar://52594556 (Layout test fast/text/international/system-language/han-quotes.html is failing)
-[ Catalina+ ] fast/text/international/system-language/han-quotes.html [ ImageOnlyFailure ]
-
 webkit.org/b/200128 imported/w3c/web-platform-tests/html/semantics/embedded-content/the-video-element/video_timeupdate_on_seek.html [ Timeout Pass ]
 
 # rdar://52557916 (REGRESSION: fast/css/paint-order.html and fast/css/paint-order-shadow.html are failing)
@@ -2025,5 +2011,24 @@ webgpu/whlsl/separate-shader-modules/separate-shader-modules-19.html [ Pass Imag
 webgpu/whlsl/separate-shader-modules/separate-shader-modules-24.html [ Pass ImageOnlyFailure ]
 webgpu/whlsl/separate-shader-modules/separate-shader-modules-26.html [ Pass ImageOnlyFailure ]
 
+# The test runner is failing in an unrelated, unexplained, invisible to the human eye, 2 pixels difference.
+webkit.org/b/201401 imported/w3c/web-platform-tests/media-source/mediasource-video-is-visible.html [ Skip ]
+
 # rdar://55484256 (REGRESSION: (Catalina) fast/images/async-image-multiple-clients-repaint.html is a flakey failure)
 [ Catalina+ ] fast/images/async-image-multiple-clients-repaint.html [ Pass Failure ]
+
+# Two canvas tests fail with small antialiasing diffs
+imported/w3c/web-platform-tests/2dcontext/building-paths/canvas_complexshapes_arcto_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/building-paths/canvas_complexshapes_beziercurveto_001.htm [ ImageOnlyFailure ]
+
+webkit.org/b/202455 imported/w3c/web-platform-tests/2dcontext/drawing-images-to-the-canvas/2d.drawImage.broken.html [ Failure ]
+
+webkit.org/b/202458 imported/w3c/web-platform-tests/2dcontext/imagebitmap/canvas-createImageBitmap-resize.html [ Failure ]
+
+webkit.org/b/202460 imported/w3c/web-platform-tests/2dcontext/image-smoothing/imagesmoothing.html [ Failure ]
+
+webkit.org/b/202516 imported/w3c/web-platform-tests/2dcontext/path-objects/2d.path.rect.winding.html [ Failure ]
+
+webkit.org/b/202523 imported/w3c/web-platform-tests/2dcontext/path-objects/2d.path.stroke.scale2.html [ Failure ]
+
+webkit.org/b/202598 imported/w3c/web-platform-tests/2dcontext/line-styles/2d.line.cap.round.html [ Failure ]

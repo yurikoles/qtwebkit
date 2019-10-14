@@ -340,6 +340,16 @@ static void checkURLArgument(NSURL *url)
     _configuration->setTestSpeedMultiplier(quota);
 }
 
+- (BOOL)suppressesConnectionTerminationOnSystemChange
+{
+    return _configuration->suppressesConnectionTerminationOnSystemChange();
+}
+
+- (void)setSuppressesConnectionTerminationOnSystemChange:(BOOL)suppresses
+{
+    _configuration->setSuppressesConnectionTerminationOnSystemChange(suppresses);
+}
+
 - (NSString *)boundInterfaceIdentifier
 {
     return _configuration->boundInterfaceIdentifier();
@@ -388,6 +398,11 @@ static void checkURLArgument(NSURL *url)
 - (void)setAllLoadsBlockedByDeviceManagementRestrictionsForTesting:(BOOL)blocked
 {
     _configuration->setAllLoadsBlockedByDeviceManagementRestrictionsForTesting(blocked);
+}
+
+- (void)registerURLSchemeServiceWorkersCanHandleForTesting:(NSString *)scheme
+{
+    _configuration->registerServiceWorkerScheme(scheme);
 }
 
 - (API::Object&)_apiObject

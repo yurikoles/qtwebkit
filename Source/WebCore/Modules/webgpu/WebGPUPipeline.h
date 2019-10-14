@@ -30,6 +30,7 @@
 #include "GPUObjectBase.h"
 #include "WebGPUShaderModule.h"
 #include <wtf/Forward.h>
+#include <wtf/Lock.h>
 
 namespace WebCore {
 
@@ -55,6 +56,7 @@ public:
         String entryPoint;
     };
 
+    virtual bool cloneShaderModules(const WebGPUDevice&) = 0;
     virtual bool recompile(const WebGPUDevice&) = 0;
 
 protected:

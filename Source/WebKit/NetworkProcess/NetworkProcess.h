@@ -236,6 +236,7 @@ public:
     void setVeryPrevalentResource(PAL::SessionID, const RegistrableDomain&, CompletionHandler<void()>&&);
     void setPruneEntriesDownTo(PAL::SessionID, uint64_t pruneTargetCount, CompletionHandler<void()>&&);
     void hadUserInteraction(PAL::SessionID, const RegistrableDomain&, CompletionHandler<void(bool)>&&);
+    void isRelationshipOnlyInDatabaseOnce(PAL::SessionID, const RegistrableDomain& subDomain, const RegistrableDomain& topDomain, CompletionHandler<void(bool)>&&);
     void hasLocalStorage(PAL::SessionID, const RegistrableDomain&, CompletionHandler<void(bool)>&&);
     void getAllStorageAccessEntries(PAL::SessionID, CompletionHandler<void(Vector<String> domains)>&&);
     void logFrameNavigation(PAL::SessionID, const NavigatedToDomain&, const TopFrameDomain&, const NavigatedFromDomain&, bool isRedirect, bool isMainFrame);
@@ -250,6 +251,7 @@ public:
     void setCacheMaxAgeCapForPrevalentResources(PAL::SessionID, Seconds, CompletionHandler<void()>&&);
     void setGrandfatheringTime(PAL::SessionID, Seconds, CompletionHandler<void()>&&);
     void setLastSeen(PAL::SessionID, const RegistrableDomain&, Seconds, CompletionHandler<void()>&&);
+    void mergeStatisticForTesting(PAL::SessionID, const RegistrableDomain&, const TopFrameDomain& topFrameDomain1, const TopFrameDomain& topFrameDomain2, Seconds lastSeen, bool hadUserInteraction, Seconds mostRecentUserInteraction, bool isGrandfathered, bool isPrevalent, bool isVeryPrevalent, unsigned dataRecordsRemoved, CompletionHandler<void()>&&);
     void setMinimumTimeBetweenDataRecordsRemoval(PAL::SessionID, Seconds, CompletionHandler<void()>&&);
     void setNotifyPagesWhenDataRecordsWereScanned(PAL::SessionID, bool value, CompletionHandler<void()>&&);
     void setIsRunningResourceLoadStatisticsTest(PAL::SessionID, bool value, CompletionHandler<void()>&&);
@@ -350,6 +352,10 @@ public:
     NetworkConnectionToWebProcess* webProcessConnection(WebCore::ProcessIdentifier) const;
     WebCore::MessagePortChannelRegistry& messagePortChannelRegistry() { return m_messagePortChannelRegistry; }
 
+    void setServiceWorkerFetchTimeoutForTesting(Seconds, CompletionHandler<void()>&&);
+    void resetServiceWorkerFetchTimeoutForTesting(CompletionHandler<void()>&&);
+    Seconds serviceWorkerFetchTimeout() const { return m_serviceWorkerFetchTimeout; }
+
 private:
     void platformInitializeNetworkProcess(const NetworkProcessCreationParameters&);
     std::unique_ptr<WebCore::NetworkStorageSession> platformCreateDefaultStorageSession() const;
@@ -422,7 +428,6 @@ private:
 
     void setCacheModel(CacheModel, String overrideCacheStorageDirectory);
     void allowSpecificHTTPSCertificateForHost(const WebCore::CertificateInfo&, const String& host);
-    void getNetworkProcessStatistics(uint64_t callbackID);
     void clearCacheForAllOrigins(uint32_t cachesToClear);
     void setAllowsAnySSLCertificateForWebSocket(bool, CompletionHandler<void()>&&);
     
@@ -449,7 +454,6 @@ private:
     void registerURLSchemeAsBypassingContentSecurityPolicy(const String&) const;
     void registerURLSchemeAsLocal(const String&) const;
     void registerURLSchemeAsNoAccess(const String&) const;
-    void registerURLSchemeAsDisplayIsolated(const String&) const;
     void registerURLSchemeAsCORSEnabled(const String&) const;
     void registerURLSchemeAsCanDisplayOnlyIfCanRequest(const String&) const;
 
@@ -469,7 +473,7 @@ private:
     
     WebSWOriginStore* existingSWOriginStoreForSession(PAL::SessionID) const;
 
-    void addServiceWorkerSession(PAL::SessionID, bool processTerminationDelayEnabled, String& serviceWorkerRegistrationDirectory, const SandboxExtension::Handle&);
+    void addServiceWorkerSession(PAL::SessionID, bool processTerminationDelayEnabled, HashSet<String>&& registeredSchemes, String&& serviceWorkerRegistrationDirectory, const SandboxExtension::Handle&);
 #endif
 
     void postStorageTask(CrossThreadTask&&);
@@ -541,6 +545,7 @@ private:
     struct ServiceWorkerInfo {
         String databasePath;
         bool processTerminationDelayEnabled { true };
+        HashSet<String> registeredSchemes;
     };
     HashMap<PAL::SessionID, ServiceWorkerInfo> m_serviceWorkerInfo;
     HashMap<PAL::SessionID, std::unique_ptr<WebCore::SWServer>> m_swServers;
@@ -574,6 +579,9 @@ private:
 
     OptionSet<NetworkCache::CacheOption> m_cacheOptions;
     WebCore::MessagePortChannelRegistry m_messagePortChannelRegistry;
+
+    static const Seconds defaultServiceWorkerFetchTimeout;
+    Seconds m_serviceWorkerFetchTimeout { defaultServiceWorkerFetchTimeout };
 };
 
 } // namespace WebKit

@@ -40,6 +40,7 @@
 #include "Event.h"
 #include "EventNames.h"
 #include "Frame.h"
+#include "JSDOMPromiseDeferred.h"
 #include "JSRTCPeerConnection.h"
 #include "Logging.h"
 #include "MediaEndpointConfiguration.h"
@@ -497,10 +498,10 @@ const char* RTCPeerConnection::activeDOMObjectName() const
     return "RTCPeerConnection";
 }
 
-// FIXME: We should do better here, it is way too easy to prevent PageCache.
 bool RTCPeerConnection::canSuspendForDocumentSuspension() const
 {
-    return !hasPendingActivity();
+    // FIXME: Evaluate whether to extend this to connected cases as well.
+    return m_iceConnectionState != RTCIceConnectionState::Completed && m_iceConnectionState != RTCIceConnectionState::Connected;
 }
 
 void RTCPeerConnection::suspend(ReasonForSuspension reason)
@@ -509,6 +510,7 @@ void RTCPeerConnection::suspend(ReasonForSuspension reason)
         return;
 
     m_shouldDelayTasks = true;
+    m_backend->suspend();
 }
 
 void RTCPeerConnection::resume()
@@ -517,6 +519,8 @@ void RTCPeerConnection::resume()
         return;
 
     m_shouldDelayTasks = false;
+    m_backend->resume();
+
     scriptExecutionContext()->postTask([this, protectedThis = makeRef(*this)](auto&) {
         if (m_isStopped || m_shouldDelayTasks)
             return;

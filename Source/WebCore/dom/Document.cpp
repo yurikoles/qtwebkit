@@ -58,6 +58,7 @@
 #include "DOMWindow.h"
 #include "DateComponents.h"
 #include "DebugPageOverlays.h"
+#include "DeprecatedGlobalSettings.h"
 #include "DocumentLoader.h"
 #include "DocumentMarkerController.h"
 #include "DocumentSharedObjectPool.h"
@@ -108,6 +109,7 @@
 #include "HashChangeEvent.h"
 #include "History.h"
 #include "HitTestResult.h"
+#include "IdleCallbackController.h"
 #include "ImageBitmapRenderingContext.h"
 #include "ImageLoader.h"
 #include "InspectorInstrumentation.h"
@@ -117,6 +119,7 @@
 #include "KeyboardEvent.h"
 #include "KeyframeEffect.h"
 #include "LayoutDisallowedScope.h"
+#include "LegacySchemeRegistry.h"
 #include "LibWebRTCProvider.h"
 #include "LoaderStrategy.h"
 #include "Logging.h"
@@ -175,7 +178,6 @@
 #include "SVGUseElement.h"
 #include "SVGZoomEvent.h"
 #include "SWClientConnection.h"
-#include "SchemeRegistry.h"
 #include "ScopedEventQueue.h"
 #include "ScriptController.h"
 #include "ScriptDisallowedScope.h"
@@ -222,6 +224,7 @@
 #include "VisitedLinkState.h"
 #include "WebAnimation.h"
 #include "WheelEvent.h"
+#include "WindowEventLoop.h"
 #include "WindowFeatures.h"
 #include "Worklet.h"
 #include "XMLDocument.h"
@@ -1898,7 +1901,7 @@ void Document::resolveStyle(ResolveStyleType type)
         frameView.willRecalcStyle();
     }
 
-    InspectorInstrumentationCookie cookie = InspectorInstrumentation::willRecalculateStyle(*this);
+    InspectorInstrumentation::willRecalculateStyle(*this);
 
     bool updatedCompositingLayers = false;
     {
@@ -1976,7 +1979,7 @@ void Document::resolveStyle(ResolveStyleType type)
         implicitClose();
     }
 
-    InspectorInstrumentation::didRecalculateStyle(cookie);
+    InspectorInstrumentation::didRecalculateStyle(*this);
 
     // Some animated images may now be inside the viewport due to style recalc,
     // resume them if necessary if there is no layout pending. Otherwise, we'll
@@ -3985,8 +3988,8 @@ void Document::updateIsPlayingMedia(uint64_t sourceElementID)
     for (auto& audioProducer : m_audioProducers)
         state |= audioProducer.mediaState();
 
-#if ENABLE(MEDIA_STREAM) && PLATFORM(IOS_FAMILY)
-    state |= MediaStreamTrack::captureState();
+#if ENABLE(MEDIA_STREAM)
+    state |= MediaStreamTrack::captureState(*this);
 #endif
 
 #if ENABLE(MEDIA_SESSION)
@@ -4031,8 +4034,8 @@ void Document::pageMutedStateDidChange()
     for (auto& audioProducer : m_audioProducers)
         audioProducer.pageMutedStateDidChange();
 
-#if ENABLE(MEDIA_STREAM) && PLATFORM(IOS_FAMILY)
-    MediaStreamTrack::muteCapture();
+#if ENABLE(MEDIA_STREAM)
+    MediaStreamTrack::updateCaptureAccordingToMutedState(*this);
 #endif
 }
 
@@ -4842,11 +4845,22 @@ ExceptionOr<void> Document::setCookie(const String& value)
     return { };
 }
 
-String Document::referrer() const
+String Document::referrer()
 {
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
     if (!m_referrerOverride.isEmpty())
         return m_referrerOverride;
+    if (DeprecatedGlobalSettings::resourceLoadStatisticsEnabled() && frame()) {
+        auto referrerStr = frame()->loader().referrer();
+        if (!referrerStr.isEmpty()) {
+            URL referrerURL { URL(), referrerStr };
+            RegistrableDomain referrerRegistrableDomain { referrerURL };
+            if (!referrerRegistrableDomain.matches(securityOrigin().data())) {
+                m_referrerOverride = referrerURL.protocolHostAndPort();
+                return m_referrerOverride;
+            }
+        }
+    }
 #endif
     if (frame())
         return frame()->loader().referrer();
@@ -4871,7 +4885,7 @@ ExceptionOr<void> Document::setDomain(const String& newDomain)
     if (isSandboxed(SandboxDocumentDomain))
         return Exception { SecurityError, "Assignment is forbidden for sandboxed iframes." };
 
-    if (SchemeRegistry::isDomainRelaxationForbiddenForURLScheme(securityOrigin().protocol()))
+    if (LegacySchemeRegistry::isDomainRelaxationForbiddenForURLScheme(securityOrigin().protocol()))
         return Exception { SecurityError };
 
     // FIXME: We should add logging indicating why a domain was not allowed.
@@ -4942,12 +4956,12 @@ static bool isValidNameNonASCII(const UChar* characters, unsigned length)
     unsigned i = 0;
 
     UChar32 c;
-    U16_NEXT(characters, i, length, c)
+    U16_NEXT(characters, i, length, c);
     if (!isValidNameStart(c))
         return false;
 
     while (i < length) {
-        U16_NEXT(characters, i, length, c)
+        U16_NEXT(characters, i, length, c);
         if (!isValidNamePart(c))
             return false;
     }
@@ -5007,7 +5021,7 @@ ExceptionOr<std::pair<AtomString, AtomString>> Document::parseQualifiedName(cons
 
     for (unsigned i = 0; i < length; ) {
         UChar32 c;
-        U16_NEXT(qualifiedName, i, length, c)
+        U16_NEXT(qualifiedName, i, length, c);
         if (c == ':') {
             if (sawColon)
                 return Exception { InvalidCharacterError };
@@ -6111,6 +6125,18 @@ void Document::pendingTasksTimerFired()
         task.performTask(*this);
 }
 
+WindowEventLoop& Document::eventLoop()
+{
+    if (!m_eventLoop) {
+        if (m_contextDocument)
+            m_eventLoop = &m_contextDocument->eventLoop();
+        else // FIXME: Documents of similar origin should share the same event loop.
+            m_eventLoop = WindowEventLoop::create();
+    }
+    return *m_eventLoop;
+
+}
+
 void Document::suspendScheduledTasks(ReasonForSuspension reason)
 {
     if (m_scheduledTasksAreSuspended) {
@@ -6347,6 +6373,20 @@ void Document::clearScriptedAnimationController()
     if (m_scriptedAnimationController)
         m_scriptedAnimationController->clearDocumentPointer();
     m_scriptedAnimationController = nullptr;
+}
+
+int Document::requestIdleCallback(Ref<IdleRequestCallback>&& callback, Seconds timeout)
+{
+    if (!m_idleCallbackController)
+        m_idleCallbackController = makeUnique<IdleCallbackController>(*this);
+    return m_idleCallbackController->queueIdleCallback(WTFMove(callback), timeout);
+}
+
+void Document::cancelIdleCallback(int id)
+{
+    if (!m_idleCallbackController)
+        return;
+    m_idleCallbackController->removeIdleCallback(id);
 }
 
 void Document::wheelEventHandlersChanged()

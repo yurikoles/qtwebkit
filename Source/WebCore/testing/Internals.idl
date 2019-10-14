@@ -209,6 +209,7 @@ enum CompositingPolicy {
 
     void clearPageCache();
     unsigned long pageCacheSize();
+    void preventDocumentForEnteringPageCache();
 
     CSSStyleDeclaration computedStyleIncludingVisitedInfo(Element element);
 
@@ -722,6 +723,7 @@ enum CompositingPolicy {
 
     boolean isAnyWorkletGlobalScopeAlive();
 
+    readonly attribute long processIdentifier;
     DOMString serviceWorkerClientIdentifier(Document document);
     Promise<void> storeRegistrationsOnDisk();
 
@@ -734,6 +736,7 @@ enum CompositingPolicy {
 
     void setConsoleMessageListener(StringCallback callback);
 
+    readonly attribute boolean supportsAudioSession;
     DOMString audioSessionCategory();
     double preferredAudioBufferSize();
     boolean audioSessionActive();
@@ -751,6 +754,8 @@ enum CompositingPolicy {
 
     void postTask(VoidCallback callback);
     void markContextAsInsecure();
+
+    void setMaxCanvasPixelMemory(unsigned long size);
 
     [Conditional=VIDEO, MayThrowException] readonly attribute NowPlayingState nowPlayingState;
 
@@ -792,4 +797,6 @@ enum CompositingPolicy {
     TextIndicatorInfo textIndicatorForRange(Range range, TextIndicatorOptions options);
 
     void addPrefetchLoadEventListener(HTMLLinkElement link, EventListener? callback);
+
+    [Conditional=WEB_AUTHN] void setMockWebAuthenticationConfiguration(MockWebAuthenticationConfiguration configuration);
 };

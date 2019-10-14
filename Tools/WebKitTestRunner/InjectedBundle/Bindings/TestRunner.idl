@@ -298,6 +298,7 @@ interface TestRunner {
     void setStatisticsDebugMode(boolean value, object completionHandler);
     void setStatisticsPrevalentResourceForDebugMode(DOMString hostName, object completionHandler);
     void setStatisticsLastSeen(DOMString hostName, double seconds, object completionHandler);
+    void setStatisticsMergeStatistic(DOMString hostName, DOMString topFrameDomain1, DOMString topFrameDomain2, double lastSeen, boolean hadUserInteraction, double mostRecentUserInteraction, boolean isGrandfathered, boolean isPrevalent, boolean isVeryPrevalent, unsigned long dataRecordsRemoved, object completionHandler);
     void setStatisticsPrevalentResource(DOMString hostName, boolean value, object completionHandler);
     void setStatisticsVeryPrevalentResource(DOMString hostName, boolean value, object completionHandler);
     boolean isStatisticsPrevalentResource(DOMString hostName);
@@ -307,6 +308,7 @@ interface TestRunner {
     boolean isStatisticsRegisteredAsRedirectingTo(DOMString hostRedirectedFrom, DOMString hostRedirectedTo);
     void setStatisticsHasHadUserInteraction(DOMString hostName, boolean value, object completionHandler);
     boolean isStatisticsHasHadUserInteraction(DOMString hostName);
+    boolean isStatisticsOnlyInDatabaseOnce(DOMString subHost, DOMString topHost);
     void setStatisticsGrandfathered(DOMString hostName, boolean value);
     boolean isStatisticsGrandfathered(DOMString hostName);
     void setUseITPDatabase(boolean value);
@@ -358,13 +360,13 @@ interface TestRunner {
     void abortModal();
 
     void setWebRTCMDNSICECandidatesEnabled(boolean value);
-    void setWebRTCUnifiedPlanEnabled(boolean value);
     void setCustomUserAgent(DOMString userAgent);
 
     void setWebAPIStatisticsEnabled(boolean value);
 
     void terminateNetworkProcess();
     void terminateServiceWorkerProcess();
+    void setUseSeparateServiceWorkerProcess(boolean value);
 
     readonly attribute unsigned long serverTrustEvaluationCallbackCallsCount;
 
@@ -388,8 +390,9 @@ interface TestRunner {
 
     void sendDisplayConfigurationChangedMessageForTesting();
 
-    // WebAuthN
-    void setWebAuthenticationMockConfiguration(object configuration);
+    void setServiceWorkerFetchTimeout(double seconds);
+
+    // WebAuthn
     void addTestKeyToKeychain(DOMString privateKeyBase64, DOMString attrLabel, DOMString applicationTagBase64);
     void cleanUpKeychain(DOMString attrLabel, optional DOMString applicationTagBase64);
     boolean keyExistsInKeychain(DOMString attrLabel, DOMString applicationTagBase64);

@@ -326,14 +326,14 @@ static void outputLayoutBox(TextStream& stream, const Box& layoutBox, const Disp
 static void outputLayoutTree(const LayoutState* layoutState, TextStream& stream, const Container& rootContainer, unsigned depth)
 {
     for (auto& child : childrenOfType<Box>(rootContainer)) {
-        Display::Box* displayBox = nullptr;
-        // Not all boxes generate display boxes.
-        if (layoutState && layoutState->hasDisplayBox(child))
-            displayBox = &layoutState->displayBoxForLayoutBox(child);
-
-        outputLayoutBox(stream, child, displayBox, depth);
-        if (layoutState && child.establishesInlineFormattingContext())
-            outputInlineRuns(stream, *layoutState, downcast<Container>(child), depth + 1);
+        if (layoutState) {
+            // Not all boxes generate display boxes.
+            if (layoutState->hasDisplayBox(child))
+                outputLayoutBox(stream, child, &layoutState->displayBoxForLayoutBox(child), depth);
+            if (child.establishesInlineFormattingContext())
+                outputInlineRuns(stream, *layoutState, downcast<Container>(child), depth + 1);
+        } else
+            outputLayoutBox(stream, child, nullptr, depth);
 
         if (is<Container>(child))
             outputLayoutTree(layoutState, stream, downcast<Container>(child), depth + 1);
@@ -366,7 +366,7 @@ void printLayoutTreeForLiveDocuments()
         // FIXME: Need to find a way to output geometry without layout context.
         auto& renderView = *document->renderView();
         auto initialContainingBlock = TreeBuilder::createLayoutTree(renderView);
-        auto layoutState = LayoutState { };
+        auto layoutState = LayoutState { *initialContainingBlock };
         layoutState.setQuirksMode(renderView.document().inLimitedQuirksMode() ? LayoutState::QuirksMode::Limited : (renderView.document().inQuirksMode() ? LayoutState::QuirksMode::Yes : LayoutState::QuirksMode::No));
         LayoutContext(layoutState).layout();
         showLayoutTree(*initialContainingBlock, &layoutState);

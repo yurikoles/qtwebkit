@@ -173,6 +173,7 @@
 #import <WebCore/JSNodeList.h>
 #import <WebCore/JSNotification.h>
 #import <WebCore/LegacyNSPasteboardTypes.h>
+#import <WebCore/LegacySchemeRegistry.h>
 #import <WebCore/LibWebRTCProvider.h>
 #import <WebCore/LocalizedStrings.h>
 #import <WebCore/LogInitialization.h>
@@ -198,7 +199,6 @@
 #import <WebCore/ResourceRequest.h>
 #import <WebCore/RuntimeApplicationChecks.h>
 #import <WebCore/RuntimeEnabledFeatures.h>
-#import <WebCore/SchemeRegistry.h>
 #import <WebCore/ScriptController.h>
 #import <WebCore/SecurityOrigin.h>
 #import <WebCore/SecurityPolicy.h>
@@ -3235,6 +3235,7 @@ static bool needsSelfRetainWhileLoadingQuirk()
     settings.setMediaCapabilitiesEnabled([preferences mediaCapabilitiesEnabled]);
 
     settings.setCoreMathMLEnabled([preferences coreMathMLEnabled]);
+    settings.setRequestIdleCallbackEnabled([preferences requestIdleCallbackEnabled]);
 
     RuntimeEnabledFeatures::sharedFeatures().setServerTimingEnabled([preferences serverTimingEnabled]);
 
@@ -4777,12 +4778,12 @@ static Vector<String> toStringVector(NSArray* patterns)
 
 + (void)_setDomainRelaxationForbidden:(BOOL)forbidden forURLScheme:(NSString *)scheme
 {
-    WebCore::SchemeRegistry::setDomainRelaxationForbiddenForURLScheme(forbidden, scheme);
+    WebCore::LegacySchemeRegistry::setDomainRelaxationForbiddenForURLScheme(forbidden, scheme);
 }
 
 + (void)_registerURLSchemeAsSecure:(NSString *)scheme
 {
-    WebCore::SchemeRegistry::registerURLSchemeAsSecure(scheme);
+    WebCore::LegacySchemeRegistry::registerURLSchemeAsSecure(scheme);
 }
 
 + (void)_registerURLSchemeAsAllowingLocalStorageAccessInPrivateBrowsing:(NSString *)scheme
@@ -4791,7 +4792,7 @@ static Vector<String> toStringVector(NSArray* patterns)
 
 + (void)_registerURLSchemeAsAllowingDatabaseAccessInPrivateBrowsing:(NSString *)scheme
 {
-    WebCore::SchemeRegistry::registerURLSchemeAsAllowingDatabaseAccessInPrivateBrowsing(scheme);
+    WebCore::LegacySchemeRegistry::registerURLSchemeAsAllowingDatabaseAccessInPrivateBrowsing(scheme);
 }
 
 - (void)_scaleWebView:(float)scale atOrigin:(NSPoint)origin
@@ -5670,7 +5671,7 @@ static Vector<String> toStringVector(NSArray* patterns)
 
 + (void)registerURLSchemeAsLocal:(NSString *)protocol
 {
-    WebCore::SchemeRegistry::registerURLSchemeAsLocal(protocol);
+    WebCore::LegacySchemeRegistry::registerURLSchemeAsLocal(protocol);
 }
 
 - (id)_initWithArguments:(NSDictionary *) arguments

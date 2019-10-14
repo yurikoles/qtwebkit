@@ -186,6 +186,7 @@
 #include <WebCore/JSDOMExceptionHandling.h>
 #include <WebCore/JSDOMWindow.h>
 #include <WebCore/KeyboardEvent.h>
+#include <WebCore/LegacySchemeRegistry.h>
 #include <WebCore/LocalizedStrings.h>
 #include <WebCore/MIMETypeRegistry.h>
 #include <WebCore/MouseEvent.h>
@@ -214,7 +215,6 @@
 #include <WebCore/ResourceResponse.h>
 #include <WebCore/RuntimeEnabledFeatures.h>
 #include <WebCore/SWClientConnection.h>
-#include <WebCore/SchemeRegistry.h>
 #include <WebCore/ScriptController.h>
 #include <WebCore/SerializedScriptValue.h>
 #include <WebCore/ServiceWorkerProvider.h>
@@ -1584,6 +1584,12 @@ void WebPage::suspendForProcessSwap()
         failedToSuspend();
         return;
     }
+
+    // Page cache does not break the opener link for the main frame (only does so for the subframes) because the
+    // main frame is normally re-used for the navigation. However, in the case of process-swapping, the main frame
+    // is now hosted in another process and the one in this process is in the cache.
+    if (m_mainFrame && m_mainFrame->coreFrame())
+        m_mainFrame->coreFrame()->loader().detachFromAllOpenedFrames();
 
     send(Messages::WebPageProxy::DidSuspendAfterProcessSwap());
 }
@@ -5118,7 +5124,7 @@ void WebPage::runModal()
 
 bool WebPage::canHandleRequest(const WebCore::ResourceRequest& request)
 {
-    if (SchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(request.url().protocol().toStringWithoutCopying()))
+    if (LegacySchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(request.url().protocol().toStringWithoutCopying()))
         return true;
 
     if (request.url().protocolIsBlob())
@@ -6450,12 +6456,12 @@ void WebPage::postSynchronousMessageForTesting(const String& messageName, API::O
         returnData = webProcess.transformHandlesToObjects(returnUserData.object());
 }
 
-void WebPage::clearWheelEventTestTrigger()
+void WebPage::clearWheelEventTestMonitor()
 {
     if (!m_page)
         return;
 
-    m_page->clearTrigger();
+    m_page->clearWheelEventTestMonitor();
 }
 
 void WebPage::setShouldScaleViewToFitDocument(bool shouldScaleViewToFitDocument)
@@ -6901,9 +6907,9 @@ static bool isEditableTextInputElement(Element& element)
     return element.isRootEditableElement();
 }
 
-void WebPage::textInputContextsInRect(WebCore::FloatRect searchRect, CompletionHandler<void(const Vector<TextInputContext>&)>&& completionHandler)
+void WebPage::textInputContextsInRect(WebCore::FloatRect searchRect, CompletionHandler<void(const Vector<ElementContext>&)>&& completionHandler)
 {
-    Vector<WebKit::TextInputContext> textInputContexts;
+    Vector<WebKit::ElementContext> textInputContexts;
 
     for (Frame* frame = &m_page->mainFrame(); frame; frame = frame->tree().traverseNext()) {
         Document* document = frame->document();
@@ -6929,7 +6935,7 @@ void WebPage::textInputContextsInRect(WebCore::FloatRect searchRect, CompletionH
             if (!searchRect.intersects(elementRect))
                 continue;
 
-            WebKit::TextInputContext context;
+            WebKit::ElementContext context;
             context.webPageIdentifier = m_identifier;
             context.documentIdentifier = document->identifier();
             context.elementIdentifier = document->identifierForElement(element);
@@ -6942,9 +6948,9 @@ void WebPage::textInputContextsInRect(WebCore::FloatRect searchRect, CompletionH
     completionHandler(textInputContexts);
 }
 
-void WebPage::focusTextInputContext(const TextInputContext& textInputContext, CompletionHandler<void(bool)>&& completionHandler)
+void WebPage::focusTextInputContext(const ElementContext& textInputContext, CompletionHandler<void(bool)>&& completionHandler)
 {
-    RefPtr<Element> element = elementForTextInputContext(textInputContext);
+    RefPtr<Element> element = elementForContext(textInputContext);
 
     if (element)
         element->focus();
@@ -6952,19 +6958,32 @@ void WebPage::focusTextInputContext(const TextInputContext& textInputContext, Co
     completionHandler(element);
 }
 
-Element* WebPage::elementForTextInputContext(const TextInputContext& textInputContext)
+Element* WebPage::elementForContext(const ElementContext& elementContext) const
 {
-    if (textInputContext.webPageIdentifier != m_identifier)
+    if (elementContext.webPageIdentifier != m_identifier)
         return nullptr;
 
-    auto* document = Document::allDocumentsMap().get(textInputContext.documentIdentifier);
+    auto* document = Document::allDocumentsMap().get(elementContext.documentIdentifier);
     if (!document)
         return nullptr;
 
     if (document->page() != m_page.get())
         return nullptr;
 
-    return document->searchForElementByIdentifier(textInputContext.elementIdentifier);
+    return document->searchForElementByIdentifier(elementContext.elementIdentifier);
+}
+
+Optional<ElementContext> WebPage::contextForElement(WebCore::Element& element) const
+{
+    auto& document = element.document();
+    if (!m_page || document.page() != m_page.get())
+        return WTF::nullopt;
+
+    auto frame = document.frame();
+    if (!frame)
+        return WTF::nullopt;
+
+    return ElementContext { elementRectInRootViewCoordinates(element, *frame), m_identifier, document.identifier(), document.identifierForElement(element) };
 }
 
 PAL::SessionID WebPage::sessionID() const

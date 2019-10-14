@@ -273,9 +273,14 @@ public:
 #if PLATFORM(COCOA)
     static bool shouldTreatCocoaTypeAsFile(const String&);
     WEBCORE_EXPORT static NSArray *supportedFileUploadPasteboardTypes();
-    const String& name() const { return m_pasteboardName; }
     long changeCount() const;
     const PasteboardCustomData& readCustomData();
+#endif
+
+#if PLATFORM(COCOA)
+    const String& name() const { return m_pasteboardName; }
+#else
+    const String& name() const { return emptyString(); }
 #endif
 
 #if PLATFORM(QT)
@@ -298,6 +303,13 @@ public:
     COMPtr<WCDataObject> writableDataObject() const { return m_writableDataObject; }
     void writeImageToDataObject(Element&, const URL&); // FIXME: Layering violation.
 #endif
+
+    Vector<PasteboardItemInfo> allPasteboardItemInfo() const;
+    PasteboardItemInfo pasteboardItemInfo(size_t index) const;
+
+    String readString(size_t index, const String& type);
+    RefPtr<WebCore::SharedBuffer> readBuffer(size_t index, const String& type);
+    URL readURL(size_t index, String& title);
 
 private:
 #if PLATFORM(QT)

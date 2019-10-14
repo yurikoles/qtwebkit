@@ -2118,8 +2118,10 @@ static inline bool tryAddEventListener(Node* targetNode, const AtomString& event
         targetNode->document().didAddTouchEventHandler(*targetNode);
 
 #if PLATFORM(IOS_FAMILY)
-    if (targetNode == &targetNode->document() && eventType == eventNames().scrollEvent)
-        targetNode->document().domWindow()->incrementScrollEventListenersCount();
+    if (targetNode == &targetNode->document() && eventType == eventNames().scrollEvent) {
+        if (auto* window = targetNode->document().domWindow())
+            targetNode->document().domWindow()->incrementScrollEventListenersCount();
+    }
 
 #if ENABLE(TOUCH_EVENTS)
     if (eventNames().isTouchRelatedEventType(targetNode->document(), eventType))
@@ -2153,8 +2155,10 @@ static inline bool tryRemoveEventListener(Node* targetNode, const AtomString& ev
         targetNode->document().didRemoveTouchEventHandler(*targetNode);
 
 #if PLATFORM(IOS_FAMILY)
-    if (targetNode == &targetNode->document() && eventType == eventNames().scrollEvent)
-        targetNode->document().domWindow()->decrementScrollEventListenersCount();
+    if (targetNode == &targetNode->document() && eventType == eventNames().scrollEvent) {
+        if (auto* window = targetNode->document().domWindow())
+            window->decrementScrollEventListenersCount();
+    }
 
 #if ENABLE(TOUCH_EVENTS)
     if (eventNames().isTouchRelatedEventType(targetNode->document(), eventType))

@@ -266,6 +266,7 @@ UIProcess/API/Cocoa/_WKUserContentWorld.mm
 UIProcess/API/Cocoa/_WKUserInitiatedAction.mm
 UIProcess/API/Cocoa/_WKUserStyleSheet.mm
 UIProcess/API/Cocoa/_WKVisitedLinkStore.mm
+UIProcess/API/Cocoa/_WKWebAuthenticationPanel.mm
 UIProcess/API/Cocoa/_WKWebsiteDataSize.mm
 UIProcess/API/Cocoa/_WKWebsiteDataStore.mm
 UIProcess/API/Cocoa/_WKWebsiteDataStoreConfiguration.mm
@@ -502,6 +503,7 @@ UIProcess/WebAuthentication/Cocoa/NearFieldSoftLink.mm @no-unify
 UIProcess/WebAuthentication/Cocoa/NfcConnection.mm
 UIProcess/WebAuthentication/Cocoa/NfcService.mm
 UIProcess/WebAuthentication/Cocoa/WKNFReaderSessionDelegate.mm
+UIProcess/WebAuthentication/Cocoa/WebAuthenticationPanelClient.mm
 
 UIProcess/WebAuthentication/Mock/MockLocalConnection.mm
 UIProcess/WebAuthentication/Mock/MockLocalService.mm

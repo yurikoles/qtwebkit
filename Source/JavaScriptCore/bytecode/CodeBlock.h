@@ -787,7 +787,7 @@ public:
     unsigned frameRegisterCount();
     int stackPointerOffset();
 
-    bool hasOpDebugForLineAndColumn(unsigned line, unsigned column);
+    bool hasOpDebugForLineAndColumn(unsigned line, Optional<unsigned> column);
 
     bool hasDebuggerRequests() const { return m_debuggerRequests; }
     void* debuggerRequestsAddress() { return &m_debuggerRequests; }
@@ -891,6 +891,9 @@ public:
     {
         return m_unlinkedCode->metadataSizeInBytes();
     }
+
+    MetadataTable* metadataTable() { return m_metadata.get(); }
+    const void* instructionsRawPointer() { return m_instructionsRawPointer; }
 
 protected:
     void finalizeLLIntInlineCaches();

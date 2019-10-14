@@ -295,6 +295,11 @@ static bool shouldAllowDeviceOrientationAndMotionAccess(WKPageRef, WKSecurityOri
     return TestController::singleton().handleDeviceOrientationAndMotionAccessRequest(origin);
 }
 
+// A placeholder to tell WebKit the client is WebKitTestRunner.
+static void runWebAuthenticationPanel()
+{
+}
+
 WKPageRef TestController::createOtherPage(WKPageRef, WKPageConfigurationRef configuration, WKNavigationActionRef navigationAction, WKWindowFeaturesRef windowFeatures, const void *clientInfo)
 {
     PlatformWebView* parentView = static_cast<PlatformWebView*>(const_cast<void*>(clientInfo));
@@ -617,8 +622,8 @@ void TestController::createWebViewWithOptions(const TestOptions& options)
     resetPreferencesToConsistentValues(options);
 
     platformCreateWebView(configuration.get(), options);
-    WKPageUIClientV13 pageUIClient = {
-        { 13, m_mainWebView.get() },
+    WKPageUIClientV14 pageUIClient = {
+        { 14, m_mainWebView.get() },
         0, // createNewPage_deprecatedForUseWithV0
         0, // showPage
         0, // close
@@ -690,7 +695,8 @@ void TestController::createWebViewWithOptions(const TestOptions& options)
         0, // didExceedBackgroundResourceLimitWhileInForeground
         0, // didResignInputElementStrongPasswordAppearance
         0, // requestStorageAccessConfirm
-        shouldAllowDeviceOrientationAndMotionAccess
+        shouldAllowDeviceOrientationAndMotionAccess,
+        runWebAuthenticationPanel
     };
     WKPageSetPageUIClient(m_mainWebView->page(), &pageUIClient.base);
 
@@ -960,6 +966,8 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
 
     WKContextClearCachedCredentials(TestController::singleton().context());
 
+    WKContextResetServiceWorkerFetchTimeoutForTesting(TestController::singleton().context());
+
     WKWebsiteDataStoreClearAllDeviceOrientationPermissions(TestController::websiteDataStore());
 
     clearIndexedDatabases();
@@ -971,6 +979,8 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
     WKContextSetAllowsAnySSLCertificateForServiceWorkerTesting(platformContext(), true);
 
     WKContextClearCurrentModifierStateForTesting(TestController::singleton().context());
+
+    WKContextSetUseSeparateServiceWorkerProcess(TestController::singleton().context(), false);
 
     // FIXME: This function should also ensure that there is only one page open.
 
@@ -995,7 +1005,7 @@ bool TestController::resetStateToConsistentValues(const TestOptions& options, Re
     // Re-set to the default backing scale factor by setting the custom scale factor to 0.
     WKPageSetCustomBackingScaleFactor(m_mainWebView->page(), 0);
 
-    WKPageClearWheelEventTestTrigger(m_mainWebView->page());
+    WKPageClearWheelEventTestMonitor(m_mainWebView->page());
 
     WKPageSetMuted(m_mainWebView->page(), true);
 
@@ -3263,6 +3273,14 @@ void TestController::setStatisticsLastSeen(WKStringRef host, double seconds)
     m_currentInvocation->didSetLastSeen();
 }
 
+void TestController::setStatisticsMergeStatistic(WKStringRef host, WKStringRef topFrameDomain1, WKStringRef topFrameDomain2, double lastSeen, bool hadUserInteraction, double mostRecentUserInteraction, bool isGrandfathered, bool isPrevalent, bool isVeryPrevalent, int dataRecordsRemoved)
+{
+    ResourceStatisticsCallbackContext context(*this);
+    WKWebsiteDataStoreSetStatisticsMergeStatistic(TestController::websiteDataStore(), host, topFrameDomain1, topFrameDomain2, lastSeen, hadUserInteraction, mostRecentUserInteraction, isGrandfathered, isPrevalent, isVeryPrevalent, dataRecordsRemoved, &context, resourceStatisticsVoidResultCallback);
+    runUntil(context.done, noTimeout);
+    m_currentInvocation->didMergeStatistic();
+}
+
 void TestController::setStatisticsPrevalentResource(WKStringRef host, bool value)
 {
     ResourceStatisticsCallbackContext context(*this);
@@ -3339,6 +3357,14 @@ bool TestController::isStatisticsHasHadUserInteraction(WKStringRef host)
 {
     ResourceStatisticsCallbackContext context(*this);
     WKWebsiteDataStoreIsStatisticsHasHadUserInteraction(TestController::websiteDataStore(), host, &context, resourceStatisticsBooleanResultCallback);
+    runUntil(context.done, noTimeout);
+    return context.result;
+}
+
+bool TestController::isStatisticsOnlyInDatabaseOnce(WKStringRef subHost, WKStringRef topHost)
+{
+    ResourceStatisticsCallbackContext context(*this);
+    WKWebsiteDataStoreIsStatisticsOnlyInDatabaseOnce(TestController::websiteDataStore(), subHost, topHost, &context, resourceStatisticsBooleanResultCallback);
     runUntil(context.done, noTimeout);
     return context.result;
 }
@@ -3594,9 +3620,9 @@ void TestController::sendDisplayConfigurationChangedMessageForTesting()
     WKSendDisplayConfigurationChangedMessageForTesting(platformContext());
 }
 
-void TestController::setWebAuthenticationMockConfiguration(WKDictionaryRef configuration)
+void TestController::setServiceWorkerFetchTimeoutForTesting(double seconds)
 {
-    WKWebsiteDataStoreSetWebAuthenticationMockConfiguration(TestController::websiteDataStore(), configuration);
+    WKContextSetServiceWorkerFetchTimeoutForTesting(platformContext(), seconds);
 }
 
 struct AdClickAttributionStringResultCallbackContext {

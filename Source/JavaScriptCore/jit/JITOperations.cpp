@@ -987,7 +987,7 @@ static SlowPathReturnType handleHostCall(ExecState* execCallee, JSValue callee, 
         if (callType == CallType::Host) {
             NativeCallFrameTracer tracer(vm, execCallee);
             execCallee->setCallee(asObject(callee));
-            vm.hostCallReturnValue = JSValue::decode(callData.native.function(execCallee));
+            vm.hostCallReturnValue = JSValue::decode(callData.native.function(asObject(callee)->globalObject(vm), execCallee));
             if (UNLIKELY(scope.exception())) {
                 return encodeResult(
                     vm.getCTIStub(throwExceptionFromCallSlowPathGenerator).retaggedCode<JSEntryPtrTag>().executableAddress(),
@@ -1016,7 +1016,7 @@ static SlowPathReturnType handleHostCall(ExecState* execCallee, JSValue callee, 
     if (constructType == ConstructType::Host) {
         NativeCallFrameTracer tracer(vm, execCallee);
         execCallee->setCallee(asObject(callee));
-        vm.hostCallReturnValue = JSValue::decode(constructData.native.function(execCallee));
+        vm.hostCallReturnValue = JSValue::decode(constructData.native.function(asObject(callee)->globalObject(vm), execCallee));
         if (UNLIKELY(scope.exception())) {
             return encodeResult(
                 vm.getCTIStub(throwExceptionFromCallSlowPathGenerator).retaggedCode<JSEntryPtrTag>().executableAddress(),
@@ -1400,6 +1400,14 @@ JSCell* JIT_OPERATION operationNewGenerator(ExecState* exec, Structure* structur
     NativeCallFrameTracer tracer(vm, exec);
 
     return JSGenerator::create(vm, structure);
+}
+
+JSCell* JIT_OPERATION operationNewAsyncGenerator(ExecState* exec, Structure* structure)
+{
+    VM& vm = exec->vm();
+    NativeCallFrameTracer tracer(vm, exec);
+
+    return JSAsyncGenerator::create(vm, structure);
 }
 
 JSCell* JIT_OPERATION operationNewRegexp(ExecState* exec, JSCell* regexpPtr)

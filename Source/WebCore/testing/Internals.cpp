@@ -107,7 +107,9 @@
 #include "InstrumentingAgents.h"
 #include "IntRect.h"
 #include "InternalSettings.h"
+#include "JSDOMPromiseDeferred.h"
 #include "JSImageData.h"
+#include "LegacySchemeRegistry.h"
 #include "LibWebRTCProvider.h"
 #include "LoaderStrategy.h"
 #include "MallocStatistics.h"
@@ -151,7 +153,6 @@
 #include "SVGPathStringBuilder.h"
 #include "SVGSVGElement.h"
 #include "SWClientConnection.h"
-#include "SchemeRegistry.h"
 #include "ScriptedAnimationController.h"
 #include "ScrollingCoordinator.h"
 #include "ScrollingMomentumCalculator.h"
@@ -192,6 +193,7 @@
 #include <wtf/Language.h>
 #include <wtf/MemoryPressureHandler.h>
 #include <wtf/MonotonicTime.h>
+#include <wtf/ProcessID.h>
 #include <wtf/URLHelpers.h>
 #include <wtf/text/StringBuilder.h>
 #include <wtf/text/StringConcatenateNumbers.h>
@@ -589,6 +591,8 @@ Internals::Internals(Document& document)
         frame->page()->setPaymentCoordinator(makeUnique<PaymentCoordinator>(*mockPaymentCoordinator));
     }
 #endif
+
+    m_unsuspendableActiveDOMObject = nullptr;
 }
 
 Document* Internals::contextDocument() const
@@ -940,6 +944,27 @@ void Internals::clearPageCache()
 unsigned Internals::pageCacheSize() const
 {
     return PageCache::singleton().pageCount();
+}
+
+class UnsuspendableActiveDOMObject final : public ActiveDOMObject, public RefCounted<UnsuspendableActiveDOMObject> {
+public:
+    static Ref<UnsuspendableActiveDOMObject> create(ScriptExecutionContext& context) { return adoptRef(*new UnsuspendableActiveDOMObject { &context }); }
+
+private:
+    explicit UnsuspendableActiveDOMObject(ScriptExecutionContext* context)
+        : ActiveDOMObject(context)
+    {
+        suspendIfNeeded();
+    }
+
+    bool canSuspendForDocumentSuspension() const final { return false; }
+    const char* activeDOMObjectName() const { return "UnsuspendableActiveDOMObject"; }
+};
+
+void Internals::preventDocumentForEnteringPageCache()
+{
+    if (auto* context = contextDocument())
+        m_unsuspendableActiveDOMObject = UnsuspendableActiveDOMObject::create(*context);
 }
 
 void Internals::disableTileSizeUpdateDelay()
@@ -1460,7 +1485,6 @@ void Internals::emulateRTCPeerConnectionPlatformEvent(RTCPeerConnection& connect
 
 void Internals::useMockRTCPeerConnectionFactory(const String& testCase)
 {
-    ASSERT(RuntimeEnabledFeatures::sharedFeatures().webRTCUnifiedPlanEnabled());
     if (!LibWebRTCProvider::webRTCAvailable())
         return;
 
@@ -3263,12 +3287,12 @@ void Internals::setApplicationCacheOriginQuota(unsigned long long quota)
 
 void Internals::registerURLSchemeAsBypassingContentSecurityPolicy(const String& scheme)
 {
-    SchemeRegistry::registerURLSchemeAsBypassingContentSecurityPolicy(scheme);
+    LegacySchemeRegistry::registerURLSchemeAsBypassingContentSecurityPolicy(scheme);
 }
 
 void Internals::removeURLSchemeRegisteredAsBypassingContentSecurityPolicy(const String& scheme)
 {
-    SchemeRegistry::removeURLSchemeRegisteredAsBypassingContentSecurityPolicy(scheme);
+    LegacySchemeRegistry::removeURLSchemeRegisteredAsBypassingContentSecurityPolicy(scheme);
 }
 
 void Internals::registerDefaultPortForProtocol(unsigned short port, const String& protocol)
@@ -4878,7 +4902,7 @@ void Internals::observeMediaStreamTrack(MediaStreamTrack& track)
 
 void Internals::grabNextMediaStreamTrackFrame(TrackFramePromise&& promise)
 {
-    m_nextTrackFramePromise = WTFMove(promise);
+    m_nextTrackFramePromise = WTF::makeUnique<TrackFramePromise>(promise);
 }
 
 void Internals::videoSampleAvailable(MediaSample& sample)
@@ -4900,7 +4924,7 @@ void Internals::videoSampleAvailable(MediaSample& sample)
         m_nextTrackFramePromise->resolve(imageData.releaseReturnValue().releaseNonNull());
     else
         m_nextTrackFramePromise->reject(imageData.exception().code());
-    m_nextTrackFramePromise = WTF::nullopt;
+    m_nextTrackFramePromise = nullptr;
 }
 
 void Internals::delayMediaStreamTrackSamples(MediaStreamTrack& track, float delay)
@@ -4943,6 +4967,15 @@ void Internals::setDisableGetDisplayMediaUserGestureConstraint(bool value)
         mediaDevices->setDisableGetDisplayMediaUserGestureConstraint(value);
 }
 #endif
+
+bool Internals::supportsAudioSession() const
+{
+#if USE(AUDIO_SESSION)
+    return true;
+#else
+    return false;
+#endif
+}
 
 String Internals::audioSessionCategory() const
 {
@@ -5313,6 +5346,29 @@ void Internals::addPrefetchLoadEventListener(HTMLLinkElement& link, RefPtr<Event
         link.allowPrefetchLoadAndErrorForTesting();
         link.addEventListener(eventNames().loadEvent, listener.releaseNonNull(), false);
     }
+}
+
+#if ENABLE(WEB_AUTHN)
+void Internals::setMockWebAuthenticationConfiguration(const MockWebAuthenticationConfiguration& configuration)
+{
+    auto* document = contextDocument();
+    if (!document)
+        return;
+    auto* page = document->page();
+    if (!page)
+        return;
+    page->chrome().client().setMockWebAuthenticationConfiguration(configuration);
+}
+#endif
+
+void Internals::setMaxCanvasPixelMemory(unsigned size)
+{
+    HTMLCanvasElement::setMaxPixelMemoryForTesting(size);
+}
+
+int Internals::processIdentifier() const
+{
+    return getCurrentProcessID();
 }
 
 } // namespace WebCore

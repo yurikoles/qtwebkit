@@ -44,6 +44,9 @@ css-custom-properties-api [ Skip ]
 css-typedom [ Skip ]
 css-dark-mode [ Skip ]
 
+# Async Clipboard API is not supported in WebKit1 yet.
+webkit.org/b/202654 editing/async-clipboard [ Skip ]
+
 webgpu [ Skip ]
 inspector/canvas/create-context-webgpu.html [ Skip ]
 inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
@@ -51,6 +54,7 @@ inspector/canvas/requestShaderSource-webgpu.html [ Skip ]
 inspector/canvas/resolveContext-webgpu.html [ Skip ]
 inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
 inspector/canvas/updateShader-webgpu.html [ Skip ]
+inspector/canvas/updateShader-webgpu-sharedVertexFragment.html [ Skip ]
 
 # Media Stream API testing is not supported for WK1 yet.
 fast/mediastream
@@ -267,6 +271,8 @@ http/wpt/loading/redirect-headers.html [ Skip ]
 # No service worker implementation for WK1
 http/tests/appcache/main-resource-redirect-with-sw.html [ Skip ]
 http/tests/cache-storage [ Skip ]
+http/tests/navigation/page-cache-domcache-pending-promise.html [ Skip ]
+http/tests/navigation/page-cache-domcachestorage-pending-promise.html [ Skip ]
 http/tests/cookies/same-site/fetch-in-cross-origin-service-worker.html [ Skip ]
 http/tests/cookies/same-site/fetch-in-same-origin-service-worker.html [ Skip ]
 http/wpt/cache-storage [ Skip ]
@@ -299,6 +305,7 @@ http/tests/IndexedDB/storage-limit.https.html [ Skip ]
 http/tests/IndexedDB/storage-limit-1.https.html [ Skip ]
 http/tests/IndexedDB/storage-limit-2.https.html [ Skip ]
 storage/indexeddb/storage-limit.html [ Skip ]
+storage/indexeddb/request-size-estimate.html [ Skip ]
 
 # Skip WebRTC for now in WK1
 imported/w3c/web-platform-tests/webrtc [ Skip ]
@@ -791,3 +798,6 @@ webkit.org/b/199242 [ Debug ] http/tests/performance/performance-resource-timing
 [ Mojave+ ] fast/images/animated-heics-verify.html [ Skip ]
 
 webkit.org/b/200002 [ Mojave+ Debug ] imported/blink/storage/indexeddb/blob-basics-metadata.html [ Timeout ]
+
+# Skip IsLoggedIn
+http/tests/is-logged-in/ [ Skip ]

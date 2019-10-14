@@ -54,6 +54,7 @@ Ref<WebsiteDataStoreConfiguration> WebsiteDataStoreConfiguration::copy()
     auto copy = WebsiteDataStoreConfiguration::create(m_isPersistent);
 
     copy->m_serviceWorkerProcessTerminationDelayEnabled = this->m_serviceWorkerProcessTerminationDelayEnabled;
+    copy->m_serviceWorkerRegisteredSchemes = this->m_serviceWorkerRegisteredSchemes;
     copy->m_fastServerTrustEvaluationEnabled = this->m_fastServerTrustEvaluationEnabled;
     copy->m_networkCacheSpeculativeValidationEnabled = this->m_networkCacheSpeculativeValidationEnabled;
     copy->m_cacheStorageDirectory = this->m_cacheStorageDirectory;
@@ -85,6 +86,7 @@ Ref<WebsiteDataStoreConfiguration> WebsiteDataStoreConfiguration::copy()
     copy->m_dataConnectionServiceType = this->m_dataConnectionServiceType;
     copy->m_testingSessionEnabled = this->m_testingSessionEnabled;
     copy->m_testSpeedMultiplier = this->m_testSpeedMultiplier;
+    copy->m_suppressesConnectionTerminationOnSystemChange = this->m_suppressesConnectionTerminationOnSystemChange;
 #if PLATFORM(COCOA)
     if (m_proxyConfiguration)
         copy->m_proxyConfiguration = adoptCF(CFDictionaryCreateCopy(nullptr, this->m_proxyConfiguration.get()));

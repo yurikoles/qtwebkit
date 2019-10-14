@@ -58,6 +58,7 @@
 #include "DownloadProxy.h"
 #include "DrawingAreaMessages.h"
 #include "DrawingAreaProxy.h"
+#include "ElementContext.h"
 #include "EventDispatcherMessages.h"
 #include "FormDataReference.h"
 #include "FrameInfoData.h"
@@ -85,13 +86,13 @@
 #include "SyntheticEditingCommandType.h"
 #include "TextChecker.h"
 #include "TextCheckerState.h"
-#include "TextInputContext.h"
 #include "URLSchemeTaskParameters.h"
 #include "UndoOrRedo.h"
 #include "UserMediaPermissionRequestProxy.h"
 #include "UserMediaProcessManager.h"
 #include "WKContextPrivate.h"
 #include "WebAutomationSession.h"
+#include "WebBackForwardCache.h"
 #include "WebBackForwardList.h"
 #include "WebBackForwardListItem.h"
 #include "WebCertificateInfo.h"
@@ -756,6 +757,7 @@ void WebPageProxy::launchProcess(const RegistrableDomain& registrableDomain, Pro
 
 bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, Optional<FrameIdentifier> mainFrameID, ProcessSwapRequestedByClient processSwapRequestedByClient, ShouldDelayClosingUntilEnteringAcceleratedCompositingMode shouldDelayClosingUntilEnteringAcceleratedCompositingMode)
 {
+    m_suspendedPageKeptToPreventFlashing = nullptr;
     m_lastSuspendedPage = nullptr;
 
     if (!mainFrameID)
@@ -786,22 +788,40 @@ bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, Opt
         return false;
     }
 
+    bool needsSuspendedPageToPreventFlashing = shouldDelayClosingUntilEnteringAcceleratedCompositingMode == ShouldDelayClosingUntilEnteringAcceleratedCompositingMode::Yes;
+    if (!needsSuspendedPageToPreventFlashing && (!fromItem || !shouldUseBackForwardCache())) {
+        if (!fromItem)
+            RELEASE_LOG_IF_ALLOWED(ProcessSwapping, "suspendCurrentPageIfPossible: Not suspending current page for process pid %i there is no associated WebBackForwardListItem", m_process->processIdentifier());
+        else
+            RELEASE_LOG_IF_ALLOWED(ProcessSwapping, "suspendCurrentPageIfPossible: Not suspending current page for process pid %i the back / forward cache is disabled", m_process->processIdentifier());
+        return false;
+    }
+
     RELEASE_LOG_IF_ALLOWED(ProcessSwapping, "suspendCurrentPageIfPossible: Suspending current page for process pid %i", m_process->processIdentifier());
     auto suspendedPage = makeUnique<SuspendedPageProxy>(*this, m_process.copyRef(), *mainFrameID, shouldDelayClosingUntilEnteringAcceleratedCompositingMode);
 
     LOG(ProcessSwapping, "WebPageProxy %" PRIu64 " created suspended page %s for process pid %i, back/forward item %s" PRIu64, identifier().toUInt64(), suspendedPage->loggingString(), m_process->processIdentifier(), fromItem ? fromItem->itemID().logString() : 0);
 
-    // If the client forced a swap then it may not be web-compatible to keep the previous page because other windows may have an opener link to it. We thus close it as soon as we
-    // can do so without flashing.
-    if (processSwapRequestedByClient == ProcessSwapRequestedByClient::Yes)
-        suspendedPage->closeWithoutFlashing();
-
-    if (fromItem && m_preferences->usesPageCache())
-        fromItem->setSuspendedPage(suspendedPage.get());
-
     m_lastSuspendedPage = makeWeakPtr(*suspendedPage);
-    m_process->processPool().addSuspendedPage(WTFMove(suspendedPage));
+
+    if (fromItem && shouldUseBackForwardCache())
+        backForwardCache().addEntry(*fromItem, WTFMove(suspendedPage));
+    else {
+        ASSERT(needsSuspendedPageToPreventFlashing);
+        m_suspendedPageKeptToPreventFlashing = WTFMove(suspendedPage);
+    }
+
     return true;
+}
+
+WebBackForwardCache& WebPageProxy::backForwardCache() const
+{
+    return process().processPool().backForwardCache();
+}
+
+bool WebPageProxy::shouldUseBackForwardCache() const
+{
+    return m_preferences->usesPageCache() && backForwardCache().capacity() > 0;
 }
 
 void WebPageProxy::swapToWebProcess(Ref<WebProcessProxy>&& process, PageIdentifier webPageID, std::unique_ptr<DrawingAreaProxy>&& drawingArea, RefPtr<WebFrameProxy>&& mainFrame)
@@ -811,6 +831,7 @@ void WebPageProxy::swapToWebProcess(Ref<WebProcessProxy>&& process, PageIdentifi
 
     m_process = WTFMove(process);
     m_webPageID = webPageID;
+    pageClient().didChangeWebPageID();
     m_websiteDataStore = m_process->websiteDataStore();
 
     if (m_logger)
@@ -1032,7 +1053,7 @@ void WebPageProxy::close()
     m_fullscreenClient = makeUnique<API::FullscreenClient>();
 #endif
 
-    m_process->processPool().removeAllSuspendedPagesForPage(*this);
+    m_process->processPool().backForwardCache().removeEntriesForPage(*this);
 
     m_process->send(Messages::WebPage::Close(), m_webPageID);
     m_process->removeWebPage(*this, WebProcessProxy::EndsUsingDataStore::Yes);
@@ -2955,7 +2976,10 @@ void WebPageProxy::receivedNavigationPolicyDecision(PolicyAction policyAction, A
             RELEASE_LOG_IF_ALLOWED(ProcessSwapping, "decidePolicyForNavigationAction: keep using process %i for navigation, reason: %{public}s", processIdentifier(), reason.utf8().data());
 
         if (shouldProcessSwap) {
-            auto suspendedPage = destinationSuspendedPage ? process().processPool().takeSuspendedPage(*destinationSuspendedPage) : nullptr;
+            // Make sure the process to be used for the navigation does not get shutDown now due to destroying SuspendedPageProxy or ProvisionalPageProxy objects.
+            auto preventNavigationProcessShutdown = processForNavigation->makeScopePreventingShutdown();
+
+            auto suspendedPage = destinationSuspendedPage ? backForwardCache().takeEntry(*destinationSuspendedPage->backForwardListItem()) : nullptr;
             if (suspendedPage && suspendedPage->pageIsClosedOrClosing())
                 suspendedPage = nullptr;
 
@@ -3036,10 +3060,11 @@ void WebPageProxy::commitProvisionalPage(FrameIdentifier frameID, uint64_t navig
     m_provisionalPage = nullptr;
 }
 
-void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, std::unique_ptr<SuspendedPageProxy>&& suspendedPageProxy, Ref<WebProcessProxy>&& newProcess, ProcessSwapRequestedByClient processSwapRequestedByClient, Optional<WebsitePoliciesData>&& websitePolicies)
+void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, std::unique_ptr<SuspendedPageProxy>&& suspendedPage, Ref<WebProcessProxy>&& newProcess, ProcessSwapRequestedByClient processSwapRequestedByClient, Optional<WebsitePoliciesData>&& websitePolicies)
 {
-    RELEASE_LOG_IF_ALLOWED(Loading, "continueNavigationInNewProcess: newProcessPID = %i, hasSuspendedPage = %i", newProcess->processIdentifier(), !!suspendedPageProxy);
+    RELEASE_LOG_IF_ALLOWED(Loading, "continueNavigationInNewProcess: newProcessPID = %i, hasSuspendedPage = %i", newProcess->processIdentifier(), !!suspendedPage);
     LOG(Loading, "Continuing navigation %" PRIu64 " '%s' in a new web process", navigation.navigationID(), navigation.loggingString());
+    RELEASE_ASSERT(!newProcess->isInProcessCache());
 
     if (m_provisionalPage) {
         RELEASE_LOG_IF_ALLOWED(ProcessSwapping, "continueNavigationInNewProcess: There is already a pending provisional load, cancelling it (provisonalNavigationID: %llu, navigationID: %llu)", m_provisionalPage->navigationID(), navigation.navigationID());
@@ -3048,7 +3073,7 @@ void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, s
         m_provisionalPage = nullptr;
     }
 
-    m_provisionalPage = makeUnique<ProvisionalPageProxy>(*this, newProcess.copyRef(), WTFMove(suspendedPageProxy), navigation.navigationID(), navigation.currentRequestIsRedirect(), navigation.currentRequest(), processSwapRequestedByClient);
+    m_provisionalPage = makeUnique<ProvisionalPageProxy>(*this, newProcess.copyRef(), WTFMove(suspendedPage), navigation.navigationID(), navigation.currentRequestIsRedirect(), navigation.currentRequest(), processSwapRequestedByClient);
 
     if (auto* item = navigation.targetItem()) {
         LOG(Loading, "WebPageProxy %p continueNavigationInNewProcess to back item URL %s", this, item->url().utf8().data());
@@ -7065,6 +7090,7 @@ void WebPageProxy::resetState(ResetStateReason resetStateReason)
     m_mainFrame = nullptr;
     m_focusedFrame = nullptr;
     m_frameSetLargestFrame = nullptr;
+    m_suspendedPageKeptToPreventFlashing = nullptr;
     m_lastSuspendedPage = nullptr;
 
 #if PLATFORM(COCOA)
@@ -7397,6 +7423,7 @@ void WebPageProxy::enterAcceleratedCompositingMode(const LayerTreeContext& layer
 
     if (m_lastSuspendedPage)
         m_lastSuspendedPage->pageEnteredAcceleratedCompositingMode();
+    m_suspendedPageKeptToPreventFlashing = nullptr;
 }
 
 void WebPageProxy::exitAcceleratedCompositingMode()
@@ -8348,7 +8375,9 @@ void WebPageProxy::updatePlayingMediaDidChange(MediaProducer::MediaStateFlags ne
 #if ENABLE(MEDIA_STREAM)
     if (oldMediaCaptureState != newMediaCaptureState) {
         m_uiClient->mediaCaptureStateDidChange(m_mediaState);
-        m_userMediaPermissionRequestManager->captureStateChanged(oldMediaCaptureState, newMediaCaptureState);
+        ASSERT(m_userMediaPermissionRequestManager);
+        if (m_userMediaPermissionRequestManager)
+            m_userMediaPermissionRequestManager->captureStateChanged(oldMediaCaptureState, newMediaCaptureState);
     }
 #endif
 
@@ -8626,12 +8655,12 @@ void WebPageProxy::didChangeBackgroundColor()
     pageClient().didChangeBackgroundColor();
 }
 
-void WebPageProxy::clearWheelEventTestTrigger()
+void WebPageProxy::clearWheelEventTestMonitor()
 {
     if (!hasRunningProcess())
         return;
     
-    m_process->send(Messages::WebPage::ClearWheelEventTestTrigger(), m_webPageID);
+    m_process->send(Messages::WebPage::clearWheelEventTestMonitor(), m_webPageID);
 }
 
 void WebPageProxy::callAfterNextPresentationUpdate(WTF::Function<void (CallbackBase::Error)>&& callback)
@@ -9379,7 +9408,7 @@ void WebPageProxy::webViewDidMoveToWindow()
     }
 }
 
-void WebPageProxy::textInputContextsInRect(WebCore::FloatRect rect, CompletionHandler<void(const Vector<WebKit::TextInputContext>&)>&& completionHandler)
+void WebPageProxy::textInputContextsInRect(WebCore::FloatRect rect, CompletionHandler<void(const Vector<WebKit::ElementContext>&)>&& completionHandler)
 {
     if (!hasRunningProcess()) {
         completionHandler({ });
@@ -9389,7 +9418,7 @@ void WebPageProxy::textInputContextsInRect(WebCore::FloatRect rect, CompletionHa
     m_process->connection()->sendWithAsyncReply(Messages::WebPage::TextInputContextsInRect(rect), WTFMove(completionHandler), m_webPageID);
 }
 
-void WebPageProxy::focusTextInputContext(const TextInputContext& context, CompletionHandler<void(bool)>&& completionHandler)
+void WebPageProxy::focusTextInputContext(const ElementContext& context, CompletionHandler<void(bool)>&& completionHandler)
 {
     if (!hasRunningProcess()) {
         completionHandler(false);
@@ -9429,6 +9458,13 @@ void WebPageProxy::configureLoggingChannel(const String& channelName, WTFLogChan
 void WebPageProxy::decidePolicyForSOAuthorizationLoad(const String& extension, CompletionHandler<void(SOAuthorizationLoadPolicy)>&& completionHandler)
 {
     m_navigationClient->decidePolicyForSOAuthorizationLoad(*this, SOAuthorizationLoadPolicy::Allow, extension, WTFMove(completionHandler));
+}
+#endif
+
+#if ENABLE(WEB_AUTHN)
+void WebPageProxy::setMockWebAuthenticationConfiguration(MockWebAuthenticationConfiguration&& configuration)
+{
+    m_websiteDataStore->setMockWebAuthenticationConfiguration(WTFMove(configuration));
 }
 #endif
 

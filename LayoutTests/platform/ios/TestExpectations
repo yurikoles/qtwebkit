@@ -41,14 +41,13 @@ http/tests/fullscreen
 compositing/no-compositing-when-fulll-screen-is-present.html
 webkit.org/b/200308 fast/events/touch/ios/content-observation/non-visible-content-change-in-fullscreen-mode.html [ Skip ]
 
-# WebGPU is not enabled on iOS Simulator.
-webgpu [ Skip ]
 inspector/canvas/create-context-webgpu.html [ Skip ]
 inspector/canvas/requestClientNodes-webgpu.html [ Skip ]
 inspector/canvas/requestShaderSource-webgpu.html [ Skip ]
 inspector/canvas/resolveContext-webgpu.html [ Skip ]
 inspector/canvas/shaderProgram-add-remove-webgpu.html [ Skip ]
 inspector/canvas/updateShader-webgpu.html [ Skip ]
+inspector/canvas/updateShader-webgpu-sharedVertexFragment.html [ Skip ]
 
 # Encrypted Media Extensions are not enabled
 media/encrypted-media/
@@ -805,6 +804,7 @@ webkit.org/b/159240 fast/events/remove-focus-navigation-starting-point-crash.htm
 webkit.org/b/164888 fast/shadow-dom/focus-navigation-out-of-slot.html [ Skip ]
 webkit.org/b/164888 fast/shadow-dom/focus-navigation-passes-shadow-host.html [ Skip ]
 webkit.org/b/164888 fast/shadow-dom/focus-navigation-passes-svg-use-element.html [ Skip ]
+webkit.org/b/202497 imported/w3c/web-platform-tests/shadow-dom/focus/ [ Skip ]
 
 # This test needs to be rewritten to use runUIScript to work on iOS
 webkit.org/b/152993 http/tests/contentdispositionattachmentsandbox/form-submission-disabled.html [ Skip ]
@@ -1318,7 +1318,6 @@ webkit.org/b/178729 css3/shapes/shape-outside/shape-image/shape-image-016.html [
 webkit.org/b/178729 css3/shapes/shape-outside/shape-image/shape-image-025.html [ ImageOnlyFailure ]
 webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/circle/shape-outside-circle-017.html [ ImageOnlyFailure ]
 webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/circle/shape-outside-circle-027.html [ ImageOnlyFailure ]
-webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/ellipse/shape-outside-ellipse-017.html [ ImageOnlyFailure ]
 webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/inset/shape-outside-inset-010.html [ ImageOnlyFailure ]
 webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/inset/shape-outside-inset-011.html [ ImageOnlyFailure ]
 webkit.org/b/178729 css3/shapes/shape-outside/supported-shapes/inset/shape-outside-inset-012.html [ ImageOnlyFailure ]
@@ -1329,7 +1328,6 @@ webkit.org/b/178729 css3/shapes/shape-outside/values/shape-margin-001.html [ Fai
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-circle-004.html [ Failure ]
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-circle-005.html [ Failure ]
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-ellipse-004.html [ Failure ]
-webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-ellipse-005.html [ Failure ]
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-inset-003.html [ Failure ]
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-polygon-004.html [ Failure ]
 webkit.org/b/178729 css3/shapes/shape-outside/values/shape-outside-shape-arguments-000.html [ Failure ]
@@ -2800,8 +2798,14 @@ http/tests/storageAccess/deny-storage-access-under-opener-if-auto-dismiss.html [
 http/tests/resourceLoadStatistics/cap-cache-max-age-for-prevalent-resource.html [ Pass ]
 http/tests/storageAccess/has-storage-access-false-by-default.html [ Pass ]
 http/tests/storageAccess/has-storage-access-false-by-default-ephemeral.html [ Pass ]
-http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral.html [ Pass ]
-http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies.html [ Pass ]
+http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral.html [ Pass Timeout ]
+http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies.html [ Pass Timeout ]
+http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-ephemeral-database.html [ Pass Timeout ]
+http/tests/storageAccess/has-storage-access-true-if-third-party-has-cookies-database.html [ Pass Timeout ]
+http/tests/storageAccess/deny-storage-access-under-opener-database.html [ Pass ]
+http/tests/storageAccess/deny-storage-access-under-opener-if-auto-dismiss-database.html [ Pass ]
+http/tests/storageAccess/has-storage-access-false-by-default-database.html [ Pass ]
+http/tests/storageAccess/has-storage-access-false-by-default-ephemeral-database.html [ Pass ]
 
 # Skipped in general expectations since they only work on iOS and Mac, WK2.
 http/tests/security/strip-referrer-to-origin-for-third-party-redirects-in-private-mode.html [ Pass ]
@@ -2936,6 +2940,7 @@ webkit.org/b/177445 fast/loader/form-submission-after-beforeunload-cancel.html [
 webkit.org/b/177397 compositing/masks/compositing-clip-path-change-no-repaint.html [ Pass Failure ]
 
 webkit.org/b/177617 http/tests/storageAccess/request-storage-access-top-frame.html [ Pass Timeout ]
+http/tests/storageAccess/request-storage-access-top-frame-database.html [ Pass Timeout ]
 
 webkit.org/b/177547 imported/w3c/web-platform-tests/fetch/security/dangling-markup-mitigation-data-url.tentative.sub.html [ Pass Failure ]
 
@@ -3227,8 +3232,6 @@ webkit.org/b/191707 imported/w3c/web-platform-tests/webrtc/simplecall.https.html
 
 webkit.org/b/197473 imported/w3c/web-platform-tests/resource-timing/resource-timing-level1.sub.html [ Pass Failure ]
 
-webkit.org/b/175678 media/W3C/video/events/event_progress.html [ Pass Failure ]
-
 # These tests depend on the implementation of "modern compatibility mode" in WebKitAdditions.
 platform/ipad/fast/css/webkit-overflow-scrolling-parsing-modern-compatibility-mode.html [ Skip ]
 
@@ -3353,11 +3356,6 @@ webkit.org/b/181837 [ Release ] imported/w3c/web-platform-tests/service-workers/
 
 webkit.org/b/201190 imported/w3c/web-platform-tests/service-workers/service-worker/registration-mime-types.https.html [ Pass Failure ]
 
-webkit.org/b/201784 webgl/2.0.0/conformance/glsl/misc/shaders-with-invariance.html [ Failure ]
-
-# <rdar://problem/54325542> quicklook/numbers-09.html is failing
-quicklook/numbers-09.html [ Failure ]
-
 # rdar://53468934
 legacy-animation-engine/fast/text/crash-complex-text-surrogate.html [ Failure ]
 fast/text/crash-complex-text-surrogate.html [ Failure ]
@@ -3370,8 +3368,6 @@ fast/scrolling/ios/touch-scroll-visibility-hidden.html [ Failure ]
 # <rdar://problem/52962272> fast/scrolling/ios/body-overflow-hidden.html is an Image failure
 fast/scrolling/ios/body-overflow-hidden.html [ Pass ImageOnlyFailure ]
 
-webkit.org/b/201898 editing/pasteboard/ios/dom-paste-same-origin.html [ Failure ]
-
 webkit.org/b/201899 editing/pasteboard/paste-does-not-fire-promises-while-sanitizing-web-content.html [ Failure ]
 
 webkit.org/b/201900 webrtc/datachannel/mdns-ice-candidates.html [ Failure ]
@@ -3382,3 +3378,29 @@ webkit.org/b/201901 svg/custom/glyph-selection-arabic-forms.svg [ Failure ]
 webkit.org/b/202283 scrollingcoordinator/ios/fixed-scrolling-with-keyboard.html [ Pass Failure ]
 
 webkit.org/b/202328 fast/images/async-image-multiple-clients-repaint.html [ Pass Failure ]
+
+# drawFocusRing without keyboard enabled does nothing
+imported/w3c/web-platform-tests/2dcontext/drawing-paths-to-the-canvas/drawFocusIfNeeded_001.html [ Skip ]
+imported/w3c/web-platform-tests/2dcontext/drawing-paths-to-the-canvas/drawFocusIfNeeded_002.html [ Skip ]
+imported/w3c/web-platform-tests/2dcontext/drawing-paths-to-the-canvas/drawFocusIfNeeded_003.html [ Skip ]
+imported/w3c/web-platform-tests/2dcontext/drawing-paths-to-the-canvas/drawFocusIfNeeded_004.html [ Skip ]
+imported/w3c/web-platform-tests/2dcontext/drawing-paths-to-the-canvas/drawFocusIfNeeded_005.html [ Skip ]
+
+# canvas tests that fail with small antialiasing diffs
+imported/w3c/web-platform-tests/2dcontext/building-paths/canvas_complexshapes_arcto_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/building-paths/canvas_complexshapes_beziercurveto_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/compositing/canvas_compositing_globalcompositeoperation_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/line-styles/canvas_linestyles_linecap_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/line-styles/lineto_a.html [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/the-canvas-state/canvas_state_restore_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/transformations/canvas_transformations_scale_001.htm [ ImageOnlyFailure ]
+imported/w3c/web-platform-tests/2dcontext/transformations/transform_a.html [ ImageOnlyFailure ]
+
+webkit.org/b/202455 imported/w3c/web-platform-tests/2dcontext/drawing-images-to-the-canvas/2d.drawImage.broken.html [ Failure ]
+
+webkit.org/b/202458 imported/w3c/web-platform-tests/2dcontext/imagebitmap/canvas-createImageBitmap-resize.html [ Failure ]
+
+webkit.org/b/202516 imported/w3c/web-platform-tests/2dcontext/path-objects/2d.path.rect.winding.html [ Failure ]
+
+webkit.org/b/202518 imported/w3c/web-platform-tests/2dcontext/drawing-text-to-the-canvas/2d.text.measure.fontBoundingBox.html [ Failure ]
+webkit.org/b/202518 imported/w3c/web-platform-tests/2dcontext/drawing-text-to-the-canvas/2d.text.measure.emHeights.html [ Failure ]

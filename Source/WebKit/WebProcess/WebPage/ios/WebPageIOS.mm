@@ -1092,7 +1092,9 @@ void WebPage::potentialTapAtPosition(uint64_t requestID, const WebCore::FloatPoi
         double viewportMaximumScale;
 
         m_viewGestureGeometryCollector->computeZoomInformationForNode(*m_potentialTapNode, origin, renderRect, fitEntireRect, viewportMinimumScale, viewportMaximumScale);
-        send(Messages::WebPageProxy::HandleSmartMagnificationInformationForPotentialTap(requestID, renderRect, fitEntireRect, viewportMinimumScale, viewportMaximumScale));
+
+        bool nodeIsRootLevel = is<WebCore::Document>(*m_potentialTapNode) || is<WebCore::HTMLBodyElement>(*m_potentialTapNode);
+        send(Messages::WebPageProxy::HandleSmartMagnificationInformationForPotentialTap(requestID, renderRect, fitEntireRect, viewportMinimumScale, viewportMaximumScale, nodeIsRootLevel));
     }
 
     sendTapHighlightForNodeIfNecessary(requestID, m_potentialTapNode.get());
@@ -2713,6 +2715,8 @@ static void elementPositionInformation(WebPage& page, Element& element, const In
             imagePositionInformation(page, element, request, info);
         boundsPositionInformation(*renderer, info);
     }
+
+    info.elementContext = page.contextForElement(element);
 }
     
 static void selectionPositionInformation(WebPage& page, const InteractionInformationRequest& request, InteractionInformationAtPosition& info)
@@ -2811,10 +2815,16 @@ void WebPage::requestPositionInformation(const InteractionInformationRequest& re
     send(Messages::WebPageProxy::DidReceivePositionInformation(positionInformation(request)));
 }
 
-void WebPage::startInteractionWithElementAtPosition(const WebCore::IntPoint& point)
+void WebPage::startInteractionWithElementContextOrPosition(Optional<ElementContext>&& elementContext, WebCore::IntPoint&& point)
 {
+    if (elementContext) {
+        m_interactionNode = elementForContext(*elementContext);
+        if (m_interactionNode)
+            return;
+    }
+
     FloatPoint adjustedPoint;
-    m_interactionNode = m_page->mainFrame().nodeRespondingToClickEvents(point, adjustedPoint);
+    m_interactionNode = m_page->mainFrame().nodeRespondingToInteraction(point, adjustedPoint);
 }
 
 void WebPage::stopInteraction()
@@ -3927,7 +3937,7 @@ void WebPage::requestDocumentEditingContext(DocumentEditingContextRequest reques
     bool wantsRects = request.options.contains(DocumentEditingContextRequest::Options::Rects);
 
     if (auto textInputContext = request.textInputContext) {
-        RefPtr<Element> element = elementForTextInputContext(*textInputContext);
+        RefPtr<Element> element = elementForContext(*textInputContext);
         if (!element) {
             completionHandler({ });
             return;

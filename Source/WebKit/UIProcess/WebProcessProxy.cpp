@@ -31,6 +31,7 @@
 #include "APIPageHandle.h"
 #include "DataReference.h"
 #include "DownloadProxyMap.h"
+#include "LoadParameters.h"
 #include "Logging.h"
 #include "PluginInfoStore.h"
 #include "PluginProcessManager.h"
@@ -43,6 +44,7 @@
 #include "WebNavigationDataStore.h"
 #include "WebNotificationManagerProxy.h"
 #include "WebPageGroup.h"
+#include "WebPageMessages.h"
 #include "WebPageProxy.h"
 #include "WebPasteboardProxy.h"
 #include "WebProcessCache.h"
@@ -139,7 +141,7 @@ Ref<WebProcessProxy> WebProcessProxy::createForServiceWorkers(WebProcessPool& pr
 {
     auto proxy = adoptRef(*new WebProcessProxy(processPool, &websiteDataStore, IsPrewarmed::No));
     proxy->m_registrableDomain = WTFMove(registrableDomain);
-    proxy->m_serviceWorkerInformation = ServiceWorkerInformation { WebPageProxyIdentifier::generate(), PageIdentifier::generate() };
+    proxy->enableServiceWorkers();
     proxy->connect();
     return proxy;
 }
@@ -246,6 +248,7 @@ void WebProcessProxy::updateRegistrationWithDataStore()
 
 void WebProcessProxy::addProvisionalPageProxy(ProvisionalPageProxy& provisionalPage)
 {
+    ASSERT(!m_isInProcessCache);
     ASSERT(!m_provisionalPages.contains(&provisionalPage));
     m_provisionalPages.add(&provisionalPage);
     updateRegistrationWithDataStore();
@@ -256,6 +259,8 @@ void WebProcessProxy::removeProvisionalPageProxy(ProvisionalPageProxy& provision
     ASSERT(m_provisionalPages.contains(&provisionalPage));
     m_provisionalPages.remove(&provisionalPage);
     updateRegistrationWithDataStore();
+    if (m_provisionalPages.isEmpty())
+        maybeShutDown();
 }
 
 void WebProcessProxy::getLaunchOptions(ProcessLauncher::LaunchOptions& launchOptions)
@@ -301,6 +306,29 @@ void WebProcessProxy::platformGetLaunchOptions(ProcessLauncher::LaunchOptions& l
 {
 }
 #endif
+
+bool WebProcessProxy::shouldSendPendingMessage(const PendingMessage& message)
+{
+#if HAVE(SANDBOX_ISSUE_MACH_EXTENSION_TO_PROCESS_BY_PID)
+    if (message.encoder->messageName() == "LoadRequestWaitingForPID") {
+        auto buffer = message.encoder->buffer();
+        auto bufferSize = message.encoder->bufferSize();
+        std::unique_ptr<IPC::Decoder> decoder = makeUnique<IPC::Decoder>(buffer, bufferSize, nullptr, Vector<IPC::Attachment> { });
+        LoadParameters loadParameters;
+        URL resourceDirectoryURL;
+        WebPageProxyIdentifier pageID;
+        if (decoder->decode(loadParameters) && decoder->decode(resourceDirectoryURL) && decoder->decode(pageID)) {
+            if (auto* page = WebProcessProxy::webPage(pageID)) {
+                page->maybeInitializeSandboxExtensionHandle(static_cast<WebProcessProxy&>(*this), loadParameters.request.url(), resourceDirectoryURL, loadParameters.sandboxExtensionHandle);
+                send(Messages::WebPage::LoadRequest(loadParameters), decoder->destinationID());
+            }
+        } else
+            ASSERT_NOT_REACHED();
+        return false;
+    }
+#endif
+    return true;
+}
 
 void WebProcessProxy::connectionWillOpen(IPC::Connection& connection)
 {
@@ -912,7 +940,7 @@ bool WebProcessProxy::canBeAddedToWebProcessCache() const
     return true;
 }
 
-void WebProcessProxy::maybeShutDown(AllowProcessCaching allowProcessCaching)
+void WebProcessProxy::maybeShutDown()
 {
     if (processPool().dummyProcessProxy() == this && m_pageMap.isEmpty()) {
         ASSERT(state() == State::Terminated);
@@ -923,7 +951,7 @@ void WebProcessProxy::maybeShutDown(AllowProcessCaching allowProcessCaching)
     if (state() == State::Terminated || !canTerminateAuxiliaryProcess())
         return;
 
-    if (allowProcessCaching == AllowProcessCaching::Yes && canBeAddedToWebProcessCache() && processPool().webProcessCache().addProcessIfPossible(*this))
+    if (canBeAddedToWebProcessCache() && processPool().webProcessCache().addProcessIfPossible(*this))
         return;
 
     shutDown();
@@ -931,7 +959,10 @@ void WebProcessProxy::maybeShutDown(AllowProcessCaching allowProcessCaching)
 
 bool WebProcessProxy::canTerminateAuxiliaryProcess()
 {
-    if (!m_pageMap.isEmpty() || m_suspendedPageCount || !m_provisionalPages.isEmpty() || m_isInProcessCache)
+    if (!m_pageMap.isEmpty() || m_suspendedPageCount || !m_provisionalPages.isEmpty() || m_isInProcessCache || m_shutdownPreventingScopeCount)
+        return false;
+
+    if (isRunningServiceWorkers())
         return false;
 
     if (!m_processPool->shouldTerminate(this))
@@ -1438,6 +1469,9 @@ void WebProcessProxy::didStartProvisionalLoadForMainFrame(const URL& url)
 
     auto registrableDomain = WebCore::RegistrableDomain { url };
     if (m_registrableDomain && *m_registrableDomain != registrableDomain) {
+#if ENABLE(SERVICE_WORKER)
+        disableServiceWorkers();
+#endif
         // Null out registrable domain since this process has now been used for several domains.
         m_registrableDomain = WebCore::RegistrableDomain { };
         return;
@@ -1458,8 +1492,10 @@ void WebProcessProxy::decrementSuspendedPageCount()
 {
     ASSERT(m_suspendedPageCount);
     --m_suspendedPageCount;
-    if (!m_suspendedPageCount)
+    if (!m_suspendedPageCount) {
         send(Messages::WebProcess::SetHasSuspendedPageProxy(false), 0);
+        maybeShutDown();
+    }
 }
 
 WebProcessPool* WebProcessProxy::processPoolIfExists() const
@@ -1533,6 +1569,28 @@ void WebProcessProxy::updateServiceWorkerPreferencesStore(const WebPreferencesSt
     send(Messages::WebSWContextManagerConnection::UpdatePreferencesStore { store }, 0);
 }
 #endif
+
+void WebProcessProxy::disableServiceWorkers()
+{
+    if (!m_serviceWorkerInformation)
+        return;
+
+    m_serviceWorkerInformation = { };
+
+#if ENABLE(SERVICE_WORKER)
+    processPool().removeFromServiceWorkerProcesses(*this);
+    send(Messages::WebSWContextManagerConnection::Close { }, 0);
+#endif
+
+    maybeShutDown();
+}
+
+void WebProcessProxy::enableServiceWorkers()
+{
+    ASSERT(m_registrableDomain && !m_registrableDomain->isEmpty());
+    ASSERT(!m_serviceWorkerInformation);
+    m_serviceWorkerInformation = ServiceWorkerInformation { WebPageProxyIdentifier::generate(), PageIdentifier::generate() };
+}
 
 } // namespace WebKit
 
