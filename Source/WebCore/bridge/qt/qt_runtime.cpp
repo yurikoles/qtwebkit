@@ -21,6 +21,7 @@
 #include "qt_runtime.h"
 
 #include "JSDOMBinding.h"
+#include "JSDOMConvertBufferSource.h"
 #include "JSDOMWindow.h"
 #include "JSDocument.h"
 #include "JSHTMLElement.h"
