@@ -161,7 +161,6 @@ list(APPEND WebCore_SOURCES
     platform/qt/DataTransferItemQt.cpp
     platform/qt/DragDataQt.cpp
     platform/qt/DragImageQt.cpp
-    platform/qt/EventLoopQt.cpp
     platform/qt/KeyedDecoderQt.cpp
     platform/qt/KeyedEncoderQt.cpp
     platform/qt/LocalizedStringsQt.cpp

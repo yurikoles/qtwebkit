@@ -104,6 +104,11 @@ void RunLoop::wakeUp()
     m_timerObject->wakeUp();
 }
 
+RunLoop::CycleResult RunLoop::cycle(const String&)
+{
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+}
+
 // RunLoop::Timer
 
 void RunLoop::TimerBase::timerFired(RunLoop* runLoop, int ID)
