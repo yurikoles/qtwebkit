@@ -186,8 +186,7 @@ public:
     void transitionToCommittedFromCachedFrame(WebCore::CachedFrame*) override;
     void transitionToCommittedForNewPage() override;
 
-    void didSaveToPageCache() override;
-    void didRestoreFromPageCache() override;
+    void didRestoreFromBackForwardCache() override;
 
     void dispatchDidBecomeFrameset(bool) override;
 

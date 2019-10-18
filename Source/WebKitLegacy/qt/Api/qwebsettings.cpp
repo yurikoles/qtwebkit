@@ -33,13 +33,13 @@
 #include <QStandardPaths>
 #include <QUrl>
 #include <WebCore/ApplicationCacheStorage.h>
+#include <WebCore/BackForwardCache.h>
 #include <WebCore/DatabaseTracker.h>
 #include <WebCore/Image.h>
 #include <WebCore/MemoryCache.h>
 #include <WebCore/MemoryRelease.h>
 #include <WebCore/NetworkStateNotifier.h>
 #include <WebCore/Page.h>
-#include <WebCore/PageCache.h>
 #include <WebCore/RuntimeEnabledFeatures.h>
 #include <WebCore/Settings.h>
 #include <WebCore/WorkerThread.h>
@@ -300,7 +300,7 @@ void QWebSettingsPrivate::apply()
         value = attributes.value(QWebSettings::ImagesEnabled, global->attributes.value(QWebSettings::ImagesEnabled));
         settings->setImagesEnabled(value);
 
-        settings->setUsesPageCache(WebCore::PageCache::singleton().maxSize());
+        settings->setUsesBackForwardCache(WebCore::BackForwardCache::singleton().maxSize());
     } else {
         QList<QWebSettingsPrivate*> settings = *::allSettings();
         for (int i = 0; i < settings.count(); ++i)
@@ -909,7 +909,7 @@ void QWebSettings::clearMemoryCaches()
 void QWebSettings::setMaximumPagesInCache(int pages)
 {
     QWebSettingsPrivate* global = QWebSettings::globalSettings()->d;
-    WebCore::PageCache::singleton().setMaxSize(qMax(0, pages));
+    WebCore::BackForwardCache::singleton().setMaxSize(qMax(0, pages));
     global->apply();
 }
 
@@ -919,7 +919,7 @@ void QWebSettings::setMaximumPagesInCache(int pages)
 int QWebSettings::maximumPagesInCache()
 {
     WebCore::initializeWebCoreQt();
-    return WebCore::PageCache::singleton().maxSize();
+    return WebCore::BackForwardCache::singleton().maxSize();
 }
 
 /*!

@@ -27,11 +27,11 @@
 #include "QtTestSupport.h"
 
 #include <QFontDatabase>
+#include <WebCore/BackForwardCache.h>
 #include <WebCore/CrossOriginPreflightResultCache.h>
 #include <WebCore/FontCache.h>
 #include <WebCore/GCController.h>
 #include <WebCore/MemoryCache.h>
-#include <WebCore/PageCache.h>
 
 #if HAVE(FONTCONFIG)
 #include <QByteArray>
@@ -51,7 +51,7 @@ void QtTestSupport::clearMemoryCaches()
         memoryCache.setDisabled(false);
     }
 
-    auto& pageCache = PageCache::singleton();
+    auto& pageCache = BackForwardCache::singleton();
     int pageCacheMaxSize = pageCache.maxSize();
     pageCache.setMaxSize(0);
     pageCache.setMaxSize(pageCacheMaxSize);

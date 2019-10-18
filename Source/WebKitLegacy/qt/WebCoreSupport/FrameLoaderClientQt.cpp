@@ -287,11 +287,7 @@ void FrameLoaderClientQt::transitionToCommittedForNewPage()
     }
 }
 
-void FrameLoaderClientQt::didSaveToPageCache()
-{
-}
-
-void FrameLoaderClientQt::didRestoreFromPageCache()
+void FrameLoaderClientQt::didRestoreFromBackForwardCache()
 {
 }
 
