@@ -34,7 +34,6 @@
 #include "NetworkConnectionToWebProcessMessages.h"
 #include "NetworkProcessConnection.h"
 #include "NetworkProcessMessages.h"
-#include "ServiceWorkerClientFetch.h"
 #include "WebCoreArgumentCoders.h"
 #include "WebProcess.h"
 #include "WebProcessPoolMessages.h"
@@ -74,7 +73,9 @@ IPC::Connection* WebSWClientConnection::messageSenderConnection() const
 
 void WebSWClientConnection::scheduleJobInServer(const ServiceWorkerJobData& jobData)
 {
-    send(Messages::WebSWServerConnection::ScheduleJobInServer { jobData });
+    runOrDelayTaskForImport([this, jobData] {
+        send(Messages::WebSWServerConnection::ScheduleJobInServer { jobData });
+    });
 }
 
 void WebSWClientConnection::finishFetchingScriptInServer(const ServiceWorkerFetchResult& result)
@@ -201,21 +202,6 @@ void WebSWClientConnection::getRegistrations(SecurityOriginData&& topOrigin, con
         m_ongoingGetRegistrationsTasks.add(callbackID, WTFMove(callback));
         send(Messages::WebSWServerConnection::GetRegistrations { callbackID, topOrigin, clientURL });
     });
-}
-
-void WebSWClientConnection::startFetch(FetchIdentifier fetchIdentifier, ServiceWorkerRegistrationIdentifier serviceWorkerRegistrationIdentifier, const ResourceRequest& request, const FetchOptions& options, const String& referrer)
-{
-    send(Messages::WebSWServerConnection::StartFetch { serviceWorkerRegistrationIdentifier, fetchIdentifier, request, options, IPC::FormDataReference { request.httpBody() }, referrer });
-}
-
-void WebSWClientConnection::cancelFetch(FetchIdentifier fetchIdentifier, ServiceWorkerRegistrationIdentifier serviceWorkerRegistrationIdentifier)
-{
-    send(Messages::WebSWServerConnection::CancelFetch { serviceWorkerRegistrationIdentifier, fetchIdentifier });
-}
-
-void WebSWClientConnection::continueDidReceiveFetchResponse(FetchIdentifier fetchIdentifier, ServiceWorkerRegistrationIdentifier serviceWorkerRegistrationIdentifier)
-{
-    send(Messages::WebSWServerConnection::ContinueDidReceiveFetchResponse { serviceWorkerRegistrationIdentifier, fetchIdentifier });
 }
 
 void WebSWClientConnection::connectionToServerLost()

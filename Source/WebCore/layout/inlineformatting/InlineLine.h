@@ -129,7 +129,7 @@ private:
     void alignContentHorizontally();
     void alignContentVertically();
 
-    void adjustBaselineAndLineHeight(const InlineItem&, LayoutUnit runHeight);
+    void adjustBaselineAndLineHeight(const InlineItem&);
     LayoutUnit inlineItemContentHeight(const InlineItem&) const;
     bool isVisuallyEmpty() const;
 
@@ -154,7 +154,7 @@ inline void Line::Run::expand(const Run& other)
 
     auto& otherDisplayRun = other.displayRun();
     m_displayRun.expandHorizontally(otherDisplayRun.logicalWidth());
-    m_displayRun.textContext()->expand(otherDisplayRun.textContext()->length());
+    m_displayRun.textContext()->expand(*otherDisplayRun.textContext());
 }
 
 }

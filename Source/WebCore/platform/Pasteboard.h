@@ -26,6 +26,7 @@
 #pragma once
 
 #include "DragImage.h"
+#include "PasteboardCustomData.h"
 #include "PasteboardItemInfo.h"
 #include <wtf/HashMap.h>
 #include <wtf/ListHashSet.h>
@@ -165,21 +166,6 @@ struct PasteboardFileReader {
     virtual void readBuffer(const String& filename, const String& type, Ref<SharedBuffer>&&) = 0;
 };
 
-// FIXME: We need to ensure that the contents of sameOriginCustomData are not accessible across different origins.
-struct PasteboardCustomData {
-    String origin;
-    Vector<String> orderedTypes;
-    HashMap<String, String> platformData;
-    HashMap<String, String> sameOriginCustomData;
-
-    WEBCORE_EXPORT Ref<SharedBuffer> createSharedBuffer() const;
-    WEBCORE_EXPORT static PasteboardCustomData fromSharedBuffer(const SharedBuffer&);
-
-#if PLATFORM(COCOA)
-    WEBCORE_EXPORT static const char* cocoaType();
-#endif
-};
-
 class Pasteboard {
     WTF_MAKE_NONCOPYABLE(Pasteboard); WTF_MAKE_FAST_ALLOCATED;
 public:
@@ -230,7 +216,7 @@ public:
     virtual WEBCORE_EXPORT void write(const PasteboardImage&);
     virtual WEBCORE_EXPORT void write(const PasteboardWebContent&);
 
-    virtual WEBCORE_EXPORT void writeCustomData(const PasteboardCustomData&);
+    virtual WEBCORE_EXPORT void writeCustomData(const Vector<PasteboardCustomData>&);
 
     enum class FileContentState { NoFileOrImageData, InMemoryImage, MayContainFilePaths };
     virtual WEBCORE_EXPORT FileContentState fileContentState();
@@ -275,6 +261,8 @@ public:
     WEBCORE_EXPORT static NSArray *supportedFileUploadPasteboardTypes();
     long changeCount() const;
     const PasteboardCustomData& readCustomData();
+#else
+    long changeCount() const { return 0; }
 #endif
 
 #if PLATFORM(COCOA)

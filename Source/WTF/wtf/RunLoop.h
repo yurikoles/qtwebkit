@@ -49,9 +49,15 @@ public:
     // Must be called from the main thread (except for the Mac platform, where it
     // can be called from any thread).
     WTF_EXPORT_PRIVATE static void initializeMainRunLoop();
+#if USE(WEB_THREAD)
+    WTF_EXPORT_PRIVATE static void initializeWebRunLoop();
+#endif
 
     WTF_EXPORT_PRIVATE static RunLoop& current();
     WTF_EXPORT_PRIVATE static RunLoop& main();
+#if USE(WEB_THREAD)
+    WTF_EXPORT_PRIVATE static RunLoop& web();
+#endif
     WTF_EXPORT_PRIVATE static bool isMain();
     ~RunLoop();
 
@@ -182,9 +188,10 @@ private:
 
     Lock m_loopLock;
 #elif USE(COCOA_EVENT_LOOP)
-    static void performWork(void*);
+    static void performWork(CFMachPortRef, void* msg, CFIndex size, void* info);
     RetainPtr<CFRunLoopRef> m_runLoop;
     RetainPtr<CFRunLoopSourceRef> m_runLoopSource;
+    RetainPtr<CFMachPortRef> m_port;
 #elif PLATFORM(QT)
     typedef HashMap<int, TimerBase*> TimerMap;
     TimerMap m_activeTimers;

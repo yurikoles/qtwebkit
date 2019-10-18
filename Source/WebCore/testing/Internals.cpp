@@ -34,6 +34,7 @@
 #include "ApplicationCacheStorage.h"
 #include "AudioSession.h"
 #include "Autofill.h"
+#include "BackForwardCache.h"
 #include "BackForwardController.h"
 #include "BitmapImage.h"
 #include "CSSAnimationController.h"
@@ -127,7 +128,6 @@
 #include "NavigatorMediaDevices.h"
 #include "NetworkLoadInformation.h"
 #include "Page.h"
-#include "PageCache.h"
 #include "PageOverlay.h"
 #include "PathUtilities.h"
 #include "PlatformKeyboardEvent.h"
@@ -340,6 +340,7 @@ private:
     void reopen() final { }
     void bringToFront() final { }
     String localizedStringsURL() final { return String(); }
+    String debuggableType() const final { return "page"_s; };
     void inspectedURLChanged(const String&) final { }
     void showCertificate(const CertificateInfo&) final { }
     void setAttachedWindowHeight(unsigned) final { }
@@ -551,6 +552,8 @@ void Internals::resetToConsistentState(Page& page)
 #if ENABLE(MEDIA_STREAM)
     RuntimeEnabledFeatures::sharedFeatures().setInterruptAudioOnPageVisibilityChangeEnabled(false);
 #endif
+
+    HTMLCanvasElement::setMaxPixelMemoryForTesting(0); // This means use the default value.
 }
 
 Internals::Internals(Document& document)
@@ -936,14 +939,14 @@ void Internals::setGridMaxTracksLimit(unsigned maxTrackLimit)
     GridPosition::setMaxPositionForTesting(maxTrackLimit);
 }
 
-void Internals::clearPageCache()
+void Internals::clearBackForwardCache()
 {
-    PageCache::singleton().pruneToSizeNow(0, PruningReason::None);
+    BackForwardCache::singleton().pruneToSizeNow(0, PruningReason::None);
 }
 
-unsigned Internals::pageCacheSize() const
+unsigned Internals::backForwardCacheSize() const
 {
-    return PageCache::singleton().pageCount();
+    return BackForwardCache::singleton().pageCount();
 }
 
 class UnsuspendableActiveDOMObject final : public ActiveDOMObject, public RefCounted<UnsuspendableActiveDOMObject> {
@@ -957,11 +960,11 @@ private:
         suspendIfNeeded();
     }
 
-    bool canSuspendForDocumentSuspension() const final { return false; }
+    bool shouldPreventEnteringBackForwardCache_DEPRECATED() const final { return true; }
     const char* activeDOMObjectName() const { return "UnsuspendableActiveDOMObject"; }
 };
 
-void Internals::preventDocumentForEnteringPageCache()
+void Internals::preventDocumentForEnteringBackForwardCache()
 {
     if (auto* context = contextDocument())
         m_unsuspendableActiveDOMObject = UnsuspendableActiveDOMObject::create(*context);
@@ -2737,6 +2740,8 @@ static LayerTreeFlags toLayerTreeFlags(unsigned short flags)
         layerTreeFlags |= LayerTreeFlagsIncludeRootLayerProperties;
     if (flags & Internals::LAYER_TREE_INCLUDES_EVENT_REGION)
         layerTreeFlags |= LayerTreeFlagsIncludeEventRegion;
+    if (flags & Internals::LAYER_TREE_INCLUDES_DEEP_COLOR)
+        layerTreeFlags |= LayerTreeFlagsIncludeDeepColor;
 
     return layerTreeFlags;
 }

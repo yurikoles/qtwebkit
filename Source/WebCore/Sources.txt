@@ -35,6 +35,8 @@ loader/cache/CachedApplicationManifest.cpp
 
 Modules/async-clipboard/Clipboard.cpp
 Modules/async-clipboard/ClipboardItem.cpp
+Modules/async-clipboard/ClipboardItemBindingsDataSource.cpp
+Modules/async-clipboard/ClipboardItemPasteboardDataSource.cpp
 Modules/async-clipboard/NavigatorClipboard.cpp
 
 Modules/beacon/NavigatorBeacon.cpp
@@ -201,6 +203,11 @@ Modules/paymentrequest/PaymentMethodChangeEvent.cpp
 Modules/paymentrequest/PaymentRequest.cpp
 Modules/paymentrequest/PaymentRequestUpdateEvent.cpp
 Modules/paymentrequest/PaymentResponse.cpp
+
+Modules/pictureinpicture/DocumentPictureInPicture.cpp
+Modules/pictureinpicture/EnterPictureInPictureEvent.cpp
+Modules/pictureinpicture/HTMLVideoElementPictureInPicture.cpp
+Modules/pictureinpicture/PictureInPictureWindow.cpp
 
 Modules/speech/DOMWindowSpeechSynthesis.cpp
 Modules/speech/SpeechSynthesis.cpp
@@ -1078,11 +1085,11 @@ fileapi/FileReaderSync.cpp
 fileapi/NetworkSendQueue.cpp
 fileapi/ThreadableBlobRegistry.cpp
 
+history/BackForwardCache.cpp
 history/BackForwardController.cpp
 history/CachedFrame.cpp
 history/CachedPage.cpp
 history/HistoryItem.cpp
-history/PageCache.cpp
 
 html/Autofill.cpp
 html/BaseButtonInputType.cpp
@@ -1725,6 +1732,7 @@ platform/MIMETypeRegistry.cpp
 platform/MainThreadSharedTimer.cpp
 platform/NotImplemented.cpp
 platform/Pasteboard.cpp
+platform/PasteboardCustomData.cpp
 platform/PasteboardWriterData.cpp
 platform/PlatformKeyboardEvent.cpp
 platform/PlatformSpeechSynthesisUtterance.cpp
@@ -1750,6 +1758,7 @@ platform/SuspendableTaskQueue.cpp
 platform/Theme.cpp
 platform/ThreadGlobalData.cpp
 platform/ThreadTimers.cpp
+platform/ThemeTypes.cpp
 platform/Timer.cpp
 platform/UserActivity.cpp
 platform/WebCoreCrossThreadCopier.cpp
@@ -2210,6 +2219,7 @@ rendering/shapes/Shape.cpp
 rendering/shapes/ShapeOutsideInfo.cpp
 
 rendering/style/BasicShapes.cpp
+rendering/style/BorderData.cpp
 rendering/style/ContentData.cpp
 rendering/style/FillLayer.cpp
 rendering/style/GapLength.cpp
@@ -2791,6 +2801,7 @@ JSDocument.cpp
 JSDocumentAndElementEventHandlers.cpp
 JSDocumentFragment.cpp
 JSDocumentOrShadowRoot.cpp
+JSDocumentPictureInPicture.cpp
 JSDocumentType.cpp
 JSDoubleRange.cpp
 JSDynamicsCompressorNode.cpp
@@ -2799,6 +2810,7 @@ JSEcdhKeyDeriveParams.cpp
 JSEcdsaParams.cpp
 JSElement.cpp
 JSElementCSSInlineStyle.cpp
+JSEnterPictureInPictureEvent.cpp
 JSErrorCallback.cpp
 JSErrorEvent.cpp
 JSEvent.cpp
@@ -2956,6 +2968,7 @@ JSHTMLTrackElement.cpp
 JSHTMLUListElement.cpp
 JSHTMLUnknownElement.cpp
 JSHTMLVideoElement.cpp
+JSHTMLVideoElementPictureInPicture.cpp
 JSHashChangeEvent.cpp
 JSHistory.cpp
 JSHkdfParams.cpp
@@ -3112,6 +3125,7 @@ JSPerformanceResourceTiming.cpp
 JSPerformanceServerTiming.cpp
 JSPerformanceTiming.cpp
 JSPeriodicWave.cpp
+JSPictureInPictureWindow.cpp
 JSPlaybackDirection.cpp
 JSPointerEvent.cpp
 JSPopStateEvent.cpp

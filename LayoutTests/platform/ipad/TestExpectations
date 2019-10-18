@@ -2,6 +2,8 @@
 css-dark-mode [ Pass ]
 css-dark-mode/older-systems [ Skip ]
 
+compositing/contents-format/ipad [ Pass ]
+
 # iPads don't zoom when form elements are focused
 fast/visual-viewport/ios/caret-after-focus-in-fixed.html [ Skip ]
 
@@ -43,8 +45,7 @@ webkit.org/b/194259 fast/events/ios/viewport-no-width-value-allows-double-tap.ht
 # <rdar://problem/51863703> [ iPad Sim ] New Layout test fast/events/autoscroll-with-software-keyboard.html is failing on iOS 13 iPad Simulator testers
 fast/events/autoscroll-with-software-keyboard.html [ Failure ]
 
-# <rdar://problem/51868813> REGRESSION (r245483) [ iPad Simulator ] 2 Layout tests fast/scrolling/ios/overflow-scroll-inherited.html fast/scrolling/ios/overflow-scrolling-touch-enabled-stacking.html are failing
-fast/scrolling/ios/overflow-scroll-inherited.html [ Failure ]
+# This tests an iphone-specific behavior so is expected to fail on iPad.
 fast/scrolling/ios/overflow-scrolling-touch-enabled-stacking.html [ ImageOnlyFailure ]
 
 # <rdar://problem/51869921> REGRESSION (iOS 13) [ iPad Sim ] Layout Test http/tests/adClickAttribution/anchor-tag-attributes-validation.html is failing

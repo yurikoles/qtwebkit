@@ -603,6 +603,13 @@ class RunWebKitPerlTests(shell.ShellCommand):
     def __init__(self, **kwargs):
         super(RunWebKitPerlTests, self).__init__(timeout=2 * 60, logEnviron=False, **kwargs)
 
+    def getResultSummary(self):
+        if self.results == SUCCESS:
+            message = 'Passed webkitperl tests'
+            self.build.buildFinished([message], SUCCESS)
+            return {u'step': unicode(message)}
+        return {u'step': u'Failed webkitperl tests'}
+
 
 class RunBuildWebKitOrgUnitTests(shell.ShellCommand):
     name = 'build-webkit-org-unit-tests'
@@ -1230,7 +1237,7 @@ class UploadBuiltProduct(transfer.FileUpload):
     def __init__(self, **kwargs):
         kwargs['workersrc'] = self.workersrc
         kwargs['masterdest'] = self.masterdest
-        kwargs['mode'] = 0644
+        kwargs['mode'] = 0o0644
         kwargs['blocksize'] = 1024 * 256
         transfer.FileUpload.__init__(self, **kwargs)
 
@@ -1507,7 +1514,7 @@ class UploadTestResults(transfer.FileUpload):
             identifier = '-{}'.format(identifier)
         kwargs['workersrc'] = self.workersrc
         kwargs['masterdest'] = Interpolate('public_html/results/%(prop:buildername)s/r%(prop:patch_id)s-%(prop:buildnumber)s{}.zip'.format(identifier))
-        kwargs['mode'] = 0644
+        kwargs['mode'] = 0o0644
         kwargs['blocksize'] = 1024 * 256
         transfer.FileUpload.__init__(self, **kwargs)
 

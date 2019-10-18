@@ -310,6 +310,7 @@ struct PrintInfo;
 struct WebAutocorrectionData;
 struct WebPopupItem;
 struct URLSchemeTaskParameters;
+struct UserMessage;
 
 enum class ProcessSwapRequestedByClient;
 enum class UndoOrRedo : bool;
@@ -570,7 +571,7 @@ public:
     RefPtr<API::Navigation> goToBackForwardItem(WebBackForwardListItem&);
     void tryRestoreScrollPosition();
     void didChangeBackForwardList(WebBackForwardListItem* addedItem, Vector<Ref<WebBackForwardListItem>>&& removed);
-    void willGoToBackForwardListItem(const WebCore::BackForwardItemIdentifier&, bool inPageCache);
+    void willGoToBackForwardListItem(const WebCore::BackForwardItemIdentifier&, bool inBackForwardCache);
 
     bool shouldKeepCurrentBackForwardListItemInList(WebBackForwardListItem&);
 
@@ -1306,8 +1307,6 @@ public:
 
     void didFinishCheckingText(uint64_t requestID, const Vector<WebCore::TextCheckingResult>&);
     void didCancelCheckingText(uint64_t requestID);
-
-    void didSaveToPageCache();
         
     void setScrollPinningBehavior(WebCore::ScrollPinningBehavior);
     WebCore::ScrollPinningBehavior scrollPinningBehavior() const { return m_scrollPinningBehavior; }
@@ -1458,9 +1457,6 @@ public:
     void setWindowFrame(const WebCore::FloatRect&);
     void getWindowFrame(Messages::WebPageProxy::GetWindowFrame::DelayedReply&&);
     void getWindowFrameWithCallback(Function<void(WebCore::FloatRect)>&&);
-
-    bool isResourceCachingDisabled() const { return m_isResourceCachingDisabled; }
-    void setResourceCachingDisabled(bool);
 
     WebCore::UserInterfaceLayoutDirection userInterfaceLayoutDirection();
     void setUserInterfaceLayoutDirection(WebCore::UserInterfaceLayoutDirection);
@@ -1769,6 +1765,11 @@ private:
     void exceededDatabaseQuota(WebCore::FrameIdentifier, const String& originIdentifier, const String& databaseName, const String& displayName, uint64_t currentQuota, uint64_t currentOriginUsage, uint64_t currentDatabaseUsage, uint64_t expectedUsage, Messages::WebPageProxy::ExceededDatabaseQuota::DelayedReply&&);
     void reachedApplicationCacheOriginQuota(const String& originIdentifier, uint64_t currentQuota, uint64_t totalBytesNeeded, Messages::WebPageProxy::ReachedApplicationCacheOriginQuota::DelayedReply&&);
     void requestGeolocationPermissionForFrame(uint64_t geolocationID, WebCore::FrameIdentifier, String originIdentifier);
+
+#if PLATFORM(GTK) || PLATFORM(WPE)
+    void sendMessageToWebView(UserMessage&&);
+    void sendMessageToWebViewWithReply(UserMessage&&, CompletionHandler<void(UserMessage&&)>&&);
+#endif
 
 #if ENABLE(MEDIA_STREAM)
     UserMediaPermissionRequestManagerProxy& userMediaPermissionRequestManager();
@@ -2538,8 +2539,6 @@ private:
     Vector<CallbackID> m_nextActivityStateChangeCallbacks;
 
     WebCore::MediaProducer::MediaStateFlags m_mediaState { WebCore::MediaProducer::IsNotPlaying };
-
-    bool m_isResourceCachingDisabled { false };
 
     bool m_hasHadSelectionChangesFromUserInteraction { false };
     bool m_isTouchBarUpdateSupressedForHiddenContentEditable { false };

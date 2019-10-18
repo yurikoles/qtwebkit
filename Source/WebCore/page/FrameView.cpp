@@ -28,6 +28,7 @@
 #include "FrameView.h"
 
 #include "AXObjectCache.h"
+#include "BackForwardCache.h"
 #include "BackForwardController.h"
 #include "CSSAnimationController.h"
 #include "CachedImage.h"
@@ -69,7 +70,6 @@
 #include "MemoryCache.h"
 #include "OverflowEvent.h"
 #include "Page.h"
-#include "PageCache.h"
 #include "PageOverlayController.h"
 #include "ProgressTracker.h"
 #include "RenderEmbeddedObject.h"
@@ -553,9 +553,9 @@ Ref<Scrollbar> FrameView::createScrollbar(ScrollbarOrientation orientation)
     return ScrollView::createScrollbar(orientation);
 }
 
-void FrameView::didRestoreFromPageCache()
+void FrameView::didRestoreFromBackForwardCache()
 {
-    // When restoring from page cache, the main frame stays in place while subframes get swapped in.
+    // When restoring from back/forward cache, the main frame stays in place while subframes get swapped in.
     // We update the scrollable area set to ensure that scrolling data structures get invalidated.
     updateScrollableAreaSet();
 }
@@ -601,7 +601,7 @@ void FrameView::setContentsSize(const IntSize& size)
 
     if (frame().isMainFrame()) {
         page->pageOverlayController().didChangeDocumentSize();
-        PageCache::singleton().markPagesForContentsSizeChanged(*page);
+        BackForwardCache::singleton().markPagesForContentsSizeChanged(*page);
     }
     layoutContext().enableSetNeedsLayout();
 }
@@ -3376,21 +3376,10 @@ void FrameView::sendResizeEventIfNeeded()
     }
 #endif
 
+    LOG(Events, "FrameView %p sendResizeEventIfNeeded scheduling resize event for document %p, size %dx%d", this, frame().document(), currentSize.width(), currentSize.height());
+    frame().document()->setNeedsDOMWindowResizeEvent();
+
     bool isMainFrame = frame().isMainFrame();
-    bool canSendResizeEventSynchronously = isMainFrame && !m_shouldAutoSize;
-
-    LOG(Events, "FrameView %p sendResizeEventIfNeeded sending resize event, size %dx%d (canSendResizeEventSynchronously %d)", this, currentSize.width(), currentSize.height(), canSendResizeEventSynchronously);
-
-    Ref<Event> resizeEvent = Event::create(eventNames().resizeEvent, Event::CanBubble::No, Event::IsCancelable::No);
-    if (canSendResizeEventSynchronously)
-        frame().document()->dispatchWindowEvent(resizeEvent);
-    else {
-        // FIXME: Queueing this event for an unpredictable time in the future seems
-        // intrinsically racy. By the time this resize event fires, the frame might
-        // be resized again, so we could end up with two resize events for the same size.
-        frame().document()->enqueueWindowEvent(WTFMove(resizeEvent));
-    }
-
     if (InspectorInstrumentation::hasFrontends() && isMainFrame) {
         if (Page* page = frame().page()) {
             if (InspectorClient* inspectorClient = page->inspectorController().inspectorClient())

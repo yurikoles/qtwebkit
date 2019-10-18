@@ -51,11 +51,6 @@ static NSBitmapImageFileType bitmapPNGFileType()
 PasteboardWebContent::PasteboardWebContent() = default;
 PasteboardWebContent::~PasteboardWebContent() = default;
 
-const char* PasteboardCustomData::cocoaType()
-{
-    return "com.apple.WebKit.custom-pasteboard-data";
-}
-
 enum class ImageType {
     Invalid = 0,
     TIFF,
@@ -260,12 +255,12 @@ String Pasteboard::readString(const String& type)
 
 String Pasteboard::readStringInCustomData(const String& type)
 {
-    return readCustomData().sameOriginCustomData.get(type);
+    return readCustomData().readStringInCustomData(type);
 }
 
 String Pasteboard::readOrigin()
 {
-    return readCustomData().origin;
+    return readCustomData().origin();
 }
 
 const PasteboardCustomData& Pasteboard::readCustomData()
@@ -280,9 +275,9 @@ const PasteboardCustomData& Pasteboard::readCustomData()
     return *m_customDataCache; 
 }
 
-void Pasteboard::writeCustomData(const PasteboardCustomData& data)
+void Pasteboard::writeCustomData(const Vector<PasteboardCustomData>& data)
 {
-    m_changeCount = platformStrategies()->pasteboardStrategy()->writeCustomData(data, m_pasteboardName);
+    m_changeCount = platformStrategies()->pasteboardStrategy()->writeCustomData(data, name());
 }
 
 long Pasteboard::changeCount() const

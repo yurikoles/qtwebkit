@@ -140,6 +140,7 @@ class HTMLIFrameElement;
 class HTMLImageElement;
 class HTMLMapElement;
 class HTMLMediaElement;
+class HTMLVideoElement;
 class HTMLPictureElement;
 class HTMLScriptElement;
 class HitTestLocation;
@@ -1060,6 +1061,7 @@ public:
     WEBCORE_EXPORT void postTask(Task&&) final; // Executes the task on context's thread asynchronously.
 
     WindowEventLoop& eventLoop();
+    WindowEventLoop* eventLoopIfExists() { return m_eventLoop.get(); }
 
     ScriptedAnimationController* scriptedAnimationController() { return m_scriptedAnimationController.get(); }
     void suspendScriptedAnimationControllerCallbacks();
@@ -1072,10 +1074,10 @@ public:
 
     void finishedParsing();
 
-    enum PageCacheState { NotInPageCache, AboutToEnterPageCache, InPageCache };
+    enum BackForwardCacheState { NotInBackForwardCache, AboutToEnterBackForwardCache, InBackForwardCache };
 
-    PageCacheState pageCacheState() const { return m_pageCacheState; }
-    void setPageCacheState(PageCacheState);
+    BackForwardCacheState backForwardCacheState() const { return m_backForwardCacheState; }
+    void setBackForwardCacheState(BackForwardCacheState);
 
     void registerForDocumentSuspensionCallbacks(Element&);
     void unregisterForDocumentSuspensionCallbacks(Element&);
@@ -1356,6 +1358,10 @@ public:
     bool hasStyleWithViewportUnits() const { return m_hasStyleWithViewportUnits; }
     void updateViewportUnitsOnResize();
 
+    void setNeedsDOMWindowResizeEvent();
+    void setNeedsVisualViewportResize();
+    void runResizeSteps();
+
     WEBCORE_EXPORT void addAudioProducer(MediaProducer&);
     WEBCORE_EXPORT void removeAudioProducer(MediaProducer&);
     MediaProducer::MediaStateFlags mediaState() const { return m_mediaState; }
@@ -1543,6 +1549,11 @@ public:
 
 #if USE(SYSTEM_PREVIEW)
     WEBCORE_EXPORT void dispatchSystemPreviewActionEvent(const String& message);
+#endif
+
+#if ENABLE(PICTURE_IN_PICTURE_API)
+    HTMLVideoElement* pictureInPictureElement() const;
+    void setPictureInPictureElement(HTMLVideoElement*);
 #endif
 
 protected:
@@ -1944,7 +1955,7 @@ private:
     InheritedBool m_designMode { inherit };
     MediaProducer::MediaStateFlags m_mediaState { MediaProducer::IsNotPlaying };
     bool m_userHasInteractedWithMediaElement { false };
-    PageCacheState m_pageCacheState { NotInPageCache };
+    BackForwardCacheState m_backForwardCacheState { NotInBackForwardCache };
     Optional<ReferrerPolicy> m_referrerPolicy;
     ReadyState m_readyState { Complete };
 
@@ -2000,6 +2011,8 @@ private:
     bool m_hasPreparedForDestruction { false };
 
     bool m_hasStyleWithViewportUnits { false };
+    bool m_needsDOMWindowResizeEvent { false };
+    bool m_needsVisualViewportResizeEvent { false };
     bool m_isTimerThrottlingEnabled { false };
     bool m_isSuspended { false };
 
@@ -2066,6 +2079,10 @@ private:
 #if PLATFORM(IOS_FAMILY)
     std::unique_ptr<ContentChangeObserver> m_contentChangeObserver;
     std::unique_ptr<DOMTimerHoldingTank> m_domTimerHoldingTank;
+#endif
+
+#if ENABLE(PICTURE_IN_PICTURE_API)
+    WeakPtr<HTMLVideoElement> m_pictureInPictureElement;
 #endif
 
     HashMap<Element*, ElementIdentifier> m_identifiedElementsMap;

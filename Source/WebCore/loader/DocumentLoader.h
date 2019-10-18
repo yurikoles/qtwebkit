@@ -432,6 +432,9 @@ private:
     WEBCORE_EXPORT void responseReceived(CachedResource&, const ResourceResponse&, CompletionHandler<void()>&&) override;
     WEBCORE_EXPORT void dataReceived(CachedResource&, const char* data, int length) override;
     WEBCORE_EXPORT void notifyFinished(CachedResource&) override;
+#if USE(QUICK_LOOK)
+    WEBCORE_EXPORT void previewResponseReceived(CachedResource&, const ResourceResponse&) override;
+#endif
 
     void responseReceived(const ResourceResponse&, CompletionHandler<void()>&&);
     void dataReceived(const char* data, int length);
@@ -536,7 +539,7 @@ private:
 
     // We retain all the received responses so we can play back the
     // WebResourceLoadDelegate messages if the item is loaded from the
-    // page cache.
+    // back/forward cache.
     Vector<ResourceResponse> m_responses;
     bool m_stopRecordingResponses { false };
     
@@ -576,7 +579,6 @@ private:
 
     Vector<CustomHeaderFields> m_customHeaderFields;
     
-    bool m_subresourceLoadersArePageCacheAcceptable { false };
     ShouldOpenExternalURLsPolicy m_shouldOpenExternalURLsPolicy { ShouldOpenExternalURLsPolicy::ShouldNotAllow };
 
     std::unique_ptr<ApplicationCacheHost> m_applicationCacheHost;

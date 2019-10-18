@@ -261,6 +261,7 @@ UIProcess/UserMediaPermissionRequestProxy.cpp
 UIProcess/UserMediaProcessManager.cpp
 UIProcess/VisitedLinkStore.cpp
 UIProcess/WebBackForwardCache.cpp
+UIProcess/WebBackForwardCacheEntry.cpp
 UIProcess/WebBackForwardList.cpp
 UIProcess/WebColorPicker.cpp
 UIProcess/WebConnectionToWebProcess.cpp
@@ -526,7 +527,6 @@ WebProcess/Plugins/Netscape/NetscapeBrowserFuncs.cpp @no-unify
 WebProcess/Plugins/Netscape/NetscapePlugin.cpp @no-unify
 WebProcess/Plugins/Netscape/NetscapePluginStream.cpp @no-unify
 
-WebProcess/Storage/ServiceWorkerClientFetch.cpp
 WebProcess/Storage/WebSWClientConnection.cpp
 WebProcess/Storage/WebSWContextManagerConnection.cpp
 WebProcess/Storage/WebSWOriginTable.cpp

@@ -7,6 +7,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////////
 
 compositing/ios [ Skip ]
+compositing/contents-format/ipad [ Skip ]
+compositing/contents-format/iphone-7 [ Skip ]
 css3/touch-action [ Skip ]
 accessibility/ios-simulator [ Skip ]
 accessibility/gtk [ Skip ]
@@ -187,6 +189,8 @@ fast/visual-viewport/rubberbanding-viewport-rects-header-footer.html  [ Skip ]
 
 # DataDetectors tests only make sense on Mac
 fast/events/do-not-drag-and-drop-data-detectors-link.html [ Skip ]
+
+webkit.org/b/202617 imported/w3c/web-platform-tests/picture-in-picture [ Skip ]
 
 # Shared Workers are unsupported
 imported/w3c/web-platform-tests/secure-contexts/basic-shared-worker.html [ Skip ]
@@ -1216,6 +1220,7 @@ webkit.org/b/186045 imported/w3c/web-platform-tests/html/semantics/embedded-cont
 webkit.org/b/186045 imported/w3c/web-platform-tests/html/semantics/embedded-content/the-img-element/available-images.html [ Pass ImageOnlyFailure ]
 webkit.org/b/186045 imported/w3c/web-platform-tests/html/semantics/embedded-content/the-img-element/sizes/sizes-dynamic-001.html [ ImageOnlyFailure ]
 webkit.org/b/186045 imported/w3c/web-platform-tests/html/semantics/embedded-content/the-img-element/sizes/sizes-dynamic-002.html [ ImageOnlyFailure ]
+webkit.org/b/186045 imported/w3c/web-platform-tests/apng/animated-png-timeout.html [ Skip ]
 
 # These W3C tests time out.
 imported/w3c/web-platform-tests/html/semantics/embedded-content/media-elements/loading-the-media-resource/autoplay-overrides-preload.html [ Skip ]

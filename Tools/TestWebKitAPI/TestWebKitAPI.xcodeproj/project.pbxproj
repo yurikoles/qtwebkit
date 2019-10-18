@@ -218,6 +218,7 @@
 		4135FB842011FAA700332139 /* InjectInternals_Bundle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4135FB832011FAA300332139 /* InjectInternals_Bundle.cpp */; };
 		4135FB852011FABF00332139 /* libWebCoreTestSupport.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4135FB862011FABF00332139 /* libWebCoreTestSupport.dylib */; };
 		414AD6862285D1C000777F2D /* StorageQuota.mm in Sources */ = {isa = PBXBuildFile; fileRef = 414AD6852285D1B000777F2D /* StorageQuota.mm */; };
+		41661C662355E85E00D33C27 /* getUserMedia-webaudio.html in Copy Resources */ = {isa = PBXBuildFile; fileRef = 41661C652355D98B00D33C27 /* getUserMedia-webaudio.html */; };
 		41882F0321010C0D002FF288 /* ProcessPreWarming.mm in Sources */ = {isa = PBXBuildFile; fileRef = 41882F0221010A70002FF288 /* ProcessPreWarming.mm */; };
 		44077BB123144B5000179E2D /* DataDetectorsTestIOS.mm in Sources */ = {isa = PBXBuildFile; fileRef = 44077BB0231449D200179E2D /* DataDetectorsTestIOS.mm */; };
 		4433A396208044140091ED57 /* SynchronousTimeoutTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4433A395208044130091ED57 /* SynchronousTimeoutTests.mm */; };
@@ -336,6 +337,8 @@
 		57599E281F071AA000A3FB8C /* IndexedDBStructuredCloneBackwardCompatibility.sqlite3-shm in Copy Resources */ = {isa = PBXBuildFile; fileRef = 57599E261F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibility.sqlite3-shm */; };
 		57599E2A1F071AA000A3FB8C /* IndexedDBStructuredCloneBackwardCompatibilityRead.html in Copy Resources */ = {isa = PBXBuildFile; fileRef = 57599E251F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibilityRead.html */; };
 		57599E2B1F071AA000A3FB8C /* IndexedDBStructuredCloneBackwardCompatibilityWrite.html in Copy Resources */ = {isa = PBXBuildFile; fileRef = 57599E231F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibilityWrite.html */; };
+		57663DEA234EA66D00E85E09 /* web-authentication-get-assertion-nfc.html in Copy Resources */ = {isa = PBXBuildFile; fileRef = 57663DE9234EA60B00E85E09 /* web-authentication-get-assertion-nfc.html */; };
+		57663DEC234F1F9300E85E09 /* web-authentication-get-assertion-hid.html in Copy Resources */ = {isa = PBXBuildFile; fileRef = 57663DEB234F1F8000E85E09 /* web-authentication-get-assertion-hid.html */; };
 		5769C50B1D9B0002000847FB /* SerializedCryptoKeyWrap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5769C50A1D9B0001000847FB /* SerializedCryptoKeyWrap.mm */; };
 		5774AA6821FBBF7800AF2A1B /* TestSOAuthorization.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5774AA6721FBBF7800AF2A1B /* TestSOAuthorization.mm */; };
 		5778D05622110A2600899E3B /* LoadWebArchive.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5778D05522110A2600899E3B /* LoadWebArchive.mm */; };
@@ -1118,6 +1121,7 @@
 			dstPath = TestWebKitAPI.resources;
 			dstSubfolderSpec = 7;
 			files = (
+				41661C662355E85E00D33C27 /* getUserMedia-webaudio.html in Copy Resources */,
 				55A817FF2181021A0004A39A /* 100x100-red.tga in Copy Resources */,
 				1A9E52C913E65EF4006917F5 /* 18-characters.html in Copy Resources */,
 				55A81800218102210004A39A /* 400x400-green.png in Copy Resources */,
@@ -1439,6 +1443,8 @@
 				CDC8E4971BC6F10800594FEC /* video-without-audio.mp4 in Copy Resources */,
 				2EBD9D0A2134730D002DA758 /* video.html in Copy Resources */,
 				CD577799211CE0E4001B371E /* web-audio-only.html in Copy Resources */,
+				57663DEC234F1F9300E85E09 /* web-authentication-get-assertion-hid.html in Copy Resources */,
+				57663DEA234EA66D00E85E09 /* web-authentication-get-assertion-nfc.html in Copy Resources */,
 				57C624502346C21E00383FE7 /* web-authentication-get-assertion.html in Copy Resources */,
 				1C2B81861C89259D00A5529F /* webfont.html in Copy Resources */,
 				51714EB41CF8C78C004723C4 /* WebProcessKillIDBCleanup-1.html in Copy Resources */,
@@ -1710,6 +1716,7 @@
 		4135FB832011FAA300332139 /* InjectInternals_Bundle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = InjectInternals_Bundle.cpp; path = Tests/InjectInternals_Bundle.cpp; sourceTree = SOURCE_ROOT; };
 		4135FB862011FABF00332139 /* libWebCoreTestSupport.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libWebCoreTestSupport.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		414AD6852285D1B000777F2D /* StorageQuota.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = StorageQuota.mm; sourceTree = "<group>"; };
+		41661C652355D98B00D33C27 /* getUserMedia-webaudio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "getUserMedia-webaudio.html"; sourceTree = "<group>"; };
 		41882F0221010A70002FF288 /* ProcessPreWarming.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ProcessPreWarming.mm; sourceTree = "<group>"; };
 		41973B5C1AF22875006C7B36 /* SharedBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SharedBuffer.cpp; sourceTree = "<group>"; };
 		44077BB0231449D200179E2D /* DataDetectorsTestIOS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = DataDetectorsTestIOS.mm; sourceTree = "<group>"; };
@@ -1856,6 +1863,8 @@
 		57599E241F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibility.sqlite3 */ = {isa = PBXFileReference; lastKnownFileType = file; path = IndexedDBStructuredCloneBackwardCompatibility.sqlite3; sourceTree = "<group>"; };
 		57599E251F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibilityRead.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = IndexedDBStructuredCloneBackwardCompatibilityRead.html; sourceTree = "<group>"; };
 		57599E261F07192C00A3FB8C /* IndexedDBStructuredCloneBackwardCompatibility.sqlite3-shm */ = {isa = PBXFileReference; lastKnownFileType = file; path = "IndexedDBStructuredCloneBackwardCompatibility.sqlite3-shm"; sourceTree = "<group>"; };
+		57663DE9234EA60B00E85E09 /* web-authentication-get-assertion-nfc.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "web-authentication-get-assertion-nfc.html"; sourceTree = "<group>"; };
+		57663DEB234F1F8000E85E09 /* web-authentication-get-assertion-hid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "web-authentication-get-assertion-hid.html"; sourceTree = "<group>"; };
 		5769C50A1D9B0001000847FB /* SerializedCryptoKeyWrap.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SerializedCryptoKeyWrap.mm; sourceTree = "<group>"; };
 		5774AA6721FBBF7800AF2A1B /* TestSOAuthorization.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TestSOAuthorization.mm; sourceTree = "<group>"; };
 		5778D05522110A2600899E3B /* LoadWebArchive.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LoadWebArchive.mm; sourceTree = "<group>"; };
@@ -3378,6 +3387,8 @@
 				F4451C751EB8FD7C0020C5DA /* two-paragraph-contenteditable.html */,
 				CD57779B211CE6CE001B371E /* video-with-audio-and-web-audio.html */,
 				CD577798211CDE8F001B371E /* web-audio-only.html */,
+				57663DEB234F1F8000E85E09 /* web-authentication-get-assertion-hid.html */,
+				57663DE9234EA60B00E85E09 /* web-authentication-get-assertion-nfc.html */,
 				57C6244F2346C1EC00383FE7 /* web-authentication-get-assertion.html */,
 				51714EB21CF8C761004723C4 /* WebProcessKillIDBCleanup-1.html */,
 				51714EB31CF8C761004723C4 /* WebProcessKillIDBCleanup-2.html */,
@@ -3742,6 +3753,7 @@
 				26F52EB018288F0F0023D412 /* geolocationWatchPosition.html */,
 				26F52EB118288F0F0023D412 /* geolocationWatchPositionWithHighAccuracy.html */,
 				4A410F4D19AF7BEF002EBAB5 /* getUserMedia.html */,
+				41661C652355D98B00D33C27 /* getUserMedia-webaudio.html */,
 				4A410F4D19AF7BEF002EBAC5 /* getUserMediaAudioVideoCapture.html */,
 				BCBD372E125ABBE600D2C29F /* icon.png */,
 				CE3524F51B142BBB0028A7C5 /* input-focus-blur.html */,

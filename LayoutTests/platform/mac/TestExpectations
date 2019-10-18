@@ -1169,7 +1169,6 @@ webkit.org/b/158534 css3/filters/backdrop/dynamic-backdrop-filter-change.html [ 
 
 # These tests hardcode platform-specific font aliases.
 webkit.org/b/158649 [ Sierra+ ] fast/text/chinese-font-name-aliases-2.html [ ImageOnlyFailure ]
-webkit.org/b/159003 [ Sierra+ ] fast/text/font-cursive-italic-cjk.html [ Skip ]
 
 webkit.org/b/158889 media/video-controls-show-on-kb-or-ax-event.html [ Pass Failure Timeout ]
 
@@ -1810,8 +1809,6 @@ imported/w3c/web-platform-tests/mathml/presentation-markup/scripts/cramped-001.h
 
 webkit.org/b/19650 [ HighSierra+ ] accessibility/mac/press-not-work-for-disabled-menu-list.html [ Pass Failure ]
 
-webkit.org/b/196517 imported/w3c/web-platform-tests/mst-content-hint/MediaStreamTrack-contentHint.html [ Skip ]
-
 # Skip iOS-specific Pointer Events WPT tests.
 imported/w3c/web-platform-tests/pointerevents/pointerevent_change-touch-action-onpointerdown_touch.html [ Skip ]
 imported/w3c/web-platform-tests/pointerevents/pointerevent_pointercancel_touch.html [ Skip ]
@@ -1975,9 +1972,6 @@ webkit.org/b/200128 imported/w3c/web-platform-tests/html/semantics/embedded-cont
 # rdar://52557916 (REGRESSION: fast/css/paint-order.html and fast/css/paint-order-shadow.html are failing)
 [ Catalina+ ] fast/css/paint-order.html [ ImageOnlyFailure ]
 [ Catalina+ ] fast/css/paint-order-shadow.html [ ImageOnlyFailure ]
-
-# rdar://54317204 (fast/text/font-cursive-italic-cjk-2.html is failing)
-[ Catalina+ ] fast/text/font-cursive-italic-cjk-2.html [ ImageOnlyFailure ]
 
 webkit.org/b/181837 [ Release ] imported/w3c/web-platform-tests/service-workers/service-worker/ready.https.html [ Pass Failure ]
 

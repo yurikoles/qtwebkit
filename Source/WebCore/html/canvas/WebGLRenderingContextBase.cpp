@@ -5212,11 +5212,6 @@ const char* WebGLRenderingContextBase::activeDOMObjectName() const
     return "WebGLRenderingContext";
 }
 
-bool WebGLRenderingContextBase::canSuspendForDocumentSuspension() const
-{
-    return true;
-}
-
 void WebGLRenderingContextBase::suspend(ReasonForSuspension)
 {
     m_isSuspended = true;

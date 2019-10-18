@@ -520,13 +520,13 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     fileapi/FileReaderLoaderClient.h
     fileapi/NetworkSendQueue.h
 
+    history/BackForwardCache.h
     history/BackForwardClient.h
     history/BackForwardController.h
     history/BackForwardItemIdentifier.h
     history/CachedFrame.h
     history/CachedFramePlatformData.h
     history/HistoryItem.h
-    history/PageCache.h
 
     html/Autocapitalize.h
     html/AutocapitalizeTypes.h
@@ -929,6 +929,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/PODIntervalTree.h
     platform/PODRedBlackTree.h
     platform/Pasteboard.h
+    platform/PasteboardCustomData.h
     platform/PasteboardItemInfo.h
     platform/PasteboardStrategy.h
     platform/PasteboardWriterData.h

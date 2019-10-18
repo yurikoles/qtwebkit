@@ -821,7 +821,7 @@ WebBackForwardCache& WebPageProxy::backForwardCache() const
 
 bool WebPageProxy::shouldUseBackForwardCache() const
 {
-    return m_preferences->usesPageCache() && backForwardCache().capacity() > 0;
+    return m_preferences->usesBackForwardCache() && backForwardCache().capacity() > 0;
 }
 
 void WebPageProxy::swapToWebProcess(Ref<WebProcessProxy>&& process, PageIdentifier webPageID, std::unique_ptr<DrawingAreaProxy>&& drawingArea, RefPtr<WebFrameProxy>&& mainFrame)
@@ -1094,10 +1094,10 @@ void WebPageProxy::maybeInitializeSandboxExtensionHandle(WebProcessProxy& proces
     if (!url.isLocalFile())
         return;
 
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
     // If the process is still launching then it does not have a PID yet. We will take care of creating the sandbox extension
     // once the process has finished launching.
-    if (process.isLaunching())
+    if (process.isLaunching() || process.wasTerminated())
         return;
 #endif
 
@@ -1105,8 +1105,15 @@ void WebPageProxy::maybeInitializeSandboxExtensionHandle(WebProcessProxy& proces
         if (process.hasAssumedReadAccessToURL(resourceDirectoryURL))
             return;
 
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
-        if (SandboxExtension::createHandleForReadByPid(resourceDirectoryURL.fileSystemPath(), process.processIdentifier(), sandboxExtensionHandle)) {
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
+        ASSERT(process.connection() && process.connection()->getAuditToken());
+        bool createdExtension = false;
+        if (process.connection() && process.connection()->getAuditToken())
+            createdExtension = SandboxExtension::createHandleForReadByAuditToken(resourceDirectoryURL.fileSystemPath(), *(process.connection()->getAuditToken()), sandboxExtensionHandle);
+        else
+            createdExtension = SandboxExtension::createHandle(resourceDirectoryURL.fileSystemPath(), SandboxExtension::Type::ReadOnly, sandboxExtensionHandle);
+
+        if (createdExtension) {
             process.assumeReadAccessToBaseURL(*this, resourceDirectoryURL);
             return;
         }
@@ -1124,8 +1131,15 @@ void WebPageProxy::maybeInitializeSandboxExtensionHandle(WebProcessProxy& proces
     // Inspector resources are in a directory with assumed access.
     ASSERT_WITH_SECURITY_IMPLICATION(!WebKit::isInspectorPage(*this));
 
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
-    if (SandboxExtension::createHandleForReadByPid("/", process.processIdentifier(), sandboxExtensionHandle)) {
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
+    ASSERT(process.connection() && process.connection()->getAuditToken());
+    bool createdExtension = false;
+    if (process.connection() && process.connection()->getAuditToken())
+        createdExtension = SandboxExtension::createHandleForReadByAuditToken("/", *(process.connection()->getAuditToken()), sandboxExtensionHandle);
+    else
+        createdExtension = SandboxExtension::createHandle("/", SandboxExtension::Type::ReadOnly, sandboxExtensionHandle);
+
+    if (createdExtension) {
         willAcquireUniversalFileReadSandboxExtension(process);
         return;
     }
@@ -1146,8 +1160,13 @@ void WebPageProxy::maybeInitializeSandboxExtensionHandle(WebProcessProxy& proces
     auto basePath = baseURL.fileSystemPath();
     if (basePath.isNull())
         return;
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
-    if (SandboxExtension::createHandleForReadByPid(basePath, process.processIdentifier(), sandboxExtensionHandle))
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
+    if (process.connection() && process.connection()->getAuditToken())
+        createdExtension = SandboxExtension::createHandleForReadByAuditToken(basePath, *(process.connection()->getAuditToken()), sandboxExtensionHandle);
+    else
+        createdExtension = SandboxExtension::createHandle(basePath, SandboxExtension::Type::ReadOnly, sandboxExtensionHandle);
+    
+    if (createdExtension)
         process.assumeReadAccessToBaseURL(*this, baseURL);
 #else
     if (SandboxExtension::createHandle(basePath, SandboxExtension::Type::ReadOnly, sandboxExtensionHandle))
@@ -1210,7 +1229,7 @@ void WebPageProxy::loadRequestWithNavigationShared(Ref<WebProcessProxy>&& proces
 
     addPlatformLoadParameters(loadParameters);
 
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
     if (!process->isLaunching() || !url.isLocalFile())
         process->send(Messages::WebPage::LoadRequest(loadParameters), webPageID);
     else
@@ -1264,7 +1283,7 @@ RefPtr<API::Navigation> WebPageProxy::loadFile(const String& fileURLString, cons
     maybeInitializeSandboxExtensionHandle(m_process, fileURL, resourceDirectoryURL, loadParameters.sandboxExtensionHandle);
     addPlatformLoadParameters(loadParameters);
 
-#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_PID)
+#if HAVE(SANDBOX_ISSUE_READ_EXTENSION_TO_PROCESS_BY_AUDIT_TOKEN)
     if (m_process->isLaunching())
         m_process->send(Messages::WebPage::LoadRequestWaitingForPID(loadParameters, resourceDirectoryURL, m_identifier), m_webPageID);
     else
@@ -1554,12 +1573,12 @@ void WebPageProxy::didChangeBackForwardList(WebBackForwardListItem* added, Vecto
     m_pageLoadState.setCanGoForward(transaction, m_backForwardList->forwardItem());
 }
 
-void WebPageProxy::willGoToBackForwardListItem(const BackForwardItemIdentifier& itemID, bool inPageCache)
+void WebPageProxy::willGoToBackForwardListItem(const BackForwardItemIdentifier& itemID, bool inBackForwardCache)
 {
     PageClientProtector protector(pageClient());
 
     if (auto* item = m_backForwardList->itemForID(itemID))
-        m_navigationClient->willGoToBackForwardListItem(*this, *item, inPageCache);
+        m_navigationClient->willGoToBackForwardListItem(*this, *item, inBackForwardCache);
 }
 
 bool WebPageProxy::shouldKeepCurrentBackForwardListItemInList(WebBackForwardListItem& item)
@@ -2979,7 +2998,9 @@ void WebPageProxy::receivedNavigationPolicyDecision(PolicyAction policyAction, A
             // Make sure the process to be used for the navigation does not get shutDown now due to destroying SuspendedPageProxy or ProvisionalPageProxy objects.
             auto preventNavigationProcessShutdown = processForNavigation->makeScopePreventingShutdown();
 
-            auto suspendedPage = destinationSuspendedPage ? backForwardCache().takeEntry(*destinationSuspendedPage->backForwardListItem()) : nullptr;
+            ASSERT(!destinationSuspendedPage || navigation->targetItem());
+            auto suspendedPage = destinationSuspendedPage ? backForwardCache().takeSuspendedPage(*navigation->targetItem()) : nullptr;
+            ASSERT(suspendedPage.get() == destinationSuspendedPage);
             if (suspendedPage && suspendedPage->pageIsClosedOrClosing())
                 suspendedPage = nullptr;
 
@@ -4089,7 +4110,7 @@ void WebPageProxy::didStartProvisionalLoadForFrameShared(Ref<WebProcessProxy>&& 
         m_provisionalPage = nullptr;
     }
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().navigation(navigationID);
@@ -4156,7 +4177,7 @@ void WebPageProxy::didReceiveServerRedirectForProvisionalLoadForFrameShared(Ref<
     MESSAGE_CHECK(process, frame);
     MESSAGE_CHECK_URL(process, request.url());
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation = navigationID ? navigationState().navigation(navigationID) : nullptr;
     if (navigation)
         navigation->appendRedirectionURL(request.url());
@@ -4250,7 +4271,7 @@ void WebPageProxy::didFailProvisionalLoadForFrameShared(Ref<WebProcessProxy>&& p
             automationSession->navigationOccurredForFrame(*frame);
     }
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().takeNavigation(navigationID);
@@ -4325,7 +4346,7 @@ void WebPageProxy::didCommitLoadForFrame(FrameIdentifier frameID, uint64_t navig
     WebFrameProxy* frame = m_process->webFrame(frameID);
     MESSAGE_CHECK(m_process, frame);
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID && (navigation = navigationState().navigation(navigationID))) {
 #if ENABLE(RESOURCE_LOAD_STATISTICS)
@@ -4442,7 +4463,7 @@ void WebPageProxy::didFinishDocumentLoadForFrame(FrameIdentifier frameID, uint64
             automationSession->documentLoadedForFrame(*frame);
     }
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().navigation(navigationID);
@@ -4461,7 +4482,7 @@ void WebPageProxy::didFinishLoadForFrame(FrameIdentifier frameID, uint64_t navig
     WebFrameProxy* frame = m_process->webFrame(frameID);
     MESSAGE_CHECK(m_process, frame);
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().navigation(navigationID);
@@ -4506,7 +4527,7 @@ void WebPageProxy::didFailLoadForFrame(FrameIdentifier frameID, uint64_t navigat
     WebFrameProxy* frame = m_process->webFrame(frameID);
     MESSAGE_CHECK(m_process, frame);
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().navigation(navigationID);
@@ -4549,7 +4570,7 @@ void WebPageProxy::didSameDocumentNavigationForFrame(FrameIdentifier frameID, ui
     MESSAGE_CHECK(m_process, frame);
     MESSAGE_CHECK_URL(m_process, url);
 
-    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the page cache.
+    // FIXME: We should message check that navigationID is not zero here, but it's currently zero for some navigations through the back/forward cache.
     RefPtr<API::Navigation> navigation;
     if (frame->isMainFrame() && navigationID)
         navigation = navigationState().navigation(navigationID);
@@ -8077,11 +8098,6 @@ void WebPageProxy::cancelComposition()
 }
 #endif // PLATFORM(QT) || PLATFORM(GTK)
 
-void WebPageProxy::didSaveToPageCache()
-{
-    m_process->didSaveToPageCache();
-}
-
 void WebPageProxy::setScrollPinningBehavior(ScrollPinningBehavior pinning)
 {
     if (m_scrollPinningBehavior == pinning)
@@ -8710,19 +8726,6 @@ void WebPageProxy::getLoadDecisionForIcon(const WebCore::LinkIcon& icon, Callbac
 void WebPageProxy::finishedLoadingIcon(CallbackID callbackID, const IPC::DataReference& data)
 {
     dataCallback(data, callbackID);
-}
-
-void WebPageProxy::setResourceCachingDisabled(bool disabled)
-{
-    if (m_isResourceCachingDisabled == disabled)
-        return;
-
-    m_isResourceCachingDisabled = disabled;
-
-    if (!hasRunningProcess())
-        return;
-
-    m_process->send(Messages::WebPage::SetResourceCachingDisabled(disabled), m_webPageID);
 }
 
 WebCore::UserInterfaceLayoutDirection WebPageProxy::userInterfaceLayoutDirection()

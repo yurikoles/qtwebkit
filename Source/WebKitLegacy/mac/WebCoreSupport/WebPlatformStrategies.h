@@ -29,9 +29,9 @@
 #include <WebCore/PasteboardStrategy.h>
 #include <WebCore/PlatformStrategies.h>
 
+class PasteboardCustomData;
 struct PasteboardImage;
 struct PasteboardWebContent;
-struct PasteboardCustomData;
 
 class WebPlatformStrategies : public WebCore::PlatformStrategies, private WebCore::PasteboardStrategy {
 public:
@@ -70,7 +70,7 @@ private:
     WebCore::Color color(const String& pasteboardName) override;
     URL url(const String& pasteboardName) override;
 
-    long writeCustomData(const WebCore::PasteboardCustomData&, const String& pasteboardName) override;
+    long writeCustomData(const Vector<WebCore::PasteboardCustomData>&, const String& pasteboardName) override;
     Vector<String> typesSafeForDOMToReadAndWrite(const String& pasteboardName, const String& origin) override;
 
     long addTypes(const Vector<String>& pasteboardTypes, const String& pasteboardName) override;

@@ -46,7 +46,8 @@ public:
 private:
     class Geometry : public FormattingContext::Geometry {
     public:
-        HeightAndMargin tableCellHeightAndMargin(const Box&) const;
+        ContentHeightAndMargin tableCellHeightAndMargin(const Box&) const;
+        Optional<LayoutUnit> computedColumnWidth(const Box& columnBox) const;
 
     private:
         friend class TableFormattingContext;
@@ -65,7 +66,7 @@ private:
 
     void ensureTableGrid();
     void computePreferredWidthForColumns();
-    void distributeAvailableWidth(LayoutUnit extraHorizontalSpace);
+    void distributeExtraHorizontalSpace(LayoutUnit availableContentWidth, LayoutUnit tableMinimumContentWidth);
     enum class WidthConstraintsType { Minimum, Maximum };
     void useAsContentLogicalWidth(WidthConstraintsType);
 

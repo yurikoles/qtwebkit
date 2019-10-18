@@ -137,6 +137,7 @@ my (
     $orientationEventsSupport,
     $paymentRequestSupport,
     $pdfkitPluginSupport,
+    $pictureInPictureAPISupport,
     $pointerLockSupport,
     $publicSuffixListSupport,
     $quotaSupport,
@@ -444,6 +445,9 @@ my @features = (
 
     { option => "pdfkit-plugin", desc => "Toggle PDFKit plugin support",
       define => "ENABLE_PDFKIT_PLUGIN", value => \$pdfkitPluginSupport },
+
+    { option => "picture-in-picture-api", desc => "Toggle Picture-in-Picture API support",
+      define => "ENABLE_PICTURE_IN_PICTURE_API", value => \$pictureInPictureAPISupport },
 
     { option => "pointer-lock", desc => "Toggle pointer lock support",
       define => "ENABLE_POINTER_LOCK", value => \$pointerLockSupport },

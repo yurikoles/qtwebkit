@@ -1236,7 +1236,6 @@ webkit.org/b/181166 imported/w3c/web-platform-tests/service-workers/service-work
 
 webkit.org/b/181167 imported/w3c/web-platform-tests/service-workers/service-worker/ServiceWorkerGlobalScope/update.https.html [ Pass Failure ]
 
-imported/w3c/web-platform-tests/html/dom/idlharness.https.html [ Crash ]
 webkit.org/b/181392 imported/w3c/web-platform-tests/service-workers/service-worker/fetch-waits-for-activate.https.html [ Pass Failure ]
 
 webkit.org/b/181821 fast/visual-viewport/ios/caret-after-focus-in-fixed.html [ Pass Failure ]
@@ -1353,9 +1352,6 @@ fast/scrolling/ios/scroll-iframe-003.html [ ImageOnlyFailure ]
 fast/scrolling/ios/scroll-iframe-004.html [ ImageOnlyFailure ]
 fast/scrolling/ios/hit-testing-iframe-006.html [ ImageOnlyFailure ]
 
-# <rdar://problem/52699318> fast/scrolling/ios/body-overflow-hidden-height-100-percent-keyboard.html is timing out
-fast/scrolling/ios/body-overflow-hidden-height-100-percent-keyboard.html [ Pass Timeout ]
-
 # Skip tests timing out for <rdar://problem/48616298>
 fast/viewport/ios/constant-width-viewport-after-changing-view-scale.html [ Skip ]
 fast/viewport/ios/ignore-minimum-device-width-for-page-with-viewport-device-width.html [ Skip ]
@@ -1363,8 +1359,5 @@ fast/viewport/ios/ignore-minimum-device-width-for-page-with-viewport-device-widt
 # problem with blur handling
 mathml/focus-event-handling.html [ Failure ]
 
-# <rdar://problem/51756254>REGRESSION (r244582-r244596) Layout tests fast/scrolling/ios/touch-scroll-visibility-hidden.html fast/scrolling/ios/touch-scroll-pointer-events-none.html are failing
-fast/scrolling/ios/touch-scroll-pointer-events-none.html [ Failure ]
-fast/scrolling/ios/touch-scroll-visibility-hidden.html [ Failure ]
 # <rdar://problem/52962272> fast/scrolling/ios/body-overflow-hidden.html is an Image failure
 fast/scrolling/ios/body-overflow-hidden.html [ Pass ImageOnlyFailure ]

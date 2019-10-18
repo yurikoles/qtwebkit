@@ -786,12 +786,9 @@ void NetworkProcessProxy::setGrandfathered(PAL::SessionID sessionID, const Regis
     sendWithAsyncReply(Messages::NetworkProcess::SetGrandfathered(sessionID, resourceDomain, isGrandfathered), WTFMove(completionHandler));
 }
 
-void NetworkProcessProxy::setUseITPDatabase(PAL::SessionID sessionID, bool value)
+void NetworkProcessProxy::setUseITPDatabase(PAL::SessionID sessionID, bool value, CompletionHandler<void()>&& completionHandler)
 {
-    if (!canSendMessage())
-        return;
-    
-    send(Messages::NetworkProcess::SetUseITPDatabase(sessionID, value), 0);
+    sendWithAsyncReply(Messages::NetworkProcess::SetUseITPDatabase(sessionID, value), WTFMove(completionHandler));
 }
 
 void NetworkProcessProxy::requestStorageAccessConfirm(WebPageProxyIdentifier pageID, FrameIdentifier frameID, const RegistrableDomain& subFrameDomain, const RegistrableDomain& topFrameDomain, CompletionHandler<void(bool)>&& completionHandler)
@@ -1056,6 +1053,16 @@ void NetworkProcessProxy::setShouldDowngradeReferrerForTesting(bool enabled, Com
     }
     
     sendWithAsyncReply(Messages::NetworkProcess::SetShouldDowngradeReferrerForTesting(enabled), WTFMove(completionHandler));
+}
+
+void NetworkProcessProxy::setShouldBlockThirdPartyCookiesForTesting(PAL::SessionID sessionID, bool enabled, CompletionHandler<void()>&& completionHandler)
+{
+    if (!canSendMessage()) {
+        completionHandler();
+        return;
+    }
+    
+    sendWithAsyncReply(Messages::NetworkProcess::SetShouldBlockThirdPartyCookiesForTesting(sessionID, enabled), WTFMove(completionHandler));
 }
 #endif // ENABLE(RESOURCE_LOAD_STATISTICS)
 

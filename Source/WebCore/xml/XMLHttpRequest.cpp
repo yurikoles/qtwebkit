@@ -1141,12 +1141,13 @@ void XMLHttpRequest::didReachTimeout()
     dispatchErrorEvents(eventNames().timeoutEvent);
 }
 
-bool XMLHttpRequest::canSuspendForDocumentSuspension() const
+// FIXME: This should never prevent entering the back/forward cache.
+bool XMLHttpRequest::shouldPreventEnteringBackForwardCache_DEPRECATED() const
 {
     // If the load event has not fired yet, cancelling the load in suspend() may cause
     // the load event to be fired and arbitrary JS execution, which would be unsafe.
     // Therefore, we prevent suspending in this case.
-    return !m_loader || document()->loadEventFinished();
+    return m_loader && !document()->loadEventFinished();
 }
 
 const char* XMLHttpRequest::activeDOMObjectName() const
@@ -1163,8 +1164,8 @@ void XMLHttpRequest::suspend(ReasonForSuspension reason)
         m_dispatchErrorOnResuming = true;
     }
 
-    if (reason == ReasonForSuspension::PageCache && m_loader) {
-        // Going into PageCache, abort the request and dispatch a network error on resuming.
+    if (reason == ReasonForSuspension::BackForwardCache && m_loader) {
+        // Going into the BackForwardCache, abort the request and dispatch a network error on resuming.
         genericError();
         m_dispatchErrorOnResuming = true;
         bool aborted = internalAbort();

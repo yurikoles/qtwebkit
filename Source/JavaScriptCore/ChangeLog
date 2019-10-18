@@ -1,3 +1,733 @@
+2019-10-18  Fujii Hironori  <Hironori.Fujii@sony.com>
+
+        [Clang][Windows] Options.cpp(317,25): error: no matching function for call to 'optionTypeSpecificIndex'
+        https://bugs.webkit.org/show_bug.cgi?id=203142
+
+        Unreviewed build fix
+
+        clang-cl reported a compilation error for MSVC bug workaround code of optionTypeSpecificIndex.
+
+        runtime\Options.cpp(294,12): error: variables defined in a constexpr function must be initialized
+            size_t index;
+                   ^
+        * runtime/Options.cpp:
+        (JSC::optionTypeSpecificIndex): Initialize the variable 'index'.
+
+2019-10-17  Mark Lam  <mark.lam@apple.com>
+
+        Add missing checks after calls to the sameValue() JSValue comparator.
+        https://bugs.webkit.org/show_bug.cgi?id=203126
+        <rdar://problem/56366561>
+
+        Reviewed by Saam Barati.
+
+        * runtime/JSFunction.cpp:
+        (JSC::JSFunction::defineOwnProperty):
+        * runtime/JSObject.cpp:
+        (JSC::JSObject::defineOwnIndexedProperty):
+        (JSC::validateAndApplyPropertyDescriptor):
+        * runtime/PropertyDescriptor.cpp:
+        (JSC::PropertyDescriptor::equalTo const):
+        * runtime/ProxyObject.cpp:
+        (JSC::performProxyGet):
+        (JSC::ProxyObject::performPut):
+        (JSC::ProxyObject::performSetPrototype):
+        (JSC::ProxyObject::performGetPrototype):
+        * runtime/RegExpObject.cpp:
+        (JSC::RegExpObject::defineOwnProperty):
+
+2019-10-17  Saam Barati  <sbarati@apple.com>
+
+        GetByVal and PutByVal on ArrayStorage need to use the same AbstractHeap
+        https://bugs.webkit.org/show_bug.cgi?id=203124
+        <rdar://problem/55988183>
+
+        Reviewed by Yusuke Suzuki.
+
+        * dfg/DFGAbstractHeap.h:
+        * dfg/DFGClobberize.h:
+        (JSC::DFG::clobberize):
+
+2019-10-17  Mark Lam  <mark.lam@apple.com>
+
+        Harden capacity checks in DFG::LocalCSEPhase::SmallMap.
+        https://bugs.webkit.org/show_bug.cgi?id=203123
+        <rdar://problem/56339943>
+
+        Change addPure() and addImpure() to use RELEASE_ASSERT in their capacity checks.
+
+        Reviewed by Keith Miller.
+
+        * dfg/DFGCSEPhase.cpp:
+
+2019-10-17  Mark Lam  <mark.lam@apple.com>
+
+        Use constexpr in more places and remove some unnecessary external linkage.
+        https://bugs.webkit.org/show_bug.cgi?id=203115
+
+        Reviewed by Yusuke Suzuki.
+
+        * API/JSWrapperMap.mm:
+        * heap/MarkedBlock.cpp:
+        * inspector/JSGlobalObjectInspectorController.cpp:
+        (Inspector::JSGlobalObjectInspectorController::appendAPIBacktrace):
+        * inspector/ScriptCallStack.h:
+        * interpreter/CLoopStack.h:
+        * interpreter/CallFrame.h:
+        * interpreter/ShadowChicken.h:
+        * jit/AssemblyHelpers.cpp:
+        (JSC::emitRandomThunkImpl):
+        * jit/GPRInfo.cpp:
+        * jit/GPRInfo.h:
+        * jit/JIT.h:
+        * jit/PCToCodeOriginMap.cpp:
+        * jit/SpecializedThunkJIT.h:
+        * jit/ThunkGenerators.cpp:
+        (JSC::roundThunkGenerator):
+        * jit/UnusedPointer.h:
+        * llint/LLIntData.h:
+        * llint/LLIntPCRanges.h:
+        * parser/Lexer.h:
+        * parser/Nodes.h:
+        * runtime/CodeCache.cpp:
+        * runtime/CodeCache.h:
+        * runtime/ErrorInstance.h:
+        * runtime/JSAsyncFunction.h:
+        * runtime/JSAsyncGeneratorFunction.h:
+        * runtime/JSBoundFunction.h:
+        * runtime/JSCallee.h:
+        * runtime/JSFunction.h:
+        * runtime/JSGeneratorFunction.h:
+        * runtime/JSNativeStdFunction.h:
+        * runtime/JSRunLoopTimer.cpp:
+        (): Deleted.
+        * runtime/JSRunLoopTimer.h:
+        * runtime/ProxyObject.h:
+        * runtime/Watchdog.cpp:
+        (): Deleted.
+        * runtime/Watchdog.h:
+        * wasm/js/WebAssemblyFunction.h:
+        * wasm/js/WebAssemblyFunctionBase.h:
+        * wasm/js/WebAssemblyWrapperFunction.h:
+
+2019-10-17  Brent Fulgham  <bfulgham@apple.com>
+
+        Build fix for newer versions of MSVC.
+
+        Rubber stamped by Mark Lam.
+
+        Some versions of MSVC optimize the inline optimization of
+        index away, triggering an uninitialized variable error. This
+        change avoids this problem.
+
+        * runtime/Options.cpp:
+        (JSC::optionTypeSpecificIndex):
+
+2019-10-17  Devin Rousso  <drousso@apple.com>
+
+        Web Inspector: rework frontend agent construction to allow commands/events to be controlled by the related target's type
+        https://bugs.webkit.org/show_bug.cgi?id=200384
+        <rdar://problem/53850352>
+
+        Reviewed by Joseph Pecoraro.
+
+        * inspector/scripts/codegen/generate_js_backend_commands.py:
+        (JSBackendCommandsGenerator.generate_domain):
+        (JSBackendCommandsGenerator.generate_domain.generate_parameter_object):
+        * inspector/scripts/codegen/models.py:
+        (validate_target_types): Added.
+        (Protocol.parse_domain):
+        (Protocol.parse_command):
+        (Protocol.parse_event):
+        (Domain.__init__):
+        (Domains):
+        (Command.__init__):
+        (Event.__init__):
+        * inspector/protocol/ApplicationCache.json:
+        * inspector/protocol/Audit.json:
+        * inspector/protocol/CPUProfiler.json:
+        * inspector/protocol/CSS.json:
+        * inspector/protocol/Canvas.json:
+        * inspector/protocol/Console.json:
+        * inspector/protocol/DOM.json:
+        * inspector/protocol/DOMDebugger.json:
+        * inspector/protocol/DOMStorage.json:
+        * inspector/protocol/Database.json:
+        * inspector/protocol/Debugger.json:
+        * inspector/protocol/Heap.json:
+        * inspector/protocol/IndexedDB.json:
+        * inspector/protocol/Inspector.json:
+        * inspector/protocol/LayerTree.json:
+        * inspector/protocol/Memory.json:
+        * inspector/protocol/Network.json:
+        * inspector/protocol/Page.json:
+        * inspector/protocol/Recording.json:
+        * inspector/protocol/Runtime.json:
+        * inspector/protocol/ScriptProfiler.json:
+        * inspector/protocol/Security.json:
+        * inspector/protocol/ServiceWorker.json:
+        * inspector/protocol/Target.json:
+        * inspector/protocol/Timeline.json:
+        * inspector/protocol/Worker.json:
+        Add `debuggableTypes` and `targetTypes` arrays to domains/commands/events that are used when
+        generating InspectorBackendCommands.js for more accurate compatibility checks.
+
+        * inspector/InspectorTarget.h:
+        * inspector/agents/InspectorTargetAgent.h:
+        * inspector/agents/InspectorTargetAgent.cpp:
+        (Inspector::targetTypeToProtocolType):
+        (Inspector::InspectorTargetAgent::exists): Deleted.
+        Remove `Target.exists` now that the frontend can do proper feature checking.
+
+        * inspector/remote/RemoteControllableTarget.h:
+        * inspector/remote/RemoteInspectionTarget.h:
+        * inspector/remote/RemoteInspectorConstants.h:
+        * inspector/remote/cocoa/RemoteInspectorCocoa.mm:
+        (Inspector::RemoteInspector::listingForInspectionTarget const):
+        * inspector/remote/glib/RemoteInspectorGlib.cpp:
+        (Inspector::RemoteInspector::listingForInspectionTarget const):
+        * inspector/remote/socket/RemoteInspectorSocket.cpp:
+        (Inspector::RemoteInspector::listingForInspectionTarget const):
+        Split the `Web` debuggable type into `Page` (WebCore::Page) and `WebPage` (WebKit::WebPageProxy).
+
+        * inspector/scripts/tests/all/expected/definitions-with-mac-platform.json-result:
+        * inspector/scripts/tests/generic/command-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/domain-availability.json: Removed.
+        * inspector/scripts/tests/generic/domain-debuggableTypes.json: Added.
+        * inspector/scripts/tests/generic/domain-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/domain-targetTypes.json: Added.
+        * inspector/scripts/tests/generic/event-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/expected/command-targetType-matching-domain-debuggableType.json-result: Added.
+        * inspector/scripts/tests/generic/expected/commands-with-async-attribute.json-result:
+        * inspector/scripts/tests/generic/expected/commands-with-optional-call-return-parameters.json-result:
+        * inspector/scripts/tests/generic/expected/domain-debuggableTypes.json-result: Added.
+        * inspector/scripts/tests/generic/expected/domain-targetType-matching-domain-debuggableType.json-result: Added.
+        * inspector/scripts/tests/generic/expected/domain-targetTypes.json-result: Added.
+        * inspector/scripts/tests/generic/expected/domains-with-varying-command-sizes.json-result:
+        * inspector/scripts/tests/generic/expected/enum-values.json-result:
+        * inspector/scripts/tests/generic/expected/event-targetType-matching-domain-debuggableType.json-result: Added.
+        * inspector/scripts/tests/generic/expected/events-with-optional-parameters.json-result:
+        * inspector/scripts/tests/generic/expected/fail-on-command-targetType-matching-domain-debuggableType.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-command-targetTypes-type.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-command-targetTypes-value.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-availability-type.json-error: Removed.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-availability-value.json-error: Removed.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-availability.json-error: Removed.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-debuggableTypes-type.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-debuggableTypes-value.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-targetType-matching-domain-debuggableType.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-targetTypes-type.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-domain-targetTypes-value.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-event-targetType-matching-domain-debuggableType.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-event-targetTypes-type.json-error: Added.
+        * inspector/scripts/tests/generic/expected/fail-on-event-targetTypes-value.json-error: Added.
+        * inspector/scripts/tests/generic/expected/generate-domains-with-feature-guards.json-result:
+        * inspector/scripts/tests/generic/expected/type-declaration-array-type.json-result:
+        * inspector/scripts/tests/generic/expected/type-declaration-enum-type.json-result:
+        * inspector/scripts/tests/generic/expected/type-declaration-object-type.json-result:
+        * inspector/scripts/tests/generic/expected/type-requiring-runtime-casts.json-result:
+        * inspector/scripts/tests/generic/expected/version.json-result:
+        * inspector/scripts/tests/generic/fail-on-command-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/fail-on-command-targetTypes-type.json: Added.
+        * inspector/scripts/tests/generic/fail-on-command-targetTypes-value.json: Added.
+        * inspector/scripts/tests/generic/fail-on-domain-debuggableTypes-type.json: Added.
+        * inspector/scripts/tests/generic/fail-on-domain-debuggableTypes-value.json: Added.
+        * inspector/scripts/tests/generic/fail-on-domain-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/fail-on-domain-targetTypes-type.json: Added.
+        * inspector/scripts/tests/generic/fail-on-domain-targetTypes-value.json: Added.
+        * inspector/scripts/tests/generic/fail-on-event-targetType-matching-domain-debuggableType.json: Added.
+        * inspector/scripts/tests/generic/fail-on-event-targetTypes-type.json: Added.
+        * inspector/scripts/tests/generic/fail-on-event-targetTypes-value.json: Added.
+        * inspector/scripts/tests/mac/expected/definitions-with-mac-platform.json-result:
+        Update test results, as well as added new tests for `debuggableTypes` and `targetTypes`.
+
+2019-10-16  Mark Lam  <mark.lam@apple.com>
+
+        Reduce the amount of memory needed to store Options.
+        https://bugs.webkit.org/show_bug.cgi?id=202105
+
+        Reviewed by Yusuke Suzuki.
+
+        The size of the JSC::Config needed to store the Options is now reduced to 4K
+        instead of 16K, enabled by constexpr template magic.
+
+        1. Instead of all options in a large array of OptionEntry (which is a union of
+           all the option types), we now have separate arrays for each of the types of
+           options.  For example,
+
+                Removed g_jscConfig.options[].
+                Added g_jscConfig.typeBoolOptions[].
+                Added g_jscConfig.typeInt32Options[].
+                Added g_jscConfig.typeDoubleOptions[].
+                ...
+
+           We used to find the storage for the option using g_jscConfig.options[Options::ID].
+           We now find the storage for each type of option using
+           g_jscConfig.options[optionTypeSpecificIndex<OptionTypeID, OptionID>()].  For
+           example, Options::useJIT() used to be implemented as:
+
+               inline bool& Options::useJIT()
+               {
+                    return g_jscConfig.options[Options::useJITID];
+               }
+
+           ... which is now replaced with:
+
+               inline bool& Options::useJIT()
+               {
+                    return g_jscConfig.typeBoolOptions[optionTypeSpecificIndex<OptionTypeID::Bool, OptionID::useJIT>()];
+               }
+
+           MSVC has a bug where it cannot handle very large source files: see
+           https://developercommunity.visualstudio.com/content/problem/653301/fatal-error-c1002-compiler-is-out-of-heap-space-in.html.
+           This bug prevents this patch from building on MSVC.  To workaround this bug,
+           we don't inline the Options accessors when COMPILER(MSVC).  This prevents MSVC
+           from having to parse the large body of template code code to used to implement
+           the inline accessors in every file that #include "Options.h".
+
+           Also add the @no-unify attribute to Options.cpp (where we put the accessors)
+           so that it doesn't trigger the MSVC bug also.
+
+        2. Introduce the optionTypeSpecificIndex() constexpr template function for
+           computing the index of each option in their respective type specific options
+           array.
+
+        3. Introduce OptionTypes, OptionTypeID, and OptionID.
+
+           The OptionTypes namespace replaces OptionEntry as the container of option types.
+           The OptionID enum class replaces Options::ID.
+           The OptionTypeID enum class is new and is used together with OptionID in
+               constexpr templates to compute the typeSpecificIndex of options.
+
+        4. Removed the OptionEntry struct and OptionEntry.h.  After (1), this struct is
+           only used in the Option class.  We just moved the union of option types (that
+           OptionEntry embeds) into the Option class.
+
+           Moved class OptionRange into OptionsList.h.
+
+        5. Removed the large OptionEntry arrays from JSC::Config.
+           Added type specific options arrays.
+           Also ordered these arrays to maximize compactness and minimize internal fragmentation.
+
+        6. Changed scaleJITPolicy() to go directly to g_jscConfig.typeInt32Options[]
+           instead of going through the Option wrapper object.  This allows us to simplify
+           things and make the Option class a read only interface of options.
+
+        7. Changed Options::initialize() to only compute the option default value once.
+           The default value specified in the OptionsList may not always be a constant.
+           Sometimes, it is a function call.
+
+        8. The Option class now only gives read only access to the options.
+
+           The Option class' role is to provide an interface for reading an option at any
+           given OptionID without first knowing about the type of the specific option.
+           It is useful for iterating options, and is currently only used by
+           Options::dumpOption().
+
+           Technically, we could merge all the Option class code into its single client.
+           We opted not to do this because the amount of code is non-trivial, and the
+           Option class does a good job of encapsulating this functionality.
+
+        * API/glib/JSCOptions.cpp:
+        (jscOptionsSetValue):
+        (jscOptionsGetValue):
+        (jsc_options_foreach):
+        (jsc_options_get_option_group):
+        * CMakeLists.txt:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * Sources.txt:
+        * runtime/JSCConfig.h:
+        * runtime/OptionEntry.h: Removed.
+        * runtime/Options.cpp:
+        (JSC::Options::isAvailable):
+        (JSC::overrideOptionWithHeuristic):
+        (JSC::optionTypeSpecificIndex):
+        (JSC::scaleJITPolicy):
+        (JSC::recomputeDependentOptions):
+        (JSC::Options::initialize):
+        (JSC::Options::setOptionWithoutAlias):
+        (JSC::Options::dumpAllOptions):
+        (JSC::Options::dumpOption):
+        (JSC::Option::Option):
+        (JSC::Option::defaultOption const):
+        (JSC::Option::dump const):
+        (JSC::Option::operator== const):
+        * runtime/Options.h:
+        (JSC::Option::id const):
+        (JSC::Option::name const):
+        (JSC::Option::description const):
+        (JSC::Option::type const):
+        (JSC::Option::availability const):
+        (JSC::Option::isOverridden const):
+        (JSC::Option::Option):
+        (JSC::Option::idIndex const):
+        (JSC::optionTypeSpecificIndex):
+        (JSC::Option::defaultOption const): Deleted.
+        (JSC::Option::boolVal): Deleted.
+        (JSC::Option::unsignedVal): Deleted.
+        (JSC::Option::doubleVal): Deleted.
+        (JSC::Option::int32Val): Deleted.
+        (JSC::Option::optionRangeVal): Deleted.
+        (JSC::Option::optionStringVal): Deleted.
+        (JSC::Option::gcLogLevelVal): Deleted.
+        * runtime/OptionsList.h:
+        (JSC::OptionRange::operator= ):
+        (JSC::OptionRange::rangeString const):
+        (JSC::countNumberOfJSCOptionsOfType):
+
+2019-10-16  Keith Miller  <keith_miller@apple.com>
+
+        Move assert in Wasm::Plan::fail.
+        https://bugs.webkit.org/show_bug.cgi?id=203052
+
+        Reviewed by Mark Lam.
+
+        Since we changed how Wasm::Plan interacts with the streaming
+        parser it's possible for the streaming parser to call fail with no
+        error message (because the corresponding Wasm::Plan already
+        failed). This patch moves an erroneous assert so it no longer
+        trips when this happens.
+
+        * wasm/WasmPlan.cpp:
+        (JSC::Wasm::Plan::fail):
+
+2019-10-16  Keith Miller  <keith_miller@apple.com>
+
+        checkConsistency in Air O0 should only run when validation is enabled
+        https://bugs.webkit.org/show_bug.cgi?id=203050
+
+        Reviewed by Saam Barati.
+
+        I resued the validateGraph and validateGraphAtEachPhase options
+        because adding a new option and threading it through all our
+        testing infrastructure didn't seem worthwhile for this.
+
+        * b3/air/AirAllocateRegistersAndStackAndGenerateCode.cpp:
+        (JSC::B3::Air::GenerateAndAllocateRegisters::checkConsistency):
+
+2019-10-16  Paulo Matos  <pmatos@igalia.com> and Caio Lima  <ticaiolima@gmail.com>
+
+        Invalid instruction generated for ARM_THUMB2 in llint
+        https://bugs.webkit.org/show_bug.cgi?id=202844
+
+        Reviewed by Saam Barati.
+
+        Do not allow instruction execution to reach OSR return label on ARMv7.
+        Currently we are seeing the instruction execution hitting a .word directive in
+        the instruction stream and segfaulting. There are two words used to represent a
+        global label which was generated as part of the work on OSR Exit to LLInt work
+        (r250806). The double word generation only occurs in ARMv7 and therefore only here
+        the segfault manifests itself.
+
+        * llint/LowLevelInterpreter.asm:
+
+2019-10-16  Paulo Matos  <pmatos@linki.tools>
+
+        Fix GCC warning on MIPS about dead variable metadata
+        https://bugs.webkit.org/show_bug.cgi?id=202987
+
+        Reviewed by Keith Miller.
+
+        * jit/JITPropertyAccess32_64.cpp:
+        (JSC::JIT::emit_op_get_internal_field):
+
+2019-10-15  Mark Lam  <mark.lam@apple.com>
+
+        operationSwitchCharWithUnknownKeyType failed to handle OOME when resolving rope string.
+        https://bugs.webkit.org/show_bug.cgi?id=202312
+        <rdar://problem/55782280>
+
+        Reviewed by Yusuke Suzuki.
+
+        operationSwitchCharWithUnknownKeyType() can only dispatch to a case handler
+        if the key string is of length 1.  All other cases should dispatch to the default
+        handler.  This patch also adds the missing OOME check.
+
+        Also fixed a bug in SpeculativeJIT::emitSwitchCharStringJump() where the slow
+        path rope resolution was returning after the length check.  It needs to return to
+        the point before the length check.
+
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::emitSwitchCharStringJump):
+        * jit/JITOperations.cpp:
+
+2019-10-15  Peng Liu  <peng.liu6@apple.com>
+
+        [Picture-in-Picture Web API] Implement HTMLVideoElement.requestPictureInPicture() / Document.exitPictureInPicture()
+        https://bugs.webkit.org/show_bug.cgi?id=201024
+
+        Reviewed by Eric Carlson.
+
+        Add configurations for Picture-in-Picture API.
+
+        * Configurations/FeatureDefines.xcconfig:
+
+2019-10-15  Angelos Oikonomopoulos  <aoikonomopoulos@igalia.com>
+
+        Interpreter: Don't assert that reference is nonnull
+        https://bugs.webkit.org/show_bug.cgi?id=202986
+
+        Reviewed by Keith Miller.
+
+        G++ 9.2 can assume that the address of a reference is nonnull and
+        emits multiple warnings to that effect in --debug builds.
+
+        * interpreter/FrameTracers.h:
+        (JSC::NativeCallFrameTracer::NativeCallFrameTracer):
+
+2019-10-14  Commit Queue  <commit-queue@webkit.org>
+
+        Unreviewed, rolling out r251090.
+        https://bugs.webkit.org/show_bug.cgi?id=202959
+
+        "broke tests" (Requested by RMorisset on #webkit).
+
+        Reverted changeset:
+
+        "Split ArithProfile into a Unary and a Binary version"
+        https://bugs.webkit.org/show_bug.cgi?id=202832
+        https://trac.webkit.org/changeset/251090
+
+2019-10-14  Robin Morisset  <rmorisset@apple.com>
+
+        Split ArithProfile into a Unary and a Binary version
+        https://bugs.webkit.org/show_bug.cgi?id=202832
+
+        Reviewed by Keith Miller.
+
+        ArithProfile was for a long time only used for add/sub/mul/div, but recently it started being used for negate. And it will soon also have to be used for inc and dec due to BigInt.
+        So in this patch I make a separate version that only has the data for a single argument, and thus takes half as much memory.
+
+        * bytecode/ArithProfile.cpp:
+        (JSC::ArithProfile<BitfieldType>::emitObserveResult):
+        (JSC::ArithProfile<BitfieldType>::shouldEmitSetDouble const):
+        (JSC::ArithProfile<BitfieldType>::emitSetDouble const):
+        (JSC::ArithProfile<BitfieldType>::shouldEmitSetNonNumeric const):
+        (JSC::ArithProfile<BitfieldType>::shouldEmitSetBigInt const):
+        (JSC::ArithProfile<BitfieldType>::emitSetNonNumeric const):
+        (JSC::ArithProfile<BitfieldType>::emitSetBigInt const):
+        (WTF::printInternal):
+        * bytecode/ArithProfile.h:
+        (JSC::ArithProfile::didObserveNonInt32 const):
+        (JSC::ArithProfile::didObserveDouble const):
+        (JSC::ArithProfile::didObserveNonNegZeroDouble const):
+        (JSC::ArithProfile::didObserveNegZeroDouble const):
+        (JSC::ArithProfile::didObserveNonNumeric const):
+        (JSC::ArithProfile::didObserveBigInt const):
+        (JSC::ArithProfile::didObserveInt32Overflow const):
+        (JSC::ArithProfile::didObserveInt52Overflow const):
+        (JSC::ArithProfile::setObservedNonNegZeroDouble):
+        (JSC::ArithProfile::setObservedNegZeroDouble):
+        (JSC::ArithProfile::setObservedNonNumeric):
+        (JSC::ArithProfile::setObservedBigInt):
+        (JSC::ArithProfile::setObservedInt32Overflow):
+        (JSC::ArithProfile::setObservedInt52Overflow):
+        (JSC::ArithProfile::observeResult):
+        (JSC::ArithProfile::addressOfBits const):
+        (JSC::ArithProfile::bits const):
+        (JSC::ArithProfile::ArithProfile):
+        (JSC::ArithProfile::hasBits const):
+        (JSC::ArithProfile::setBit):
+        (JSC::UnaryArithProfile::UnaryArithProfile):
+        (JSC::UnaryArithProfile::observedIntBits):
+        (JSC::UnaryArithProfile::observedNumberBits):
+        (JSC::UnaryArithProfile::argResultType const):
+        (JSC::UnaryArithProfile::argObservedType const):
+        (JSC::UnaryArithProfile::setArgObservedType):
+        (JSC::UnaryArithProfile::argSawInt32):
+        (JSC::UnaryArithProfile::argSawNumber):
+        (JSC::UnaryArithProfile::argSawNonNumber):
+        (JSC::UnaryArithProfile::observeArg):
+        (JSC::UnaryArithProfile::isObservedTypeEmpty):
+        (JSC::BinaryArithProfile::BinaryArithProfile):
+        (JSC::BinaryArithProfile::observedIntIntBits):
+        (JSC::BinaryArithProfile::observedNumberIntBits):
+        (JSC::BinaryArithProfile::observedIntNumberBits):
+        (JSC::BinaryArithProfile::observedNumberNumberBits):
+        (JSC::BinaryArithProfile::observeLHS):
+        (JSC::BinaryArithProfile::observeLHSAndRHS):
+        (JSC::BinaryArithProfile::isObservedTypeEmpty):
+        * bytecode/BytecodeList.rb:
+        * bytecode/CodeBlock.cpp:
+        (JSC::CodeBlock::addJITAddIC):
+        (JSC::CodeBlock::addJITMulIC):
+        (JSC::CodeBlock::addJITSubIC):
+        (JSC::CodeBlock::addJITNegIC):
+        (JSC::CodeBlock::binaryArithProfileForBytecodeOffset):
+        (JSC::CodeBlock::unaryArithProfileForBytecodeOffset):
+        (JSC::CodeBlock::binaryArithProfileForPC):
+        (JSC::CodeBlock::unaryArithProfileForPC):
+        (JSC::CodeBlock::couldTakeSpecialFastCase):
+        * bytecode/CodeBlock.h:
+        (JSC::CodeBlock::addMathIC):
+        * bytecode/Fits.h:
+        * bytecode/MethodOfGettingAValueProfile.cpp:
+        (JSC::MethodOfGettingAValueProfile::emitReportValue const):
+        (JSC::MethodOfGettingAValueProfile::reportValue):
+        * bytecode/MethodOfGettingAValueProfile.h:
+        (JSC::MethodOfGettingAValueProfile::MethodOfGettingAValueProfile):
+        * bytecompiler/BytecodeGenerator.cpp:
+        (JSC::BytecodeGenerator::emitUnaryOp):
+        * bytecompiler/BytecodeGenerator.h:
+        * bytecompiler/NodesCodegen.cpp:
+        (JSC::UnaryOpNode::emitBytecode):
+        * dfg/DFGByteCodeParser.cpp:
+        (JSC::DFG::ByteCodeParser::makeSafe):
+        (JSC::DFG::ByteCodeParser::makeDivSafe):
+        * dfg/DFGGraph.cpp:
+        (JSC::DFG::Graph::methodOfGettingAValueProfileFor):
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::compileValueAdd):
+        (JSC::DFG::SpeculativeJIT::compileValueSub):
+        (JSC::DFG::SpeculativeJIT::compileValueNegate):
+        (JSC::DFG::SpeculativeJIT::compileValueMul):
+        * ftl/FTLLowerDFGToB3.cpp:
+        (JSC::FTL::DFG::LowerDFGToB3::compileValueAdd):
+        (JSC::FTL::DFG::LowerDFGToB3::compileValueSub):
+        (JSC::FTL::DFG::LowerDFGToB3::compileValueMul):
+        (JSC::FTL::DFG::LowerDFGToB3::compileUnaryMathIC):
+        (JSC::FTL::DFG::LowerDFGToB3::compileBinaryMathIC):
+        (JSC::FTL::DFG::LowerDFGToB3::compileArithAddOrSub):
+        (JSC::FTL::DFG::LowerDFGToB3::compileValueNegate):
+        * jit/JIT.h:
+        * jit/JITAddGenerator.cpp:
+        (JSC::JITAddGenerator::generateInline):
+        (JSC::JITAddGenerator::generateFastPath):
+        * jit/JITAddGenerator.h:
+        * jit/JITArithmetic.cpp:
+        (JSC::JIT::emit_op_negate):
+        (JSC::JIT::emit_op_add):
+        (JSC::JIT::emitMathICFast):
+        (JSC::JIT::emitMathICSlow):
+        (JSC::JIT::emit_op_div):
+        (JSC::JIT::emit_op_mul):
+        (JSC::JIT::emit_op_sub):
+        * jit/JITDivGenerator.cpp:
+        (JSC::JITDivGenerator::generateFastPath):
+        * jit/JITDivGenerator.h:
+        (JSC::JITDivGenerator::JITDivGenerator):
+        * jit/JITInlines.h:
+        (JSC::JIT::copiedArithProfile):
+        * jit/JITMathIC.h:
+        (JSC::JITMathIC::JITMathIC):
+        (JSC::JITMathIC::generateInline):
+        (JSC::JITMathIC::arithProfile const):
+        (JSC::isBinaryProfileEmpty):
+        (JSC::JITBinaryMathIC::JITBinaryMathIC):
+        (JSC::isUnaryProfileEmpty):
+        (JSC::JITUnaryMathIC::JITUnaryMathIC):
+        * jit/JITMulGenerator.cpp:
+        (JSC::JITMulGenerator::generateInline):
+        (JSC::JITMulGenerator::generateFastPath):
+        * jit/JITMulGenerator.h:
+        * jit/JITNegGenerator.cpp:
+        (JSC::JITNegGenerator::generateInline):
+        (JSC::JITNegGenerator::generateFastPath):
+        * jit/JITNegGenerator.h:
+        * jit/JITOperations.cpp:
+        * jit/JITOperations.h:
+        * jit/JITSubGenerator.cpp:
+        (JSC::JITSubGenerator::generateInline):
+        (JSC::JITSubGenerator::generateFastPath):
+        * jit/JITSubGenerator.h:
+        * llint/LLIntData.cpp:
+        (JSC::LLInt::Data::performAssertions):
+        * llint/LLIntOffsetsExtractor.cpp:
+        (JSC::LLIntOffsetsExtractor::dummy):
+        * llint/LowLevelInterpreter.asm:
+        * llint/LowLevelInterpreter32_64.asm:
+        * llint/LowLevelInterpreter64.asm:
+        * parser/ResultType.h:
+        (JSC::ResultType::ResultType):
+        * runtime/CommonSlowPaths.cpp:
+        (JSC::updateArithProfileForUnaryArithOp):
+        (JSC::updateArithProfileForBinaryArithOp):
+        (JSC::SLOW_PATH_DECL):
+
+2019-10-14  Yusuke Suzuki  <ysuzuki@apple.com>
+
+        [JSC] GetterSetter should be JSCell, not JSObject
+        https://bugs.webkit.org/show_bug.cgi?id=202656
+
+        Reviewed by Tadeu Zagallo and Saam Barati.
+
+        Essentially, GetterSetter is not a JSObject. It is like a JSCell. But we made GetterSetter JSObject
+        to leverage existing strict-eq implementations for JSObject: pointer-comparison. But given the following
+        conditions,
+
+        1. GetterSetter strict-eq comparison only happens in builtin code when using @tryGetById.
+        2. RHS of that comparison is always folded into constant in DFG.
+        3. We already use pointer-comparison for cells that are neither JSString nor JSBigInt.
+        4. DFG strength reduction already has a rule which makes `CompareStrictEq(Cell-not-JSString/JSBigInt, Constant)` `ComparePtrEq`.
+
+        So we already support non-JSString/JSBigInt cell comparison in JSC JS code. We should use it instead of making GetterSetter JSObject.
+        This patch makes GetterSetter JSCell, and makes getterSetterStructure per-VM structure.
+
+        The attached test reported AI validation failure. AI assumed that GetterSetter's realm should be the same to the base object. But
+        this is incorrect in our runtime code: we are creating GetterSetter with lexical realm (JSGlobalObject). But the fundamental problem
+        is that GetterSetter is JSObject and tied to JSGlobalObject while it is not necessary.
+
+        * dfg/DFGAbstractInterpreterInlines.h:
+        (JSC::DFG::AbstractInterpreter<AbstractStateType>::executeEffects):
+        * dfg/DFGFixupPhase.cpp:
+        * runtime/GetterSetter.cpp:
+        * runtime/GetterSetter.h:
+        * runtime/JSGlobalObject.cpp:
+        (JSC::getGetterById):
+        (JSC::JSGlobalObject::init):
+        (JSC::JSGlobalObject::visitChildren):
+        * runtime/JSGlobalObject.h:
+        (JSC::JSGlobalObject::regExpProtoGlobalGetter const):
+        (JSC::JSGlobalObject::regExpProtoUnicodeGetter const):
+        (JSC::JSGlobalObject::customGetterSetterFunctionStructure const):
+        (JSC::JSGlobalObject::getterSetterStructure const): Deleted.
+        * runtime/JSType.h:
+        * runtime/VM.cpp:
+        (JSC::VM::VM):
+        * runtime/VM.h:
+
+2019-10-14  Saam Barati  <sbarati@apple.com>
+
+        Canonicalize how we prepare the prototype chain for inline caching
+        https://bugs.webkit.org/show_bug.cgi?id=202827
+        <rdar://problem/56193919>
+
+        Reviewed by Yusuke Suzuki.
+
+        This patch canonicalizes how we prepare the prototype chain for caching. Both
+        in the poly proto chain, and the generateConditions*, we were flattening
+        dictionaries as we walk the prototype chain. We now unify that into one
+        function called `preparePrototypeChainForCaching`. In that, we flatten
+        dictionaries as we traverse the prototype chain, and note if any objects
+        are poly proto.
+        
+        My patch in r250540 made it so we now flatten uncacheable dictionaries (this
+        was the intention all along, but it was a perf bug that we didn't do this). That
+        revealed that the inline caching code could use a stale PropertyOffset when
+        flattening an uncacheable dictionary. This patch makes it so we universally
+        try just defer caching to later if we encounter a situation where we flatten
+        a dictionary that could be a property holder.
+
+        * bytecode/ObjectPropertyConditionSet.cpp:
+        (JSC::generateConditionsForPrototypeEquivalenceConcurrently):
+        (JSC::generateConditionsForPropertyMissConcurrently):
+        (JSC::generateConditionsForPropertySetterMissConcurrently):
+        (JSC::preparePrototypeChainForCaching):
+        * bytecode/ObjectPropertyConditionSet.h:
+        * bytecode/PolyProtoAccessChain.cpp:
+        (JSC::PolyProtoAccessChain::create):
+        * bytecode/PolyProtoAccessChain.h:
+        (JSC::PolyProtoAccessChain::slotBaseStructure const):
+        * jit/Repatch.cpp:
+        (JSC::tryCacheGetByID):
+        (JSC::tryCachePutByID):
+        (JSC::tryCacheInByID):
+        (JSC::tryCacheInstanceOf):
+        * llint/LLIntSlowPaths.cpp:
+        (JSC::LLInt::setupGetByIdPrototypeCache):
+        * runtime/StructureRareData.cpp:
+        (JSC::StructureRareData::setObjectToStringValue):
+
 2019-10-11  Devin Rousso  <drousso@apple.com>
 
         Web Inspector: Debugger: support pattern blackboxing

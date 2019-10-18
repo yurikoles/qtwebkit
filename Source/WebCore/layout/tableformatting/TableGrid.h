@@ -48,6 +48,7 @@ public:
 
     void setHorizontalSpacing(LayoutUnit horizontalSpacing) { m_horizontalSpacing = horizontalSpacing; }
     LayoutUnit horizontalSpacing() const { return m_horizontalSpacing; }
+    LayoutUnit totalHorizontalSpacing() const { return columnsContext().columns().size() * horizontalSpacing(); }
 
     void setVerticalSpacing(LayoutUnit verticalSpacing) { m_verticalSpacing = verticalSpacing; }
     LayoutUnit verticalSpacing() const { return m_verticalSpacing; }
@@ -80,13 +81,19 @@ public:
         void setLogicalWidth(LayoutUnit);
         LayoutUnit logicalWidth() const;
 
+        bool hasFixedWidth() const;
+
+        const Box* columnBox() const { return m_columnBox.get(); }
+
     private:
         friend class ColumnsContext;
-        Column() = default;
+        Column(const Box* columnBox);
 
         FormattingContext::IntrinsicWidthConstraints m_widthConstraints;
         LayoutUnit m_computedLogicalWidth;
         LayoutUnit m_computedLogicalLeft;
+        WeakPtr<const Box> m_columnBox;
+
 #ifndef NDEBUG
         bool m_hasWidthConstraints { false };
         bool m_hasComputedWidth { false };
@@ -99,14 +106,16 @@ public:
         using ColumnList = Vector<Column>;
         ColumnList& columns() { return m_columns; }
         const ColumnList& columns() const { return m_columns; }
+        void addColumn(const Box* columnBox = nullptr);
+
         LayoutUnit logicalWidth() const { return columns().last().logicalRight() - columns().first().logicalLeft(); }
 
     private:
         friend class TableGrid;
-        void addColumn();
 
         ColumnList m_columns;
     };
+    const ColumnsContext& columnsContext() const { return m_columnsContext; }
     ColumnsContext& columnsContext() { return m_columnsContext; }
 
     struct Row {

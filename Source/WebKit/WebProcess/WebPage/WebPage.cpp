@@ -136,6 +136,7 @@
 #include <JavaScriptCore/SamplingProfiler.h>
 #include <WebCore/ApplicationCacheStorage.h>
 #include <WebCore/ArchiveResource.h>
+#include <WebCore/BackForwardCache.h>
 #include <WebCore/BackForwardController.h>
 #include <WebCore/Chrome.h>
 #include <WebCore/CommonVM.h>
@@ -192,7 +193,6 @@
 #include <WebCore/MouseEvent.h>
 #include <WebCore/NotImplemented.h>
 #include <WebCore/Page.h>
-#include <WebCore/PageCache.h>
 #include <WebCore/PageConfiguration.h>
 #include <WebCore/PingLoader.h>
 #include <WebCore/PlatformKeyboardEvent.h>
@@ -529,6 +529,10 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
         m_useAsyncScrolling = false;
     m_page->settings().setScrollingCoordinatorEnabled(m_useAsyncScrolling);
 #endif
+
+    // Disable Back/Forward cache expiration in the WebContent process since management happens in the UIProcess
+    // in modern WebKit.
+    m_page->settings().setBackForwardCacheExpirationInterval(Seconds::infinity());
 
     m_mainFrame = WebFrame::createWithCoreMainFrame(this, &m_page->mainFrame());
     m_drawingArea->updatePreferences(parameters.store);
@@ -1580,12 +1584,12 @@ void WebPage::suspendForProcessSwap()
         return;
     }
 
-    if (!PageCache::singleton().addIfCacheable(*currentHistoryItem, corePage())) {
+    if (!BackForwardCache::singleton().addIfCacheable(*currentHistoryItem, corePage())) {
         failedToSuspend();
         return;
     }
 
-    // Page cache does not break the opener link for the main frame (only does so for the subframes) because the
+    // Back/forward cache does not break the opener link for the main frame (only does so for the subframes) because the
     // main frame is normally re-used for the navigation. However, in the case of process-swapping, the main frame
     // is now hosted in another process and the one in this process is in the cache.
     if (m_mainFrame && m_mainFrame->coreFrame())
@@ -6537,11 +6541,6 @@ void WebPage::didRestoreScrollPosition()
     send(Messages::WebPageProxy::DidRestoreScrollPosition());
 }
 
-void WebPage::setResourceCachingDisabled(bool disabled)
-{
-    m_page->setResourceCachingDisabled(disabled);
-}
-
 void WebPage::setUserInterfaceLayoutDirection(uint32_t direction)
 {
     m_userInterfaceLayoutDirection = static_cast<WebCore::UserInterfaceLayoutDirection>(direction);
@@ -6650,6 +6649,10 @@ void WebPage::setIsSuspended(bool suspended)
 
     // Unfrozen on drawing area reset.
     freezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+
+    // Only the committed WebPage gets application visibility notifications from the UIProcess, so make sure
+    // we don't hold a BackgroundApplication freeze reason when transitioning from committed to suspended.
+    unfreezeLayerTree(LayerTreeFreezeReason::BackgroundApplication);
 
     WebProcess::singleton().sendPrewarmInformation(mainWebFrame()->url());
 

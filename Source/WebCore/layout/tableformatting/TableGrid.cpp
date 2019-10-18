@@ -35,6 +35,11 @@ namespace Layout {
 
 WTF_MAKE_ISO_ALLOCATED_IMPL(TableGrid);
 
+TableGrid::Column::Column(const Box* columnBox)
+    : m_columnBox(makeWeakPtr(columnBox))
+{
+}
+
 void TableGrid::Column::setWidthConstraints(FormattingContext::IntrinsicWidthConstraints widthConstraints)
 {
 #ifndef NDEBUG
@@ -77,9 +82,15 @@ LayoutUnit TableGrid::Column::logicalLeft() const
     return m_computedLogicalLeft;
 }
 
-void TableGrid::ColumnsContext::addColumn()
+bool TableGrid::Column::hasFixedWidth() const
 {
-    m_columns.append({ });
+    // FIXME: This only covers the <col> attribute case.
+    return columnBox() && columnBox()->columnWidth();
+}
+
+void TableGrid::ColumnsContext::addColumn(const Box* columnBox)
+{
+    m_columns.append({ columnBox });
 }
 
 TableGrid::Row::Row(const Box& rowBox)
@@ -168,7 +179,7 @@ FormattingContext::IntrinsicWidthConstraints TableGrid::widthConstraints() const
     auto widthConstraints = FormattingContext::IntrinsicWidthConstraints { };
     for (auto& column : m_columnsContext.columns())
         widthConstraints += column.widthConstraints();
-    widthConstraints.expand((m_columnsContext.columns().size() + 1) * m_horizontalSpacing); 
+    widthConstraints.expand(totalHorizontalSpacing()); 
     return widthConstraints;
 }
 

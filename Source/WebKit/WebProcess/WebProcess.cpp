@@ -82,6 +82,7 @@
 #include <WebCore/AXObjectCache.h>
 #include <WebCore/ApplicationCacheStorage.h>
 #include <WebCore/AuthenticationChallenge.h>
+#include <WebCore/BackForwardCache.h>
 #include <WebCore/CPUMonitor.h>
 #include <WebCore/CommonVM.h>
 #include <WebCore/CrossOriginPreflightResultCache.h>
@@ -107,7 +108,6 @@
 #include <WebCore/MockRealtimeMediaSourceCenter.h>
 #include <WebCore/NetworkStorageSession.h>
 #include <WebCore/Page.h>
-#include <WebCore/PageCache.h>
 #include <WebCore/PageGroup.h>
 #include <WebCore/PlatformKeyboardEvent.h>
 #include <WebCore/PlatformMediaSessionManager.h>
@@ -306,9 +306,9 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
             }
 #endif
 
-            auto maintainPageCache = m_isSuspending && hasPageRequiringPageCacheWhileSuspended() ? WebCore::MaintainPageCache::Yes : WebCore::MaintainPageCache::No;
+            auto maintainBackForwardCache = m_isSuspending ? WebCore::MaintainBackForwardCache::Yes : WebCore::MaintainBackForwardCache::No;
             auto maintainMemoryCache = m_isSuspending && m_hasSuspendedPageProxy ? WebCore::MaintainMemoryCache::Yes : WebCore::MaintainMemoryCache::No;
-            WebCore::releaseMemory(critical, synchronous, maintainPageCache, maintainMemoryCache);
+            WebCore::releaseMemory(critical, synchronous, maintainBackForwardCache, maintainMemoryCache);
         });
 #if PLATFORM(MAC) || PLATFORM(GTK) || PLATFORM(WPE)
         memoryPressureHandler.setShouldUsePeriodicMemoryMonitor(true);
@@ -385,6 +385,8 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters)
         registerURLSchemeAsCanDisplayOnlyIfCanRequest(scheme);
 
     setDefaultRequestTimeoutInterval(parameters.defaultRequestTimeoutInterval);
+
+    setBackForwardCacheCapacity(parameters.backForwardCacheCapacity);
 
     setAlwaysUsesComplexTextCodePath(parameters.shouldAlwaysUseComplexTextCodePath);
 
@@ -467,15 +469,6 @@ void WebProcess::setWebsiteDataStoreParameters(WebProcessDataStoreParameters&& p
     platformSetWebsiteDataStoreParameters(WTFMove(parameters));
     
     ensureNetworkProcessConnection();
-}
-
-bool WebProcess::hasPageRequiringPageCacheWhileSuspended() const
-{
-    for (auto& page : m_pageMap.values()) {
-        if (page->isSuspended())
-            return true;
-    }
-    return false;
 }
 
 bool WebProcess::areAllPagesSuspended() const
@@ -629,13 +622,13 @@ void WebProcess::setCacheModel(CacheModel cacheModel)
     unsigned cacheMinDeadCapacity = 0;
     unsigned cacheMaxDeadCapacity = 0;
     Seconds deadDecodedDataDeletionInterval;
-    unsigned pageCacheSize = 0;
-    calculateMemoryCacheSizes(cacheModel, cacheTotalCapacity, cacheMinDeadCapacity, cacheMaxDeadCapacity, deadDecodedDataDeletionInterval, pageCacheSize);
+    unsigned backForwardCacheSize = 0;
+    calculateMemoryCacheSizes(cacheModel, cacheTotalCapacity, cacheMinDeadCapacity, cacheMaxDeadCapacity, deadDecodedDataDeletionInterval, backForwardCacheSize);
 
     auto& memoryCache = MemoryCache::singleton();
     memoryCache.setCapacities(cacheMinDeadCapacity, cacheMaxDeadCapacity, cacheTotalCapacity);
     memoryCache.setDeadDecodedDataDeletionInterval(deadDecodedDataDeletionInterval);
-    PageCache::singleton().setMaxSize(pageCacheSize);
+    BackForwardCache::singleton().setMaxSize(backForwardCacheSize);
 
     platformSetCacheModel(cacheModel);
 }
@@ -1292,11 +1285,6 @@ void WebProcess::setTextCheckerState(const TextCheckerState& textCheckerState)
     }
 }
 
-void WebProcess::releasePageCache()
-{
-    PageCache::singleton().pruneToSizeNow(0, PruningReason::MemoryPressure);
-}
-
 void WebProcess::fetchWebsiteData(OptionSet<WebsiteDataType> websiteDataTypes, CompletionHandler<void(WebsiteData&&)>&& completionHandler)
 {
     WebsiteData websiteData;
@@ -1312,7 +1300,7 @@ void WebProcess::deleteWebsiteData(OptionSet<WebsiteDataType> websiteDataTypes, 
     UNUSED_PARAM(modifiedSince);
 
     if (websiteDataTypes.contains(WebsiteDataType::MemoryCache)) {
-        PageCache::singleton().pruneToSizeNow(0, PruningReason::None);
+        BackForwardCache::singleton().pruneToSizeNow(0, PruningReason::None);
         MemoryCache::singleton().evictResources(sessionID());
 
         CrossOriginPreflightResultCache::singleton().clear();
@@ -1775,6 +1763,21 @@ bool WebProcess::hasVisibleWebPage() const
             return true;
     }
     return false;
+}
+
+void WebProcess::setBackForwardCacheCapacity(unsigned capacity)
+{
+    BackForwardCache::singleton().setMaxSize(capacity);
+}
+
+void WebProcess::clearCachedPage(BackForwardItemIdentifier backForwardItemID, CompletionHandler<void()>&& completionHandler)
+{
+    HistoryItem* item = WebBackForwardListProxy::itemForID(backForwardItemID);
+    if (!item)
+        return completionHandler();
+
+    BackForwardCache::singleton().remove(*item);
+    completionHandler();
 }
 
 LibWebRTCNetwork& WebProcess::libWebRTCNetwork()

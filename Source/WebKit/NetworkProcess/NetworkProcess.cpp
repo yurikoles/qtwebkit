@@ -666,15 +666,18 @@ void NetworkProcess::setGrandfathered(PAL::SessionID sessionID, const Registrabl
     }
 }
 
-void NetworkProcess::setUseITPDatabase(PAL::SessionID sessionID, bool value)
+void NetworkProcess::setUseITPDatabase(PAL::SessionID sessionID, bool value, CompletionHandler<void()>&& completionHandler)
 {
     if (auto* networkSession = this->networkSession(sessionID)) {
         if (m_isITPDatabaseEnabled != value) {
             m_isITPDatabaseEnabled = value;
             networkSession->recreateResourceLoadStatisticStore();
         }
-    } else
+        completionHandler();
+    } else {
         ASSERT_NOT_REACHED();
+        completionHandler();
+    }
 }
 
 void NetworkProcess::setPrevalentResource(PAL::SessionID sessionID, const RegistrableDomain& domain, CompletionHandler<void()>&& completionHandler)
@@ -1253,6 +1256,15 @@ void NetworkProcess::setShouldDowngradeReferrerForTesting(bool enabled, Completi
     forEachNetworkSession([enabled](auto& networkSession) {
         networkSession.setShouldDowngradeReferrerForTesting(enabled);
     });
+    completionHandler();
+}
+
+void NetworkProcess::setShouldBlockThirdPartyCookiesForTesting(PAL::SessionID sessionID, bool enabled, CompletionHandler<void()>&& completionHandler)
+{
+    if (auto* networkStorageSession = storageSession(sessionID))
+        networkStorageSession->setIsThirdPartyCookieBlockingOnSitesWithoutUserInteractionEnabled(enabled);
+    else
+        ASSERT_NOT_REACHED();
     completionHandler();
 }
 #endif // ENABLE(RESOURCE_LOAD_STATISTICS)

@@ -31,13 +31,13 @@
 namespace WebCore {
 
 class Color;
+class PasteboardCustomData;
 class SelectionData;
 class SharedBuffer;
 struct PasteboardImage;
 struct PasteboardItemInfo;
 struct PasteboardURL;
 struct PasteboardWebContent;
-struct PasteboardCustomData;
 
 class PasteboardStrategy {
 public:
@@ -75,7 +75,7 @@ public:
     virtual int getPasteboardItemsCount(const String& pasteboardName) = 0;
 
     virtual Vector<String> typesSafeForDOMToReadAndWrite(const String& pasteboardName, const String& origin) = 0;
-    virtual long writeCustomData(const PasteboardCustomData&, const String& pasteboardName) = 0;
+    virtual long writeCustomData(const Vector<PasteboardCustomData>&, const String& pasteboardName) = 0;
 
 #if PLATFORM(GTK)
     virtual void writeToClipboard(const String& pasteboardName, const SelectionData&) = 0;

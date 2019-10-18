@@ -177,7 +177,7 @@ treatsAnyTextCSSLinkAsStylesheet:
   initial: false
 shrinksStandaloneImagesToFit:
   initial: true
-pageCacheSupportsPlugins:
+backForwardCacheSupportsPlugins:
   initial: false
 showsURLsInToolTips:
   initial: false
@@ -297,6 +297,8 @@ inlineMediaPlaybackRequiresPlaysInlineAttribute:
   initial: defaultInlineMediaPlaybackRequiresPlaysInlineAttribute
 allowsPictureInPictureMediaPlayback:
   initial: defaultAllowsPictureInPictureMediaPlayback
+pictureInPictureAPIEnabled:
+  initial: false
 mediaControlsScaleWithPageZoom:
   initial: defaultMediaControlsScaleWithPageZoom
 invisibleAutoplayNotPermitted:
@@ -424,8 +426,8 @@ logsPageMessagesToSystemConsoleEnabled:
   initial: false
 
 backForwardCacheExpirationInterval:
-  type: double
-  initial: 1800
+  type: Seconds
+  initial: 30_min
 
 # Some apps could have a default video poster if it is not set.
 defaultVideoPosterURL:
@@ -718,9 +720,9 @@ pluginsEnabled:
   getter: arePluginsEnabled
   onChange: pluginsEnabledChanged
 
-usesPageCache:
+usesBackForwardCache:
   initial: false
-  onChange: usesPageCacheChanged
+  onChange: usesBackForwardCacheChanged
 
 dnsPrefetchingEnabled:
   initial: false
@@ -871,8 +873,8 @@ webRTCEncryptionEnabled:
   initial: true
   inspectorOverride: true
 
-isITPSessionSwitchingEnabled:
-  initial: true
+isThirdPartyCookieBlockingOnSitesWithoutUserInteractionEnabled:
+  initial: false
 
 isLoggedInAPIEnabled:
   initial: false
