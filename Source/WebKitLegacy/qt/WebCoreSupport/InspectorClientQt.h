@@ -88,6 +88,7 @@ public:
     void frontendLoaded() override;
 
     String localizedStringsURL() override;
+    String debuggableType() const final { return "page"_s; };
 
     void bringToFront() override;
     void closeWindow() override;
