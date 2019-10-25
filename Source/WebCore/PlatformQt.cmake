@@ -66,6 +66,7 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/network/qt/ResourceRequest.h
     platform/network/qt/ResourceResponse.h
     platform/network/qt/SharedCookieJarQt.h
+    platform/network/qt/SocketStreamHandleImpl.h
 
     platform/qt/KeyedDecoderQt.h
     platform/qt/KeyedEncoderQt.h
@@ -75,6 +76,8 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/qt/QWebPageClient.h
     platform/qt/ThirdPartyCookiesQt.h
     platform/qt/UserAgentQt.h
+
+    platform/sql/SQLiteDatabase.h
 
     testing/js/WebCoreTestSupport.h
 )
