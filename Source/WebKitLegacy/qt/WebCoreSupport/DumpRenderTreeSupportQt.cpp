@@ -48,12 +48,12 @@
 #include <WebCore/HTMLInputElement.h>
 #include <WebCore/InspectorController.h>
 #include <WebCore/JSNode.h>
+#include <WebCore/LegacySchemeRegistry.h>
 #include <WebCore/MemoryCache.h>
 #include <WebCore/NetworkStorageSession.h>
 #include <WebCore/NetworkingContext.h>
 #include <WebCore/PrintContext.h>
 #include <WebCore/RenderTreeAsText.h>
-#include <WebCore/SchemeRegistry.h>
 #include <WebCore/ScriptController.h>
 #include <WebCore/SecurityPolicy.h>
 #include <WebCore/Settings.h>
@@ -284,7 +284,7 @@ void DumpRenderTreeSupportQt::resetOriginAccessWhiteLists()
 
 void DumpRenderTreeSupportQt::setDomainRelaxationForbiddenForURLScheme(bool forbidden, const QString& scheme)
 {
-    SchemeRegistry::setDomainRelaxationForbiddenForURLScheme(forbidden, scheme);
+    LegacySchemeRegistry::setDomainRelaxationForbiddenForURLScheme(forbidden, scheme);
 }
 
 void DumpRenderTreeSupportQt::setCaretBrowsingEnabled(QWebPageAdapter* adapter, bool value)
