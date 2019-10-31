@@ -75,6 +75,7 @@
 #include <WebCore/HTMLInputElement.h>
 #include <WebCore/HitTestResult.h>
 #include <WebCore/InspectorController.h>
+#include <WebCore/LegacySchemeRegistry.h>
 #include <WebCore/LibWebRTCProvider.h>
 #include <WebCore/LocalizedStrings.h>
 #include <WebCore/MIMETypeRegistry.h>
@@ -88,7 +89,6 @@
 #include <WebCore/ProgressTracker.h>
 #include <WebCore/QWebPageClient.h>
 #include <WebCore/RenderTextControl.h>
-#include <WebCore/SchemeRegistry.h>
 #include <WebCore/ScrollbarTheme.h>
 #include <WebCore/Settings.h>
 #include <WebCore/SocketProvider.h>
@@ -1332,7 +1332,7 @@ QString QWebPageAdapter::defaultUserAgentString()
 
 bool QWebPageAdapter::treatSchemeAsLocal(const QString& scheme)
 {
-    return WebCore::SchemeRegistry::shouldTreatURLSchemeAsLocal(scheme);
+    return WebCore::LegacySchemeRegistry::shouldTreatURLSchemeAsLocal(scheme);
 }
 
 QObject* QWebPageAdapter::currentFrame() const
