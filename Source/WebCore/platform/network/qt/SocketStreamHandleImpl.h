@@ -62,7 +62,6 @@ namespace WebCore {
         {
             return adoptRef(*new SocketStreamHandleImpl(url, client));
         }
-        static RefPtr<SocketStreamHandleImpl> create(QTcpSocket* socket, SocketStreamHandleClient& client) { return adoptRef(*new SocketStreamHandleImpl(socket, client)); }
 
         ~SocketStreamHandleImpl();
 
@@ -72,7 +71,6 @@ namespace WebCore {
 
     private:
         SocketStreamHandleImpl(const URL&, SocketStreamHandleClient&);
-        SocketStreamHandleImpl(QTcpSocket*, SocketStreamHandleClient&);
 
         bool sendPendingData();
         size_t bufferedAmount() final;
