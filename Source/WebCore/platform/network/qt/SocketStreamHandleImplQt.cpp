@@ -185,8 +185,9 @@ void SocketStreamHandlePrivate::socketSslErrors(const QList<QSslError>& error)
 }
 #endif
 
-SocketStreamHandleImpl::SocketStreamHandleImpl(const URL& url, SocketStreamHandleClient& client)
+SocketStreamHandleImpl::SocketStreamHandleImpl(const URL& url, SocketStreamHandleClient& client, const StorageSessionProvider* provider)
     : SocketStreamHandle(url, client)
+    , m_storageSessionProvider(provider)
 {
     LOG(Network, "SocketStreamHandle %p new client %p", this, &m_client);
     m_p = new SocketStreamHandlePrivate(this, url);
