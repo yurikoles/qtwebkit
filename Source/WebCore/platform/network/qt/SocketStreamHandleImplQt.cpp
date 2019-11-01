@@ -192,15 +192,6 @@ SocketStreamHandleImpl::SocketStreamHandleImpl(const URL& url, SocketStreamHandl
     m_p = new SocketStreamHandlePrivate(this, url);
 }
 
-SocketStreamHandleImpl::SocketStreamHandleImpl(QTcpSocket* socket, SocketStreamHandleClient& client)
-    : SocketStreamHandle(URL(), client)
-{
-    LOG(Network, "SocketStreamHandle %p new client %p", this, &m_client);
-    m_p = new SocketStreamHandlePrivate(this, socket);
-    if (socket->isOpen())
-        m_state = Open;
-}
-
 SocketStreamHandleImpl::~SocketStreamHandleImpl()
 {
     LOG(Network, "SocketStreamHandle %p delete", this);
