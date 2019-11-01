@@ -58,9 +58,9 @@ namespace WebCore {
 
     class SocketStreamHandleImpl final : public SocketStreamHandle {
     public:
-        static Ref<SocketStreamHandleImpl> create(const URL& url, SocketStreamHandleClient& client, PAL::SessionID, const String&, SourceApplicationAuditToken&&, const StorageSessionProvider*)
+        static Ref<SocketStreamHandleImpl> create(const URL& url, SocketStreamHandleClient& client, PAL::SessionID, const String&, SourceApplicationAuditToken&&, const StorageSessionProvider* provider)
         {
-            return adoptRef(*new SocketStreamHandleImpl(url, client));
+            return adoptRef(*new SocketStreamHandleImpl(url, client, provider));
         }
 
         ~SocketStreamHandleImpl();
@@ -70,7 +70,7 @@ namespace WebCore {
         WEBCORE_EXPORT void platformClose() final;
 
     private:
-        SocketStreamHandleImpl(const URL&, SocketStreamHandleClient&);
+        SocketStreamHandleImpl(const URL&, SocketStreamHandleClient&, const StorageSessionProvider*);
 
         bool sendPendingData();
         size_t bufferedAmount() final;
