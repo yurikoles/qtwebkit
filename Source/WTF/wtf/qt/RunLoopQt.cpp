@@ -107,6 +107,7 @@ void RunLoop::wakeUp()
 RunLoop::CycleResult RunLoop::cycle(const String&)
 {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    return CycleResult::Continue;
 }
 
 // RunLoop::Timer
