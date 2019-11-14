@@ -32,6 +32,8 @@ endif ()
 
 QTWEBKIT_SKIP_AUTOMOC(WebKitLegacy)
 
+file(MAKE_DIRECTORY ${WebKitLegacy_DERIVED_SOURCES_DIR})
+
 list(APPEND WebKitLegacy_INCLUDE_DIRECTORIES
     "${CMAKE_BINARY_DIR}/include"
     "${WEBKITLEGACY_DIR}/qt/Api"
