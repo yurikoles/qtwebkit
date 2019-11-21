@@ -108,15 +108,14 @@ static void parentProcessDiedCallback(void*)
 
 void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters&& parameters)
 {
+    // QTFIXME: leftover of old process model
+#if 0
 #if ENABLE(SECCOMP_FILTERS)
     {
         WebKit::SeccompFiltersWebProcessQt seccompFilters(parameters);
         seccompFilters.initialize();
     }
 #endif
-
-    // QTFIXME: leftover of old process model
-#if 0
     m_networkAccessManager = new QtNetworkAccessManager(this);
 
     if (!parameters.cookieStorageDirectory.isEmpty()) {
@@ -132,7 +131,6 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters&& par
         // The m_networkAccessManager takes ownership of the diskCache object upon the following call.
         m_networkAccessManager->setCache(diskCache);
     }
-#endif
 
 #if defined(Q_OS_MACOS)
     pid_t ppid = getppid();
@@ -150,6 +148,12 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters&& par
         m_injectedBundle = InjectedBundle::create(parameters, transformHandlesToObjects(parameters.initializationUserData.object()).get());
         QtBuiltinBundle::shared().initialize(toAPI(m_injectedBundle.get()));
     }
+#endif
+}
+
+void WebProcess::platformSetWebsiteDataStoreParameters(WebProcessDataStoreParameters&&)
+{
+
 }
 
 void WebProcess::platformTerminate()
