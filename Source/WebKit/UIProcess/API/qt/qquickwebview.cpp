@@ -681,7 +681,7 @@ void QQuickWebViewPrivate::_q_onIconChangedForPageURL(const QString& pageUrl)
 
 /* Called either when the url changes, or when the icon for the current page changes */
 void QQuickWebViewPrivate::updateIcon()
-{
+{/*
     Q_Q(QQuickWebView);
 
     QQuickView* view = qobject_cast<QQuickView*>(q->window());
@@ -699,7 +699,7 @@ void QQuickWebViewPrivate::updateIcon()
         return;
 
     m_iconUrl = iconUrl;
-    emit q->iconChanged();
+    emit q->iconChanged();*/
 }
 
 void QQuickWebViewPrivate::_q_onReceivedResponseFromDownload(QWebDownloadItem* downloadItem)
