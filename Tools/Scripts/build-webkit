@@ -277,8 +277,6 @@ if (isAppleCocoaWebKit()) {
     (system("perl Tools/Scripts/update-webkit-support-libs") == 0) or die;
     (system("perl Tools/Scripts/update-webkit-auxiliary-libs") == 0) or die;
     setupAppleWinEnv()
-} elsif (isQt() && isAnyWindows()) {
-    (system("perl Tools/Scripts/update-qtwebkit-win-libs") == 0) or die;
 }
 
 # If asked to build just the WebKit project, overwrite the projects
