@@ -88,19 +88,9 @@
     </branch>
   </autotools>
 
-  <autotools id="libffi" autogen-sh="configure">
-    <branch module="libffi/libffi-3.1.tar.gz" version="3.1"
-             repo="sourceware.org-mirror"
-             hash="sha256:97feeeadca5e21870fa4433bc953d1b3af3f698d5df8a428f68b73cd60aef6eb"
-             md5sum="f5898b29bbfd70502831a212d9249d10"/>
-  </autotools>
-
   <autotools id="glib"
              autogen-sh="configure"
              autogenargs="--disable-dtrace --disable-gtk-doc-html">
-    <dependencies>
-      <dep package="libffi"/>
-    </dependencies>
     <branch module="/pub/GNOME/sources/glib/2.44/glib-2.44.1.tar.xz" version="2.44.1"
             repo="ftp.gnome.org"
             hash="sha256:8811deacaf8a503d0a9b701777ea079ca6a4277be10e3d730d2112735d5eca07">
