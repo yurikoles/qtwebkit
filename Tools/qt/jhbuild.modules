@@ -246,8 +246,8 @@
   </autotools>
 
   <autotools id="openssl" autogenargs="" autogen-sh="./Configure" supports-non-srcdir-builds="no"
-             autogen-template="%(srcdir)s/%(autogen-sh)s shared --prefix=%(prefix)s enable-unit-test no-ssl3-method enable-rfc3779 enable-cms linux-x86_64"
-	     makeinstallargs="install INSTALL_PREFIX='$(DESTDIR)'">
+             autogen-template="%(srcdir)s/%(autogen-sh)s shared --prefix=%(prefix)s --libdir=lib --openssldir=%(prefix)s enable-unit-test no-ssl3-method enable-rfc3779 enable-cms linux-x86_64"
+             makeinstallargs="install INSTALL_PREFIX='$(DESTDIR)'">
     <branch repo="openssl"
             module="old/1.0.2/openssl-1.0.2r.tar.gz" version="1.0.2r" checkoutdir="openssl-1.0.2r"
             hash="sha256:ae51d08bba8a83958e894946f15303ff894d75c2b8bbd44a852b64e3fe11d0d6"/>
