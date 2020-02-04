@@ -122,7 +122,7 @@ class QtPort(Port):
     def qt_version(self):
         version = ''
         try:
-            for line in self._executive.run_command(['qmake', '-v']).split('\n'):
+            for line in self.host.executive.run_command(self._jhbuild_wrapper + ['qmake', '-v']).split('\n'):
                 match = re.search('Qt\sversion\s(?P<version>\d\.\d)', line)
                 if match:
                     version = match.group('version')
