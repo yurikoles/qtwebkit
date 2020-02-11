@@ -2169,7 +2169,7 @@ WTF::String WebsiteDataStore::defaultJavaScriptConfigurationDirectory()
 }
 #endif
 
-#if !USE(GLIB)
+#if !USE(GLIB) || PLATFORM(QT)
 WTF::String WebsiteDataStore::defaultDeviceIdHashSaltsStorageDirectory()
 {
     // Not implemented.
