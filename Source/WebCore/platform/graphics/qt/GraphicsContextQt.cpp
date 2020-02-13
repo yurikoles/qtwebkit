@@ -1602,7 +1602,7 @@ void GraphicsContext::set3DTransform(const TransformationMatrix& transform)
 
 void GraphicsContext::setURLForRect(const URL& url, const FloatRect& rect)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && !defined(QT_NO_PDF)
     if (paintingDisabled())
         return;
 

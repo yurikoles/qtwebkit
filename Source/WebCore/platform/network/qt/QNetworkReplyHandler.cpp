@@ -42,7 +42,7 @@
 
 #include <QCoreApplication>
 
-#if USE(HTTP2)
+#if USE(HTTP2) && QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
 
 #include <private/http2protocol_p.h>
 #include <cstdlib>
@@ -63,7 +63,7 @@ ProtocolParameters::ProtocolParameters()
 
 QT_END_NAMESPACE
 
-#endif // USE(HTTP2)
+#endif // USE(HTTP2) && QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
 
 static const int gMaxRedirections = 10;
 
@@ -802,7 +802,7 @@ QNetworkReply* QNetworkReplyHandler::sendNetworkRequest(QNetworkAccessManager* m
     if (!manager)
         return 0;
 
-#if USE(HTTP2)
+#if USE(HTTP2) && QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
     static const bool alpnIsSupported = ResourceRequest::alpnIsSupported();
     if (alpnIsSupported && !manager->property(Http2::http2ParametersPropertyName).isValid()) {
         Http2::ProtocolParameters params;

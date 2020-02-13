@@ -174,6 +174,11 @@ include(WebKitCommon)
 # -----------------------------------------------------------------------------
 if (ENABLE_API_TESTS)
     enable_testing()
+
+    # Qt API tests are at top level because of Coin requirements
+    if (${PORT} STREQUAL "Qt")
+        add_subdirectory(tests)
+    endif ()
 endif ()
 
 # -----------------------------------------------------------------------------
