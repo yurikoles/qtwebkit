@@ -18,12 +18,6 @@ if (QT_CONAN_DIR)
         message(FATAL_ERROR "conan executable not found. Make sure that Conan is installed and available in PATH")
     endif ()
     include("${QT_CONAN_DIR}/conanbuildinfo.cmake")
-
-    # Remove this workaround when libxslt package is fixed
-    string(REPLACE "include/libxslt" "include" replace_CONAN_INCLUDE_DIRS ${CONAN_INCLUDE_DIRS})
-    set(CONAN_INCLUDE_DIRS ${replace_CONAN_INCLUDE_DIRS})
-
-    # Remove this workaround when libxml2 package is fixed
     set(_BACKUP_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
     conan_basic_setup()
     set(CMAKE_MODULE_PATH ${_BACKUP_CMAKE_MODULE_PATH})
