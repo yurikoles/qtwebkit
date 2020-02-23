@@ -18,7 +18,7 @@ if (QT_CONAN_DIR)
         message(FATAL_ERROR "conan executable not found. Make sure that Conan is installed and available in PATH")
     endif ()
     include("${QT_CONAN_DIR}/conanbuildinfo.cmake")
-    conan_basic_setup()
+    conan_basic_setup(TARGETS)
 
     install(CODE "
         set(_conan_imports_dest \${CMAKE_INSTALL_PREFIX})
