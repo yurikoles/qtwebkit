@@ -1,3 +1,404 @@
+2017-12-10  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Modernize "except" usage for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180612
+
+        Reviewed by Michael Catanzaro.
+
+        * BuildSlaveSupport/build.webkit.org-config/committer_auth.py:
+        (CommitterAuth.auth_json):
+        (CommitterAuth.authenticate):
+        (CommitterAuth.is_webkit_committer):
+        (CommitterAuth.is_webkit_trac_user):
+        * BuildSlaveSupport/wait-for-SVN-server.py:
+        (getLatestSVNRevision):
+        * QueueStatusServer/handlers/updatebase.py:
+        (UpdateBase._int_from_request):
+        * Scripts/webkitpy/bindings/main.py:
+        (BindingsTests.generate_from_idl):
+        (BindingsTests.generate_supplemental_dependency):
+        (BindingsTests.detect_changes):
+        * Scripts/webkitpy/codegen/main.py:
+        (BuiltinsGeneratorTests.generate_from_js_builtins):
+        (BuiltinsGeneratorTests.detect_changes):
+        * Scripts/webkitpy/common/checkout/changelog.py:
+        (ChangeLog.parse_latest_entry_from_file):
+        * Scripts/webkitpy/common/checkout/checkout.py:
+        (Checkout.bug_id_for_this_commit):
+        * Scripts/webkitpy/common/checkout/scm/git.py:
+        (Git.in_working_directory):
+        (Git.clone):
+        (Git._string_to_int_or_none):
+        (Git._commit_on_branch):
+        * Scripts/webkitpy/common/checkout/scm/svn.py:
+        (SVN.revisions_changing_file):
+        * Scripts/webkitpy/common/config/committers.py:
+        (CommitterList.load_json):
+        * Scripts/webkitpy/common/message_pool.py:
+        (_Worker.run):
+        * Scripts/webkitpy/common/net/buildbot/buildbot.py:
+        (Builder.force_build.predicate):
+        (Builder._fetch_revision_to_build_map):
+        (BuildBot._fetch_build_dictionary):
+        * Scripts/webkitpy/common/net/credentials.py:
+        (Credentials._credentials_from_git):
+        * Scripts/webkitpy/common/net/networktransaction.py:
+        (NetworkTransaction.run):
+        * Scripts/webkitpy/common/net/networktransaction_unittest.py:
+        (NetworkTransactionTest.test_exception):
+        (NetworkTransactionTest.test_timeout):
+        * Scripts/webkitpy/common/net/statusserver.py:
+        (StatusServer._fetch_url):
+        * Scripts/webkitpy/common/net/unittestresults.py:
+        (UnitTestResults.results_from_string):
+        * Scripts/webkitpy/common/prettypatch.py:
+        (PrettyPatch.check_pretty_patch):
+        (PrettyPatch.pretty_patch_text):
+        * Scripts/webkitpy/common/prettypatch_unittest.py:
+        (PrettyPatchTest.check_ruby):
+        * Scripts/webkitpy/common/system/autoinstall.py:
+        (AutoInstaller._extract_tar):
+        (AutoInstaller._unzip):
+        (AutoInstaller._replace_domain_with_next_mirror):
+        (AutoInstaller._download_to_stream):
+        (AutoInstaller.install):
+        * Scripts/webkitpy/common/system/crashlogs.py:
+        (CrashLogs._find_newest_log_darwin):
+        (CrashLogs._find_newest_log_win):
+        (CrashLogs._find_all_logs_darwin):
+        * Scripts/webkitpy/common/system/executive.py:
+        (Executive.kill_process):
+        (Executive.running_pids):
+        * Scripts/webkitpy/common/system/filesystem.py:
+        (FileSystem.maybe_make_directory):
+        (FileSystem.remove):
+        * Scripts/webkitpy/common/system/user.py:
+        (User._wait_on_list_response):
+        (User.edit):
+        (User.page):
+        (User.can_open_url):
+        * Scripts/webkitpy/common/system/workspace.py:
+        (Workspace.create_zip):
+        * Scripts/webkitpy/common/watchlist/watchlistparser.py:
+        (WatchListParser._parse_definition_section):
+        * Scripts/webkitpy/common/webkitunittest.py:
+        (TestCase._assertRaisesRegexp):
+        * Scripts/webkitpy/inspector/main.py:
+        (InspectorGeneratorTests.generate_from_json):
+        (InspectorGeneratorTests.detect_changes):
+        * Scripts/webkitpy/layout_tests/controllers/layout_test_finder.py:
+        (LayoutTestFinder._read_test_names_from_file):
+        * Scripts/webkitpy/layout_tests/controllers/layout_test_runner.py:
+        (LayoutTestRunner.run_tests):
+        * Scripts/webkitpy/layout_tests/controllers/manager.py:
+        (Manager.upload_results):
+        * Scripts/webkitpy/layout_tests/layout_package/json_results_generator.py:
+        (JSONResultsGenerator.upload_json_files):
+        (JSONResultsGenerator._get_archived_json_results):
+        * Scripts/webkitpy/layout_tests/models/test_expectations_unittest.py:
+        (MiscTests.test_parse_warning):
+        (SemanticTests.test_bad_bugid):
+        * Scripts/webkitpy/layout_tests/models/test_run_results.py:
+        (summarize_results):
+        * Scripts/webkitpy/layout_tests/run_webkit_tests.py:
+        (main):
+        * Scripts/webkitpy/layout_tests/servers/http_server.py:
+        (Lighttpd._remove_stale_logs):
+        * Scripts/webkitpy/layout_tests/servers/http_server_base.py:
+        (HttpServerBase._is_running_on_port):
+        (HttpServerBase._check_that_all_ports_are_available):
+        * Scripts/webkitpy/layout_tests/servers/http_server_integrationtest.py:
+        (BaseTest.assert_servers_are_down):
+        (BaseTest.assert_servers_are_up):
+        (BaseTest.integration_test_server__fails):
+        (BaseTest.maybe_make_dir):
+        * Scripts/webkitpy/layout_tests/servers/run_webkit_httpd.py:
+        (run_server):
+        * Scripts/webkitpy/layout_tests/servers/web_platform_test_launcher.py:
+        * Scripts/webkitpy/layout_tests/servers/websocket_server.py:
+        (PyWebSocket.is_running):
+        (PyWebSocket._remove_stale_logs):
+        * Scripts/webkitpy/performance_tests/perftestsrunner.py:
+        (_merge_slave_config_json):
+        (_merge_outputs_if_needed):
+        (_upload_json):
+        * Scripts/webkitpy/port/base.py:
+        (Port._build_driver):
+        (Port._build_image_diff):
+        (Port._symbols_string):
+        * Scripts/webkitpy/port/leakdetector.py:
+        (LeakDetector.count_total_bytes_and_unique_leaks):
+        (LeakDetector.check_for_leaks):
+        * Scripts/webkitpy/port/leakdetector_valgrind.py:
+        (LeakDetectorValgrind._parse_leaks_output):
+        * Scripts/webkitpy/port/mac.py:
+        (MacPort.reset_preferences):
+        (MacPort.stop_helper):
+        * Scripts/webkitpy/port/port_testcase.py:
+        (PortTestCase.assert_servers_are_down):
+        (PortTestCase.assert_servers_are_up):
+        (PortTestCase.integration_test_http_server__fails):
+        (PortTestCase.integration_test_websocket_server__fails):
+        * Scripts/webkitpy/port/server_process.py:
+        (ServerProcess.write):
+        (ServerProcess._wait_for_data_and_update_buffers_using_select):
+        (ServerProcess._non_blocking_read_win32):
+        * Scripts/webkitpy/port/win.py:
+        (WinPort._runtime_feature_list):
+        * Scripts/webkitpy/port/xvfbdriver.py:
+        (XvfbDriver._xvfb_read_display_id):
+        * Scripts/webkitpy/style/checkers/jsonchecker.py:
+        (JSONChecker.check):
+        * Scripts/webkitpy/style/checkers/xml.py:
+        (XMLChecker.check):
+        * Scripts/webkitpy/style/filereader.py:
+        (TextFileReader.process_file):
+        * Scripts/webkitpy/style/filereader_unittest.py:
+        (TextFileReaderTest.test_process_file__does_not_exist):
+        * Scripts/webkitpy/style/optparser.py:
+        (ArgumentParser.parse):
+        * Scripts/webkitpy/tool/bot/irc_command.py:
+        (CreateBug.execute):
+        (Rollout.execute):
+        * Scripts/webkitpy/tool/bot/ircbot.py:
+        (IRCBot.process_message):
+        * Scripts/webkitpy/tool/bot/layouttestresultsreader.py:
+        (LayoutTestResultsReader._read_file_contents):
+        * Scripts/webkitpy/tool/bot/patchanalysistask.py:
+        (PatchAnalysisTask._run_command):
+        * Scripts/webkitpy/tool/bot/queueengine.py:
+        (QueueEngine.run):
+        * Scripts/webkitpy/tool/commands/abstractsequencedcommand.py:
+        (AbstractSequencedCommand.execute):
+        * Scripts/webkitpy/tool/commands/download.py:
+        (AbstractPatchSequencingCommand._prepare_to_process):
+        * Scripts/webkitpy/tool/commands/earlywarningsystem.py:
+        (AbstractEarlyWarningSystem.review_patch):
+        * Scripts/webkitpy/tool/commands/queries.py:
+        (FailureReason._blame_line_for_revision):
+        * Scripts/webkitpy/tool/commands/queues.py:
+        (AbstractQueue._cc_watchers):
+        (AbstractQueue.run_webkit_patch):
+        (CommitQueue.process_work_item):
+        (StyleQueue.review_patch):
+        * Scripts/webkitpy/tool/commands/rebaseline.py:
+        (AbstractParallelRebaselineCommand._run_webkit_patch):
+        * Scripts/webkitpy/tool/commands/stepsequence.py:
+        (StepSequence.run_and_handle_errors):
+        * Scripts/webkitpy/tool/commands/suggestnominations.py:
+        (SuggestNominations._count_recent_patches):
+        * Scripts/webkitpy/tool/multicommandtool.py:
+        (MultiCommandTool.main):
+        * Scripts/webkitpy/tool/servers/rebaselineserver.py:
+        (_rebaseline_test):
+        (_move_test_baselines):
+        * Scripts/webkitpy/tool/steps/addsvnmimetypeforpng_unittest.py:
+        (AddSvnMimetypeForPngTest.test_run):
+        * Scripts/webkitpy/tool/steps/checkstyle.py:
+        (CheckStyle.run):
+        * Scripts/webkitpy/tool/steps/commit.py:
+        (Commit._check_test_expectations):
+        (Commit.run):
+        * Scripts/webkitpy/tool/steps/confirmdiff.py:
+        (ConfirmDiff._show_pretty_diff):
+        * Scripts/webkitpy/tool/steps/haslanded.py:
+        (HasLanded.diff_diff):
+        * Scripts/webkitpy/tool/steps/preparechangelog.py:
+        (PrepareChangeLog.run):
+        * Scripts/webkitpy/tool/steps/promptforbugortitle.py:
+        (PromptForBugOrTitle.run):
+        * Scripts/webkitpy/tool/steps/sortxcodeprojectfiles.py:
+        (SortXcodeProjectFiles.run):
+        * Scripts/webkitpy/webdriver_tests/webdriver_w3c_web_server.py:
+        (WebDriverW3CWebServer._wait_for_server.check_port):
+        * TestResultServer/model/datastorefile.py:
+        (DataStoreFile.save_data):
+        * jhbuild/jhbuildutils.py:
+        (enter_jhbuild_environment_if_available):
+
+2017-12-09  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Replace print >> operator with print() function for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180611
+
+        Reviewed by Michael Catanzaro.
+
+        * CygwinDownloader/cygwin-downloader.py:
+        (download_url_to_file):
+        * Scripts/webkitpy/common/system/profiler.py:
+        (Perf.profile_after_exit):
+        * Scripts/webkitpy/common/version_check.py:
+        * Scripts/webkitpy/layout_tests/lint_test_expectations.py:
+        (main):
+        * Scripts/webkitpy/layout_tests/run_webkit_tests.py:
+        (main):
+        * Scripts/webkitpy/layout_tests/servers/run_webkit_httpd.py:
+        (run_server):
+        * Scripts/webkitpy/tool/commands/analyzechangelog.py:
+        (ChangeLogAnalyzer._print_status):
+        * Scripts/webkitpy/tool/commands/queries.py:
+        (BugsToCommit.execute):
+        (PatchesInCommitQueue.execute):
+        (PatchesToCommitQueue.execute):
+        (PatchesToReview._print_report):
+        (WhatBroke._print_builder_line):
+        (WhatBroke._print_blame_information_for_builder):
+        (WhatBroke.execute):
+        (ResultsFor._print_layout_test_results):
+        (ResultsFor.execute):
+        (FailureReason._print_blame_information_for_transition):
+        (FailureReason._explain_failures_for_builder):
+        (FailureReason._builder_to_explain):
+        (FailureReason.execute):
+        (FindFlakyTests._find_failures):
+        (FindFlakyTests._print_statistics):
+        (FindFlakyTests._walk_backwards_from):
+        (execute):
+        (PrintExpectations.execute):
+        (PrintBaselines.execute):
+        (PrintBaselines._print_baselines):
+        (FindResolvedBugs.execute):
+        * Scripts/webkitpy/tool/commands/rebaseline.py:
+        (AbstractParallelRebaselineCommand._run_webkit_patch):
+        (AbstractParallelRebaselineCommand._rebaseline):
+        * Scripts/webkitpy/tool/servers/gardeningserver.py:
+        (GardeningHTTPRequestHandler.rebaselineall):
+        * Scripts/webkitpy/tool/servers/gardeningserver_unittest.py:
+        (GardeningServerTest.disabled_test_rebaselineall.run_command):
+        (GardeningServerTest):
+
+2017-12-08  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Replace print operator with print() function for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180592
+
+        Reviewed by Michael Catanzaro.
+
+        * BuildSlaveSupport/wait-for-SVN-server.py:
+        (getLatestSVNRevision):
+        (waitForSVNRevision):
+        * Scripts/download-latest-github-release.py:
+        (find_latest_release):
+        (main):
+        * Scripts/update-wasm-gcc-torture.py:
+        (update_lkgr):
+        (untar_torture):
+        (list_js_files):
+        (waterfall_known_failures):
+        * Scripts/update-webkit-wincairo-libs.py:
+        * Scripts/webkitpy/benchmark_runner/benchmark_runner.py:
+        (BenchmarkRunner.show_results):
+        * Scripts/webkitpy/benchmark_runner/http_server_driver/simple_http_server_driver.py:
+        (SimpleHTTPServerDriver.fetch_result):
+        * Scripts/webkitpy/benchmark_runner/run_benchmark.py:
+        (list_benchmark_plans):
+        * Scripts/webkitpy/bindings/main.py:
+        (BindingsTests.generate_from_idl):
+        (BindingsTests.generate_supplemental_dependency):
+        (BindingsTests.detect_changes):
+        (BindingsTests.run_tests):
+        (BindingsTests.main):
+        * Scripts/webkitpy/codegen/main.py:
+        (BuiltinsGeneratorTests.generate_from_js_builtins):
+        (BuiltinsGeneratorTests.detect_changes):
+        (BuiltinsGeneratorTests.single_builtin_test):
+        (BuiltinsGeneratorTests.run_test):
+        (BuiltinsGeneratorTests.run_tests):
+        (BuiltinsGeneratorTests.main):
+        * Scripts/webkitpy/common/net/bugzilla/bugzilla_mock.py:
+        (MockBugzilla.fetch_attachment):
+        * Scripts/webkitpy/common/net/buildbot/buildbot.py:
+        (Builder._fetch_revision_to_build_map):
+        * Scripts/webkitpy/common/system/crashlogs.py:
+        (CrashLogs._find_newest_log_win):
+        * Scripts/webkitpy/common/system/outputcapture_unittest.py:
+        (OutputCaptureTest.test_output_capture_scope):
+        * Scripts/webkitpy/common/system/profiler.py:
+        (GooglePProf.profile_after_exit):
+        (Perf.profile_after_exit):
+        * Scripts/webkitpy/common/system/user.py:
+        (User.prompt_with_multiple_lists):
+        (User.prompt_with_list):
+        (User._warn_if_application_is_xcode):
+        (User.edit_changelog):
+        * Scripts/webkitpy/inspector/main.py:
+        (InspectorGeneratorTests.generate_from_json):
+        (InspectorGeneratorTests.detect_changes):
+        (InspectorGeneratorTests.run_tests):
+        (InspectorGeneratorTests.main):
+        * Scripts/webkitpy/layout_tests/controllers/manager.py:
+        (Manager._print_expectation_line_for_test):
+        (Manager._print_expectations_for_subset):
+        (Manager._print_expectations_for_subset.if):
+        * Scripts/webkitpy/layout_tests/servers/run_webkit_httpd.py:
+        (run_server):
+        * Scripts/webkitpy/port/config_standalone.py:
+        (main):
+        * Scripts/webkitpy/port/darwin_testcase.py:
+        (DarwinTest.test_spindump.logging_run_command):
+        (DarwinTest.test_sample_process.logging_run_command):
+        * Scripts/webkitpy/port/ios.py:
+        (IOSPort.clean_up_test_run):
+        * Scripts/webkitpy/port/ios_device_unittest.py:
+        (IOSDeviceTest.test_spindump.logging_run_command):
+        (IOSDeviceTest.test_sample_process.logging_run_command):
+        * Scripts/webkitpy/port/ios_simulator_unittest.py:
+        (IOSSimulatorTest.test_xcrun.throwing_run_command):
+        * Scripts/webkitpy/port/leakdetector_unittest.py:
+        (test_count_total_bytes_and_unique_leaks.mock_run_script):
+        * Scripts/webkitpy/port/mac_unittest.py:
+        (MacTest.test_xcrun.throwing_run_command):
+        * Scripts/webkitpy/style/checkers/contributors.py:
+        (ContributorsChecker.check):
+        * Scripts/webkitpy/tool/commands/abstractlocalservercommand.py:
+        (AbstractLocalServerCommand.execute):
+        * Scripts/webkitpy/tool/commands/adduserstogroups.py:
+        (AddUsersToGroups.execute):
+        * Scripts/webkitpy/tool/commands/analyzechangelog.py:
+        (AnalyzeChangeLog._generate_jsons):
+        (AnalyzeChangeLog.execute):
+        (ChangeLogAnalyzer._set_filename):
+        (ChangeLogAnalyzer.analyze):
+        * Scripts/webkitpy/tool/commands/bugfortest.py:
+        (BugForTest.execute):
+        * Scripts/webkitpy/tool/commands/bugsearch.py:
+        (execute):
+        * Scripts/webkitpy/tool/commands/findusers.py:
+        (FindUsers.execute):
+        * Scripts/webkitpy/tool/commands/gardenomatic.py:
+        (GardenOMatic.execute):
+        * Scripts/webkitpy/tool/commands/rebaseline.py:
+        (RebaselineTest.execute):
+        * Scripts/webkitpy/tool/commands/rebaselineserver.py:
+        (RebaselineServer._prepare_config):
+        * Scripts/webkitpy/tool/commands/setupgitclone.py:
+        (SetupGitClone.execute):
+        (SetupGitClone._get_username_and_email):
+        * Scripts/webkitpy/tool/commands/suggestnominations.py:
+        (SuggestNominations._print_nominations):
+        (SuggestNominations._print_counts):
+        * Scripts/webkitpy/tool/commands/upload.py:
+        (CommitMessageForCurrentDiff.execute):
+        (CreateBug.prompt_for_bug_title_and_comment):
+        * Scripts/webkitpy/tool/multicommandtool.py:
+        (HelpCommand.execute):
+        * Scripts/webkitpy/tool/servers/gardeningserver_unittest.py:
+        (TestGardeningHTTPRequestHandler._serve_text):
+        (TestGardeningHTTPRequestHandler._serve_json):
+        * Scripts/webkitpy/tool/steps/addsvnmimetypeforpng.py:
+        (AddSvnMimetypeForPng.run):
+        * Scripts/webkitpy/tool/steps/suggestreviewers.py:
+        (SuggestReviewers.run):
+        * Scripts/webkitpy/w3c/test_importer.py:
+        (TestImporter.update_tests_options):
+        * Scripts/webkitpy/webdriver_tests/webdriver_test_runner_selenium.py:
+        (WebDriverTestRunnerSelenium.run):
+        * TestResultServer/model/jsonresults_unittest.py:
+        * gtk/ycm_extra_conf.py:
+        (FlagsForFile):
+        * lldb/lldb_webkit.py:
+        (btjs):
+
 2017-05-31  Carlos Alberto Lopez Perez  <clopez@igalia.com>
 
         [GTK][WPE] run-javascriptcore-tests should use the jhbuild

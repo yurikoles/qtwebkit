@@ -52,8 +52,8 @@ class InspectorGeneratorTests:
             stderr_output = self.executive.run_command(cmd)
             if stderr_output:
                 self.write_error_file(json_file, output_directory, stderr_output)
-        except ScriptError, e:
-            print e.output
+        except ScriptError as e:
+            print(e.output)
             exit_code = e.exit_code
         return exit_code
 
@@ -75,16 +75,16 @@ class InspectorGeneratorTests:
             exit_code = 0
             try:
                 output = self.executive.run_command(cmd)
-            except ScriptError, e:
+            except ScriptError as e:
                 output = e.output
                 exit_code = e.exit_code
 
             if exit_code or output:
-                print 'FAIL: %s' % output_file
-                print output
+                print('FAIL: %s' % output_file)
+                print(output)
                 changes_found = True
             else:
-                print 'PASS: %s' % output_file
+                print('PASS: %s' % output_file)
         return changes_found
 
     def run_tests(self, input_directory, reference_directory):
@@ -104,7 +104,7 @@ class InspectorGeneratorTests:
                 passed = False
 
             if self.reset_results:
-                print "Reset results for test: %s" % (input_file)
+                print("Reset results for test: %s" % (input_file))
                 continue
 
             # Detect changes
@@ -125,10 +125,10 @@ class InspectorGeneratorTests:
         if not self.run_tests(input_directory, reference_directory):
             all_tests_passed = False
 
-        print ''
+        print('')
         if all_tests_passed:
-            print 'All tests PASS!'
+            print('All tests PASS!')
             return 0
         else:
-            print 'Some tests FAIL! (To update the reference files, execute "run-inspector-generator-tests --reset-results")'
+            print('Some tests FAIL! (To update the reference files, execute "run-inspector-generator-tests --reset-results")')
             return -1

@@ -1,3 +1,226 @@
+2019-08-26  Carlos Alberto Lopez Perez  <clopez@igalia.com>
+
+        Missing media controls when WebKit is built with Python3
+        https://bugs.webkit.org/show_bug.cgi?id=194367
+
+        Reviewed by Carlos Garcia Campos.
+
+        The JavaScript minifier script jsmin.py expects a text stream
+        with text type as input, but the script make-js-file-arrays.py
+        was passing to it a FileIO() object. So, when the jsmin script
+        called read() over this object, python3 was returning a type of
+        bytes, but for python2 it returns type str.
+
+        This caused two problems: first that jsmin failed to do any minifying
+        because it was comparing strings with a variable of type bytes.
+        The second major problem was in the write() function, when the
+        jsmin script tried to convert a byte character to text by calling
+        str() on it. Because what this does is not to convert from byte
+        type to string, but to simply generate a string with the format b'c'.
+        So the jsmin script was returning back as minified JS complete
+        garbage in the form of "b't'b'h'b'h'b'i" for python3.
+
+        Therefore, when WebKit was built with python3 this broke everything
+        that depended on the embedded JS code that make-js-file-arrays.py
+        was supposed to generate, like the media controls and the WebDriver
+        atoms.
+
+        Fix this by reworking the code in make-js-file-arrays script to
+        read the data from the file using a TextIOWrapper in python 3
+        with decoding for 'utf-8'. This ensures that the jsmin receives
+        a text type. For python2 keep using the same FileIO class.
+
+        On the jsmin.py script remove the problematic call to str() inside
+        the write() function when running with python3.
+        On top of that, add an extra check in jsmin.py script to make it
+        fail if the character type read is not the one expected. This
+        will cause the build to fail instead of failing silently like
+        now. I did some tests and the runtime cost of this extra check
+        is almost zero.
+
+        * Scripts/jsmin.py:
+        (JavascriptMinify.minify.write):
+        (JavascriptMinify):
+        * Scripts/make-js-file-arrays.py:
+        (main):
+
+2018-09-21  Mike Gorse  <mgorse@suse.com>
+
+        Build tools should work when the /usr/bin/python is python3
+        https://bugs.webkit.org/show_bug.cgi?id=156674
+
+        Reviewed by Michael Catanzaro.
+
+        * Scripts/cssmin.py:
+        * Scripts/generate-js-builtins.py:
+        (do_open):
+        (generate_bindings_for_builtins_files):
+        * Scripts/generateIntlCanonicalizeLanguage.py:
+        * Scripts/jsmin.py:
+        (JavascriptMinify.minify.write):
+        (JavascriptMinify):
+        (JavascriptMinify.minify):
+        * Scripts/make-js-file-arrays.py:
+        (chunk):
+        (main):
+        * Scripts/wkbuiltins/__init__.py:
+        * Scripts/wkbuiltins/builtins_generate_combined_header.py:
+        (generate_section_for_global_private_code_name_macro):
+        * Scripts/wkbuiltins/builtins_generate_internals_wrapper_header.py:
+        (BuiltinsInternalsWrapperHeaderGenerator.__init__):
+        * Scripts/wkbuiltins/builtins_generate_internals_wrapper_implementation.py:
+        (BuiltinsInternalsWrapperImplementationGenerator.__init__):
+        * Scripts/wkbuiltins/builtins_model.py:
+        (BuiltinFunction.__lt__):
+        (BuiltinsCollection.copyrights):
+        (BuiltinsCollection._parse_functions):
+        * disassembler/udis86/ud_opcode.py:
+        (UdOpcodeTables.pprint.printWalk):
+        * generate-bytecode-files:
+        * inspector/scripts/codegen/__init__.py:
+        * inspector/scripts/codegen/cpp_generator.py:
+        * inspector/scripts/codegen/generate_cpp_alternate_backend_dispatcher_header.py:
+        (CppAlternateBackendDispatcherHeaderGenerator.generate_output):
+        * inspector/scripts/codegen/generate_cpp_backend_dispatcher_header.py:
+        (CppBackendDispatcherHeaderGenerator.domains_to_generate):
+        (CppBackendDispatcherHeaderGenerator.generate_output):
+        (CppBackendDispatcherHeaderGenerator._generate_dispatcher_declarations_for_domain):
+        * inspector/scripts/codegen/generate_cpp_backend_dispatcher_implementation.py:
+        (CppBackendDispatcherImplementationGenerator.domains_to_generate):
+        (CppBackendDispatcherImplementationGenerator.generate_output):
+        * inspector/scripts/codegen/generate_cpp_frontend_dispatcher_header.py:
+        (CppFrontendDispatcherHeaderGenerator.domains_to_generate):
+        (CppFrontendDispatcherHeaderGenerator.generate_output):
+        * inspector/scripts/codegen/generate_cpp_frontend_dispatcher_implementation.py:
+        (CppFrontendDispatcherImplementationGenerator.domains_to_generate):
+        (CppFrontendDispatcherImplementationGenerator.generate_output):
+        * inspector/scripts/codegen/generate_cpp_protocol_types_header.py:
+        (CppProtocolTypesHeaderGenerator.generate_output):
+        (CppProtocolTypesHeaderGenerator._generate_forward_declarations):
+        * inspector/scripts/codegen/generate_cpp_protocol_types_implementation.py:
+        (CppProtocolTypesImplementationGenerator.generate_output):
+        (CppProtocolTypesImplementationGenerator._generate_enum_conversion_methods_for_domain):
+        (CppProtocolTypesImplementationGenerator._generate_enum_mapping_and_conversion_methods):
+        (CppProtocolTypesImplementationGenerator._generate_open_field_names):
+        (CppProtocolTypesImplementationGenerator._generate_builders_for_domain):
+        (CppProtocolTypesImplementationGenerator._generate_assertion_for_object_declaration):
+        * inspector/scripts/codegen/generate_js_backend_commands.py:
+        (JSBackendCommandsGenerator.should_generate_domain):
+        (JSBackendCommandsGenerator.domains_to_generate):
+        (JSBackendCommandsGenerator.generate_output):
+        (JSBackendCommandsGenerator.generate_domain):
+        * inspector/scripts/codegen/generate_objc_backend_dispatcher_header.py:
+        (ObjCBackendDispatcherHeaderGenerator.domains_to_generate):
+        (ObjCBackendDispatcherHeaderGenerator.generate_output):
+        * inspector/scripts/codegen/generate_objc_backend_dispatcher_implementation.py:
+        (ObjCBackendDispatcherImplementationGenerator.domains_to_generate):
+        (ObjCBackendDispatcherImplementationGenerator.generate_output):
+        (ObjCBackendDispatcherImplementationGenerator._generate_success_block_for_command):
+        * inspector/scripts/codegen/generate_objc_configuration_header.py:
+        * inspector/scripts/codegen/generate_objc_configuration_implementation.py:
+        * inspector/scripts/codegen/generate_objc_frontend_dispatcher_implementation.py:
+        (ObjCFrontendDispatcherImplementationGenerator.domains_to_generate):
+        (ObjCFrontendDispatcherImplementationGenerator.generate_output):
+        (ObjCFrontendDispatcherImplementationGenerator._generate_event):
+        * inspector/scripts/codegen/generate_objc_header.py:
+        (ObjCHeaderGenerator.generate_output):
+        (ObjCHeaderGenerator._generate_type_interface):
+        * inspector/scripts/codegen/generate_objc_internal_header.py:
+        (ObjCInternalHeaderGenerator.generate_output):
+        * inspector/scripts/codegen/generate_objc_protocol_type_conversions_header.py:
+        (ObjCProtocolTypeConversionsHeaderGenerator.domains_to_generate):
+        (ObjCProtocolTypeConversionsHeaderGenerator.generate_output):
+        * inspector/scripts/codegen/generate_objc_protocol_type_conversions_implementation.py:
+        (ObjCProtocolTypeConversionsImplementationGenerator.domains_to_generate):
+        * inspector/scripts/codegen/generate_objc_protocol_types_implementation.py:
+        (ObjCProtocolTypesImplementationGenerator.domains_to_generate):
+        (ObjCProtocolTypesImplementationGenerator.generate_output):
+        (ObjCProtocolTypesImplementationGenerator.generate_type_implementation):
+        (ObjCProtocolTypesImplementationGenerator._generate_init_method_for_required_members):
+        * inspector/scripts/codegen/generator.py:
+        (Generator.non_supplemental_domains):
+        (Generator.open_fields):
+        (Generator.calculate_types_requiring_shape_assertions):
+        (Generator._traverse_and_assign_enum_values):
+        (Generator.stylized_name_for_enum_value):
+        * inspector/scripts/codegen/models.py:
+        (find_duplicates):
+        * inspector/scripts/codegen/objc_generator.py:
+        * wasm/generateWasm.py:
+        (opcodeIterator):
+        * yarr/generateYarrCanonicalizeUnicode:
+        * yarr/generateYarrUnicodePropertyTables.py:
+        * yarr/hasher.py:
+        (stringHash):
+
+2018-09-14  Mike Gorse  <mgorse@suse.com>
+
+        builtins directory causes name conflict on Python 3
+        https://bugs.webkit.org/show_bug.cgi?id=189552
+
+        Reviewed by Michael Catanzaro.
+
+        * CMakeLists.txt: builtins -> wkbuiltins.
+        * DerivedSources.make: builtins -> wkbuiltins.
+        * Scripts/generate-js-builtins.py: import wkbuiltins, rather than
+          builtins.
+        * Scripts/wkbuiltins/__init__.py: Renamed from Source/JavaScriptCore/Scripts/builtins/__init__.py.
+        * Scripts/wkbuiltins/builtins_generate_combined_header.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_combined_header.py.
+        * Scripts/wkbuiltins/builtins_generate_internals_wrapper_implementation.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_internals_wrapper_implementation.py.
+        * Scripts/wkbuiltins/builtins_generate_separate_header.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_separate_header.py.
+        * Scripts/wkbuiltins/builtins_generate_separate_implementation.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_separate_implementation.py.
+        * Scripts/wkbuiltins/builtins_generate_wrapper_header.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_wrapper_header.py.
+        * Scripts/wkbuiltins/builtins_generate_wrapper_implementation.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generate_wrapper_implementation.py.
+        * Scripts/wkbuiltins/builtins_generator.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_generator.py.
+        * Scripts/wkbuiltins/builtins_model.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_model.py.
+        * Scripts/wkbuiltins/builtins_templates.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins_templates.py.
+        * Scripts/wkbuiltins/wkbuiltins.py: Renamed from Source/JavaScriptCore/Scripts/builtins/builtins.py.
+        * JavaScriptCore.xcodeproj/project.pbxproj: Update for the renaming.
+
+2016-08-25  Csaba Osztrogonác  <ossy@webkit.org>
+
+        generate-js-builtins.py should generate platform independent files
+        https://bugs.webkit.org/show_bug.cgi?id=161196
+
+        Reviewed by Mark Lam.
+
+        * Scripts/generate-js-builtins.py: Files should be processed in fixed order.
+
+2017-12-10  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Modernize "except" usage for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180612
+
+        Reviewed by Michael Catanzaro.
+
+        * inspector/scripts/generate-inspector-protocol-bindings.py:
+
+2017-12-09  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Replace print >> operator with print() function for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180611
+
+        Reviewed by Michael Catanzaro.
+
+        * Scripts/make-js-file-arrays.py:
+        (main):
+
+2017-12-08  Konstantin Tokarev  <annulen@yandex.ru>
+
+        [python] Replace print operator with print() function for python3 compatibility
+        https://bugs.webkit.org/show_bug.cgi?id=180592
+
+        Reviewed by Michael Catanzaro.
+
+        * Scripts/generateYarrUnicodePropertyTables.py:
+        (openOrExit):
+        (verifyUCDFilesExist):
+        (Aliases.parsePropertyAliasesFile):
+        (Aliases.parsePropertyValueAliasesFile):
+        * Scripts/make-js-file-arrays.py:
+        (main):
+        * generate-bytecode-files:
+
 2016-06-02  Oliver Hunt  <oliver@apple.com>
 
         JS parser incorrectly handles invalid utf8 in error messages.
