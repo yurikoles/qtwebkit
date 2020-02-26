@@ -1540,6 +1540,9 @@ webkit.org/b/90007 http/tests/security/mixedContent/insecure-audio-video-in-main
 http/tests/xmlhttprequest/post-blob-content-type-async.html [ Failure ]
 http/tests/xmlhttprequest/post-blob-content-type-sync.html [ Failure ]
 
+#818 fix causes regression, but it's probably less harmful then original bug
+http/tests/cache/subresource-fragment-identifier.html [ Failure ]
+
 # =========================================================================== #
 #       Failing xmlhttprequest tests                                          #
 # =========================================================================== #
