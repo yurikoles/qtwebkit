@@ -147,14 +147,15 @@ macro(QTWEBKIT_SEPARATE_DEBUG_INFO _target _target_debug)
             set(${_target_debug} "${_target_file}.debug")
 
             if (DWZ_FOUND AND NOT SKIP_DWZ)
-                set(DWZ_COMMAND COMMAND ${DWZ_EXECUTABLE} -L 1000000000 ${${_target_debug}})
+                set(EXTRACT_DEBUG_INFO_COMMAND COMMAND ${DWZ_EXECUTABLE} -L 1000000000 -o ${${_target_debug}} ${_target_file})
+            else ()
+                set(EXTRACT_DEBUG_INFO_COMMAND COMMAND ${CMAKE_OBJCOPY} --only-keep-debug ${_target_file} ${${_target_debug}}
             endif ()
 
             add_custom_command(TARGET ${_target} POST_BUILD
-                COMMAND ${CMAKE_OBJCOPY} --only-keep-debug ${_target_file} ${${_target_debug}}
+                ${EXTRACT_DEBUG_INFO_COMMAND}
                 COMMAND ${CMAKE_OBJCOPY} --strip-debug ${_target_file}
                 COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${${_target_debug}} ${_target_file}
-                ${DWZ_COMMAND}
                 VERBATIM
             )
             unset(_target_file)

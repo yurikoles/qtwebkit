@@ -5,6 +5,10 @@
 #  DWZ_EXECUTABLE          - The full path to the dwz tool.
 #  DWZ_FOUND               - True if dwz has been found.
 #
+#  DWZ_VERSION_STRING      - Python version found e.g. 2.5.2
+#  DWZ_VERSION_MAJOR       - Python major version found e.g. 2
+#  DWZ_VERSION_MINOR       - Python minor version found e.g. 5
+#
 # Copyright (C) 2019 Konstantin Tokarev <annulen@yandex.ru>
 #
 # Redistribution and use in source and binary forms, with or without
