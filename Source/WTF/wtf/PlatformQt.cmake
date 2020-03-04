@@ -46,6 +46,9 @@ if (USE_MACH_PORTS)
         cocoa/MachSendRight.cpp
         cocoa/WorkQueueCocoa.cpp
     )
+    list(APPEND WTF_PUBLIC_HEADERS
+        spi/darwin/XPCSPI.h
+    )
 endif()
 
 list(APPEND WTF_SYSTEM_INCLUDE_DIRECTORIES
