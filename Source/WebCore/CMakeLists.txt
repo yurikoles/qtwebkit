@@ -1209,16 +1209,10 @@ set(WebCore_PLUG_INS_RESOURCES
 )
 
 set(WebCore_LIBRARIES
-    LibXml2::LibXml2
-    SQLite::SQLite3
     WebKit::JavaScriptCore
     WebKit::PAL
     ZLIB::ZLIB
 )
-
-if (ENABLE_XSLT)
-    list(APPEND WebCore_LIBRARIES LibXslt::LibXslt)
-endif ()
 
 set(WebCoreTestSupport_LIBRARIES
     WebKit::JavaScriptCore
