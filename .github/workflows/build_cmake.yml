@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Sparse checkout
-      shell: bash
+      shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
         REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
         BRANCH="${GITHUB_REF/#refs\/heads\//}"
@@ -217,7 +217,7 @@ jobs:
           ${{ matrix.config.name }}-ccache-${{ env.CACHE_PARTITION }}-
 
     - name: Configure
-      shell: bash
+      shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
         if [ "${{ runner.os }}" != "Linux" ]; then
             cmake_extra_args="-DQt5_DIR=${{ steps.qt.outputs.qt_dir }}/lib/cmake/Qt5"
