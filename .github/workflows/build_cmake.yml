@@ -164,16 +164,9 @@ jobs:
           execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ../${archive} WORKING_DIRECTORY qt5)
         endfunction()
 
-        foreach(package qtbase qtdeclarative qttools qtsvg qtserialport qtquickcontrols qtquickcontrols2 qtgraphicaleffects qtlocation qtimageformats)
+        foreach(package qtbase qtdeclarative qtlocation qtmultimedia qtsensors qtwebchannel)
           downloadAndExtract(
             "${qt_base_url}/qt.qt5.${qt_version_dotless}.${qt_package_arch_suffix}/${qt_package_version}${package}${qt_package_suffix}.7z"
-            ${package}.7z
-          )
-        endforeach()
-
-        foreach(package qtquicktimeline qtquick3d qtscript)
-          downloadAndExtract(
-            "${qt_base_url}/qt.qt5.${qt_version_dotless}.${package}.${qt_package_arch_suffix}/${qt_package_version}${package}${qt_package_suffix}.7z"
             ${package}.7z
           )
         endforeach()
