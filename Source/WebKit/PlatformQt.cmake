@@ -900,6 +900,7 @@ if (COMPILER_IS_GCC_OR_CLANG)
         qt/WidgetApi/qwebview.cpp
     PROPERTIES
         COMPILE_FLAGS -frtti
+        SKIP_PRECOMPILE_HEADERS ON
     )
 endif ()
 
