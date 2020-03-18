@@ -44,8 +44,7 @@ jobs:
         git clone --depth 10 "$QTWEBKIT_SNAPSHOTS_REPO" qtwebkit-snapshots -b $QTWEBKIT_BRANCH
         cd qtwebkit-snapshots
         original_sha1=$(git log -n1 $snapshot_sha1 | awk '/\s+Import QtWebKit commit [0-9a-f]+$/ {print $NF}')
-        original_tag=$(git describe $original_sha1)
-        echo "Snapshot commit: $snapshot_sha1 Original commit: $original_tag ( $original_sha1 )"
+        echo "Snapshot commit: $snapshot_sha1 Original commit: $original_sha1"
         echo "Pushed tag: ${{ steps.tag_name.outputs.tag }}"
         echo "Pushed SHA: ${{ github.sha }}"
 
