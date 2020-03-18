@@ -290,6 +290,7 @@ option(GENERATE_DOCUMENTATION "Generate HTML and QCH documentation" OFF)
 cmake_dependent_option(ENABLE_TEST_SUPPORT "Build tools for running layout tests and related library code" ON
                                            "DEVELOPER_MODE" OFF)
 option(USE_STATIC_RUNTIME "Use static runtime (MSVC only)" OFF)
+option(ENABLE_PCH "Use pre-compiled headers (MSVC only)" ON)
 
 # Private options specific to the Qt port. Changing these options is
 # completely unsupported. They are intended for use only by WebKit developers.
