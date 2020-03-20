@@ -6,6 +6,7 @@
 
 include(FindCygwin)
 
+message("~~~~~ PATH 2 == $ENV{PATH}")
 find_program(GPERF_EXECUTABLE
     gperf
     ${CYGWIN_INSTALL_PATH}/bin

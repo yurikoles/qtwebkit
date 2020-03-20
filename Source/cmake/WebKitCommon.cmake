@@ -19,6 +19,7 @@ if (NOT HAS_RUN_WEBKIT_COMMON)
     endif ()
 
     # TODO Enforce version requirement for gperf
+    message("~~~~~ PATH 1 == $ENV{PATH}")
     find_package(Gperf 3.0.1 REQUIRED)
 
     # TODO Enforce version requirement for perl
