@@ -21,6 +21,7 @@
 from conans import ConanFile, CMake, tools
 import os
 import shlex
+import argparse
 
 
 class QtWebKitConan(ConanFile):
@@ -101,7 +102,8 @@ class QtWebKitConan(ConanFile):
         #    cmake.definitions["CMAKE_CXX_COMPILER_LAUNCHER"] = "ccache"
 
         if "QTDIR" in os.environ:
-            cmake.definitions["Qt5_DIR"] = os.path.join(os.environ["QTDIR"], "lib", "cmake", "Qt5")
+            cmake.definitions["Qt5_DIR"] = os.path.join(
+                os.environ["QTDIR"], "lib", "cmake", "Qt5")
             print("Qt5 directory:" + cmake.definitions["Qt5_DIR"])
 
         if "CMAKEFLAGS" in os.environ:
@@ -110,23 +112,22 @@ class QtWebKitConan(ConanFile):
             cmake_flags = None
 
         if "NINJAFLAGS" in os.environ:
-            ninja_flags = os.environ["NINJAFLAGS"]
+            parser = argparse.ArgumentParser()
+            parser.add_argument('-j', default=None, type=int)
+            jarg, ninja_flags = parser.parse_known_args(
+                shlex.split(os.environ["NINJAFLAGS"]))
+            if jarg.j:
+                os.environ['CONAN_CPU_COUNT'] = str(jarg.j)
+            ninja_flags.insert(0, '--')
         else:
-            ninja_flags = ""
+            ninja_flags = None
 
         print(self.source_folder)
         print()
         print(self.build_folder)
 
         cmake.configure(args=cmake_flags)
-
-        # Use custom replacement of cmake.build() to avoid Conan interference into ninja flags
-        if self.should_build:
-            if self.settings.os == "Windows":
-                print(tools.vcvars_command(self.settings))
-                self.run(tools.vcvars_command(self.settings))
-            self.run("ninja " + ninja_flags)
-
+        cmake.build(args=ninja_flags)
         cmake.install()
 
     # QtWebKit installation requires conanfile.txt in build directory, so we generate it here
