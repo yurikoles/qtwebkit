@@ -236,29 +236,26 @@ jobs:
 
     - name: Install dependencies (Windows/Conan)
       if: runner.os == 'Windows'
-      shell: bash --noprofile --norc -eo pipefail -x {0}
+      shell: cmd
       run: |
         pip3 install conan
-        mkdir build
-        conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-        conan remote add qtproject https://api.bintray.com/conan/qtproject/conan
-        conan install --no-imports --install-folder build Tools/qt/conanfile.py
 
     - name: CMake environment
       shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
         echo "::add-path::$GITHUB_WORKSPACE"
         echo "::add-path::${{ steps.cmake_and_ninja.outputs.cmake_dir }}"
-
-        echo "::set-env name=CC::${{ matrix.config.cc }}"
-        echo "::set-env name=CXX::${{ matrix.config.cxx }}"
+        
+        if [ "${{ runner.os }}" != "Windows" ]; then
+          echo "::set-env name=CC::${{ matrix.config.cc }}"
+          echo "::set-env name=CXX::${{ matrix.config.cxx }}"
+        fi
 
         echo "::set-env name=CCACHE_BASEDIR::$GITHUB_WORKSPACE"
         echo "::set-env name=CCACHE_DIR::$GITHUB_WORKSPACE/.ccache"
 
         if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake_extra_args="-DQt5_DIR=${{ steps.qt.outputs.qt_dir }}/lib/cmake/Qt5 \
-                -DQT_CONAN_DIR=build"
+            cmake_extra_args="-DQt5_DIR=${{ steps.qt.outputs.qt_dir }}/lib/cmake/Qt5"
         fi
 
         echo "::set-env name=cmake_args::\
@@ -278,10 +275,7 @@ jobs:
       if: runner.os == 'Windows' && matrix.config.environment_script != ''
       shell: cmd
       run: |
-        call "${{ matrix.config.environment_script }}"
-        call "build/activate.bat"
-        cmake %cmake_args% -H. -Bbuild -GNinja || exit /b 1
-
+        py Tools\qt\build-qtwebkit-conan.py --configure --cmakeargs="%cmake_args%"  || exit /b 1
     - name: Configure (macOS/Conan)
       if: runner.os == 'macOS'
       shell: bash --noprofile --norc -eo pipefail -x {0}
@@ -312,10 +306,7 @@ jobs:
       if: runner.os == 'Windows' && matrix.config.environment_script != ''
       shell: cmd
       run: |
-        call "${{ matrix.config.environment_script }}"
-        call "build/activate.bat"
-        ninja -C build -j %HOST_N_CORES% -v || exit /b 1
-
+        py Tools\qt\build-qtwebkit-conan.py --build --install --ninjaargs="-j %HOST_N_CORES% -v" || exit /b 1
     - name: Build (macOS/Conan)
       if: runner.os == 'macOS'
       shell: bash --noprofile --norc -eo pipefail -x {0}
