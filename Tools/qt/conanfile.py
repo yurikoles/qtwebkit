@@ -137,15 +137,15 @@ class QtWebKitConan(ConanFile):
         conanfile.write("[imports]\n")
 
         if self.settings.os == 'Windows':
-            conanfile.write("bin, icudt65.dll -> ./bin")
-            conanfile.write("bin, icuin65.dll -> ./bin")
-            conanfile.write("bin, icuuc65.dll -> ./bin")
+            conanfile.write("bin, icudt65.dll -> ./bin\n")
+            conanfile.write("bin, icuin65.dll -> ./bin\n")
+            conanfile.write("bin, icuuc65.dll -> ./bin\n")
             # Visual Studio
-            conanfile.write("bin, libxml2.dll -> ./bin")
-            conanfile.write("bin, libxslt.dll -> ./bin")
+            conanfile.write("bin, libxml2.dll -> ./bin\n")
+            conanfile.write("bin, libxslt.dll -> ./bin\n")
             # MinGW
-            conanfile.write("bin, libxml2-2.dll -> ./bin")
-            conanfile.write("bin, libxslt-1.dll -> ./bin")
+            conanfile.write("bin, libxml2-2.dll -> ./bin\n")
+            conanfile.write("bin, libxslt-1.dll -> ./bin\n")
 
         conanfile.close()
 
