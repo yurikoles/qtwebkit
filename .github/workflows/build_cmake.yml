@@ -34,22 +34,19 @@ jobs:
       matrix:
         config:
         - {
-            name: "Ubuntu GCC Release", artifact: "Linux",
+            name: "Ubuntu Release", artifact: "Linux",
             os: ubuntu-latest,
             build_type: Release,
-            cc: "gcc", cxx: "g++"
           }
         - {
-            name: "macOS Clang Release", artifact: "macOS",
+            name: "macOS Release", artifact: "macOS",
             os: macos-latest,
             build_type: Release,
-            cc: "clang", cxx: "clang++"
           }
         - {
             name: "Windows MSVC Conan Release", artifact: "Windows-MSVC",
             os: windows-latest,
             build_type: Release,
-            cc: "cl", cxx: "cl",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
 
@@ -220,6 +217,12 @@ jobs:
       with:
         python-version: '3.7'
 
+    - name: Install dependencies (Conan)
+      if: runner.os == 'Windows' || runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo pipefail -x {0}
+      run: |
+        pip3 install conan
+
     - name: Install dependencies (Ubuntu)
       if: runner.os == 'Linux'
       run: |
@@ -228,59 +231,30 @@ jobs:
         libtasn1-6-dev libgcrypt20-dev
         # excluded cmake and ninja-build which are normally required
 
-    - name: Install dependencies (macOS/Conan)
-      if: runner.os == 'macOS'
-      shell: bash --noprofile --norc -eo pipefail -x {0}
-      run: |
-        pip3 install conan
-
-    - name: Install dependencies (Windows/Conan)
-      if: runner.os == 'Windows'
-      shell: bash --noprofile --norc -eo pipefail -x {0}
-      run: |
-        pip3 install conan
-        mkdir build
-        conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-        conan remote add qtproject https://api.bintray.com/conan/qtproject/conan
-        conan install --no-imports --install-folder build Tools/qt/conanfile.py
-
     - name: CMake environment
       shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
         echo "::add-path::$GITHUB_WORKSPACE"
         echo "::add-path::${{ steps.cmake_and_ninja.outputs.cmake_dir }}"
 
-        echo "::set-env name=CC::${{ matrix.config.cc }}"
-        echo "::set-env name=CXX::${{ matrix.config.cxx }}"
-
         echo "::set-env name=CCACHE_BASEDIR::$GITHUB_WORKSPACE"
         echo "::set-env name=CCACHE_DIR::$GITHUB_WORKSPACE/.ccache"
-
-        if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake_extra_args="-DQt5_DIR=${{ steps.qt.outputs.qt_dir }}/lib/cmake/Qt5 \
-                -DQT_CONAN_DIR=build"
-        fi
 
         echo "::set-env name=cmake_args::\
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DENABLE_PCH=OFF \
-            $cmake_extra_args"
+            -DENABLE_PCH=OFF"
 
     - name: Configure (Linux)
       if: runner.os == 'Linux'
       shell: bash --noprofile --norc -eo pipefail -x {0}
-      run: |
-        cmake $cmake_args -H. -Bbuild -GNinja
+      run: cmake $cmake_args -H. -Bbuild -GNinja
 
     - name: Configure (MSVC)
       if: runner.os == 'Windows' && matrix.config.environment_script != ''
       shell: cmd
-      run: |
-        call "${{ matrix.config.environment_script }}"
-        call "build/activate.bat"
-        cmake %cmake_args% -H. -Bbuild -GNinja || exit /b 1
+      run: py Tools\qt\build-qtwebkit-conan.py --configure --cmakeargs="%cmake_args%" --qt="${{ steps.qt.outputs.qt_dir }}" || exit /b 1
 
     - name: Configure (macOS/Conan)
       if: runner.os == 'macOS'
@@ -308,13 +282,10 @@ jobs:
       shell: bash --noprofile --norc -eo pipefail -x {0}
       run: ninja -C build -j $HOST_N_CORES -v
 
-    - name: Build (MSVC)
+    - name: Build (MSVC/Conan)
       if: runner.os == 'Windows' && matrix.config.environment_script != ''
       shell: cmd
-      run: |
-        call "${{ matrix.config.environment_script }}"
-        call "build/activate.bat"
-        ninja -C build -j %HOST_N_CORES% -v || exit /b 1
+      run: py Tools\qt\build-qtwebkit-conan.py --build --install --ninjaargs="-j %HOST_N_CORES% -v" || exit /b 1
 
     - name: Build (macOS/Conan)
       if: runner.os == 'macOS'
