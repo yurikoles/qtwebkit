@@ -50,7 +50,7 @@ def run_command(command):
 
 parser = argparse.ArgumentParser(description='Build QtWebKit with Conan. For installation of build product into Qt, use --install option')
 
-parser.add_argument("--qt", help="Root directory of Qt Installation", type=str)
+parser.add_argument("--qt", help="Root directory of Qt Installation", type=str, metavar="QTDIR")
 parser.add_argument(
     "--cmakeargs", help="Space seperated values that should be passed as CMake arguments", default="", type=str)
 parser.add_argument("--ninjaargs", help="Ninja arguments",
