@@ -77,6 +77,7 @@ print("Path of build directory:" + build_directory)
 
 run_command("conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan")
 run_command("conan remote add -f qtproject https://api.bintray.com/conan/qtproject/conan")
+run_command("conan remote add -f qtproject-testing https://api.bintray.com/conan/qtproject/conan-testing")
 
 script = 'conan install {0} -if "{1}" --build=missing'.format(conanfile_path, build_directory)
 run_command(script)

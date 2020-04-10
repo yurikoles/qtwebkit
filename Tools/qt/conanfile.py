@@ -38,7 +38,8 @@ class QtWebKitConan(ConanFile):
     requires = (
         "libjpeg-turbo/2.0.3@qtproject/stable",
         "libpng/1.6.37",
-        "libwebp/1.1.0"
+        "libwebp/1.1.0",
+        "woff2/1.0.2@qtproject/stable",
     )
     default_options = {
         "icu:shared": True,
@@ -55,7 +56,11 @@ class QtWebKitConan(ConanFile):
         "zlib:shared": False,
         "libpng:shared": False,
         "sqlite3:shared": False,
-        "libwebp:shared": False
+        "libwebp:shared": False,
+        "woff2:shared": False,
+        "libtasn1:shared": False,
+        "libgcrypt:shared": True, # FIXME
+        "libgpg-error:shared": True # FIXME
     }
 
     def build_requirements(self):
@@ -88,6 +93,8 @@ class QtWebKitConan(ConanFile):
             self.requires("libxslt/1.1.34@qtproject/stable")
             self.requires("zlib/1.2.11")
             self.requires("sqlite3/3.31.1")
+            self.requires("libtasn1/4.16.0@qtproject/stable")
+            self.requires("libgcrypt/1.8.4@qtproject/stable")
 
     def build(self):
         cmake = CMake(self, set_cmake_flags=True)
