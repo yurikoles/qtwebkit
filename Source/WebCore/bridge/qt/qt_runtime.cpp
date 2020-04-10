@@ -1598,6 +1598,7 @@ void QtConnectionObject::execute(void** argv)
 
     JSValueRef callException = 0;
     ExecState* exec = toJS(m_context);
+    JSLockHolder lock(exec);
     JSObjectCallAsFunction(m_context, m_receiverFunction, m_receiver, argc, args.data(), &callException);
     if (callException)
         WebCore::reportException(exec, toJS(exec, callException));

@@ -119,15 +119,15 @@ list(REMOVE_DUPLICATES WebKitLegacy_SYSTEM_INCLUDE_DIRECTORIES)
 
 if (ENABLE_WEBKIT)
     if (APPLE)
-        set(WEBKIT_LIBRARY -Wl,-force_load WebKit)
+        set(WEBKIT_LIBRARY -Wl,-force_load $<TARGET_FILE:WebKit>)
     elseif (MSVC)
-        set(WEBKIT_LIBRARY "-WHOLEARCHIVE:WebKit${CMAKE_DEBUG_POSTFIX}")
+        set(WEBKIT_LIBRARY "-WHOLEARCHIVE:$<TARGET_FILE:WebKit>")
     elseif (UNIX OR MINGW)
-        set(WEBKIT_LIBRARY -Wl,--whole-archive WebKit -Wl,--no-whole-archive)
+        set(WEBKIT_LIBRARY -Wl,--whole-archive $<TARGET_FILE:WebKit> -Wl,--no-whole-archive)
     else ()
         message(WARNING "Unknown system, linking with WebKit may fail!")
-        set(WEBKIT_LIBRARY WebKit)
     endif ()
+    set(WEBKIT_LIBRARY ${WEBKIT_LIBRARY} WebKit) # For linking dependencies
 endif ()
 
 list(APPEND WebKitLegacy_LIBRARIES
@@ -158,10 +158,9 @@ if (ENABLE_GEOLOCATION)
 endif ()
 
 if (USE_QT_MULTIMEDIA)
-    qt_wrap_cpp(WebKitLegacy WebKitLegacy_SOURCES
-        qt/Api/qwebfullscreenvideohandler.h
-    )
     list(APPEND WebKitLegacy_SOURCES
+        qt/Api/qwebfullscreenvideohandler.h
+
         qt/WebCoreSupport/FullScreenVideoQt.cpp
     )
 endif ()
@@ -407,6 +406,10 @@ if (KDE_INSTALL_USE_QT_SYS_PATHS)
         BIN_INSTALL_DIR "$$QT_MODULE_BIN_BASE"
         LIB_INSTALL_DIR "$$QT_MODULE_LIB_BASE"
     )
+    set(WebKit_Private_PRI_ARGUMENTS
+        BIN_INSTALL_DIR "$$QT_MODULE_BIN_BASE"
+        LIB_INSTALL_DIR "$$QT_MODULE_LIB_BASE"
+    )
     if (MACOS_BUILD_FRAMEWORKS)
         list(APPEND QtWebKit_PRI_ARGUMENTS
             INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers"
@@ -415,6 +418,7 @@ if (KDE_INSTALL_USE_QT_SYS_PATHS)
         list(APPEND QtWebKit_Private_PRI_ARGUMENTS
             INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers/${PROJECT_VERSION}"
             INCLUDE_INSTALL_DIR2 "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers/${PROJECT_VERSION}/QtWebKit"
+            MODULE_CONFIG "lib_bundle"
         )
     else ()
         list(APPEND QtWebKit_PRI_ARGUMENTS

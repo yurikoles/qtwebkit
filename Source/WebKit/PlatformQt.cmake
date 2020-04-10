@@ -488,10 +488,6 @@ WEBKIT_MAKE_FORWARDING_HEADERS(WebKit
 
 WEBKIT_CREATE_FORWARDING_HEADERS(QtWebKit/private DIRECTORIES UIProcess/API/qt)
 
-if (ENABLE_API_TESTS)
-    add_subdirectory(UIProcess/API/qt/tests)
-endif ()
-
 file(GLOB WebKit_PRIVATE_HEADERS UIProcess/API/qt/*_p.h)
 install(
     FILES

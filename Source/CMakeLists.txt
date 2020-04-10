@@ -40,12 +40,12 @@ if (ENABLE_WEBCORE)
     add_subdirectory(WebCore)
 endif ()
 
-if (ENABLE_WEBKIT_LEGACY)
-    add_subdirectory(WebKitLegacy)
-endif ()
-
 if (ENABLE_WEBKIT)
     add_subdirectory(WebKit)
+endif ()
+
+if (ENABLE_WEBKIT_LEGACY)
+    add_subdirectory(WebKitLegacy)
 endif ()
 
 if (ENABLE_WEBDRIVER)
