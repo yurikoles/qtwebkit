@@ -408,6 +408,9 @@ endif ()
 
 if (USE_GCRYPT)
     include(platform/GCrypt.cmake)
+    list(APPEND WebCore_SYSTEM_INCLUDE_DIRECTORIES
+        ${LIBTASN1_INCLUDE_DIRS}
+    )
     list(APPEND WebCore_LIBRARIES
         ${LIBTASN1_LIBRARIES}
     )
