@@ -41,6 +41,11 @@ find_library(WOFF2DEC_LIBRARIES
     HINTS ${PC_WOFF2DEC_LIBDIR}
 )
 
+if (NOT PC_WOFF2DEC_VERSION)
+    # When not using pkg-config, we acept any version
+    set(PC_WOFF2DEC_VERSION ${WOFF2Dec_FIND_VERSION})
+endif ()
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(WOFF2Dec
     REQUIRED_VARS WOFF2DEC_INCLUDE_DIRS WOFF2DEC_LIBRARIES
