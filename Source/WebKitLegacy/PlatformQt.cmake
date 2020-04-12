@@ -36,6 +36,7 @@ file(MAKE_DIRECTORY ${WebKitLegacy_DERIVED_SOURCES_DIR})
 
 list(APPEND WebKitLegacy_INCLUDE_DIRECTORIES
     "${CMAKE_BINARY_DIR}/include"
+    "${WEBKITLEGACY_DIR}/qt"
     "${WEBKITLEGACY_DIR}/qt/Api"
     "${WEBKITLEGACY_DIR}/qt/WebCoreSupport"
 )
