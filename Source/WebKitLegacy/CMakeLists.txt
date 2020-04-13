@@ -100,7 +100,7 @@ if (APPLE AND NOT ${PORT} STREQUAL "Qt")
     set_target_properties(WebKitLegacy PROPERTIES LINK_FLAGS "-umbrella WebKit")
 endif ()
 
-if (MSVC)
+if (MSVC AND NOT ${PORT} STREQUAL "Qt")
     add_custom_command(
         TARGET WebKitLegacy
         POST_BUILD
