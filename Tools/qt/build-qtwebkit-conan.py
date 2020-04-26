@@ -28,6 +28,7 @@ import argparse
 import pathlib
 import platform
 import sys
+import subprocess
 
 
 def parse_qt(qt):
@@ -45,22 +46,58 @@ def parse_ninja(ninja):
         os.environ["NINJAFLAGS"] = ninja
 
 
-def parse_compiler(compiler):
+def detect_arch(profile):
+    return subprocess.check_output("conan profile get settings.arch_build {0}".format(profile), shell=True).rstrip().decode('ascii')
+
+
+def set_arch(arch, profile):
+    run_command("conan profile update settings.arch={0} {1}".format(arch, profile))
+    run_command("conan profile update settings.arch_build={0} {1}".format(arch, profile))
+
+
+def create_profile(compiler, cc, cxx, arch):
+    profile = 'qtwebkit_{0}_{1}'.format(compiler, arch) # e.g. qtwebkit_msvc_x86
+    if "qtwebkit_msvc" in profile:
+        run_command("conan profile new {0} --detect --force".format(profile))
+        os.environ["CC"] = cc
+        os.environ["CXX"] = cxx
+    else:
+        os.environ["CC"] = cc
+        os.environ["CXX"] = cxx
+        run_command("conan profile new {0} --detect --force".format(profile))
+
+    if arch == 'default':
+        arch = detect_arch(profile)
+
+    set_arch(arch, profile)
+
+    if platform.system() == "Windows" and "gcc" in profile:
+        run_command("conan profile update settings.compiler.threads=posix {0}".format(profile))
+        if arch == 'x86':
+            run_command("conan profile update settings.compiler.exception=dwarf2 {0}".format(profile))
+        if arch == 'x86_64':
+            run_command("conan profile update settings.compiler.exception=seh {0}".format(profile))
+
+    return profile
+
+
+def parse_compiler(compiler, arch):
+    preset_data = {
+        "msvc": ["cl", "cl"],
+        "clang": ["clang", "clang++"],
+        "gcc": ["gcc", "g++"]
+    }
     if not compiler and not ("CC" in os.environ and "CXX" in os.environ):
         if platform.system() == "Windows":
             compiler = "msvc"
         elif platform.system() == "Darwin":
             compiler = "clang"
 
-    if compiler == "msvc":
-        os.environ["CC"] = "cl"
-        os.environ["CXX"] = "cl"
-    elif compiler == "clang":
-        os.environ["CC"] = "clang"
-        os.environ["CXX"] = "clang++"
-    elif compiler == "gcc":
-        os.environ["CC"] = "gcc"
-        os.environ["CXX"] = "g++"
+    if compiler in preset_data:
+        data = preset_data[compiler]
+        return create_profile(compiler, data[0], data[1], arch)
+
+    sys.exit("Error: Unknown Compiler " + compiler + " specified")
 
 
 def run_command(command):
@@ -80,10 +117,12 @@ parser.add_argument("--ninjaargs", help="Ninja arguments",
                     default="", type=str)
 parser.add_argument(
     "--build_directory", help="Name of build dirtectory (defaults to build)", default="build", type=str)
-parser.add_argument("--compiler", help="Specify compiler for build (msvc, gcc, clang)", type=str)
+parser.add_argument("--compiler", help="Specify compiler for build (msvc, gcc, clang)", default=None, choices=['gcc', 'msvc', 'clang'], type=str)
 parser.add_argument("--configure", help="Execute the configuration step. When specified, build won't run unless --build is specified", action="store_true")
 parser.add_argument("--build", help="Execute the build step. When specified, configure won't run unless --configure is specified", action="store_true")
 parser.add_argument("--install", help="Execute the install step. When specified, configure and build steps WILL run without changes", action="store_true")
+parser.add_argument("--profile", help="Name of conan profile provided by user. Note: compiler and profile options are mutually exclusive", default="default", type=str)
+parser.add_argument("--arch", help="32 bit or 64 bit build, leave blank for autodetect", default="default", choices=['x86', 'x64'])
 
 args = parser.parse_args()
 
@@ -101,13 +140,17 @@ print("Path of build directory:" + build_directory)
 run_command("conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan")
 run_command("conan remote add -f qtproject https://api.bintray.com/conan/qtproject/conan")
 
-script = 'conan install {0} -if "{1}" --build=missing'.format(conanfile_path, build_directory)
+if args.profile != "default" and args.compiler != None:
+    sys.exit("Error: Both compiler and Conan profile specified")
+
+profile_flag = parse_compiler(args.compiler, args.arch) if args.profile == "default" else args.profile
+
+script = 'conan install {0} -if "{1}" --build=missing --profile={2}'.format(conanfile_path, build_directory, profile_flag)
 run_command(script)
 
 parse_qt(args.qt)
 parse_cmake(args.cmakeargs)
 parse_ninja(args.ninjaargs)
-parse_compiler(args.compiler)
 
 if not args.configure and not args.build:
     # If we have neither --configure nor --build, we should do both configure and build (but install only if requested)
