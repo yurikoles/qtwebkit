@@ -118,6 +118,9 @@ parser.add_argument("--arch", help="32 bit or 64 bit build, leave blank for auto
 
 args = parser.parse_args()
 
+# Always print commands run by conan internally
+os.environ["CONAN_PRINT_RUN_COMMANDS"] = "1"
+
 src_directory = str(pathlib.Path(__file__).resolve().parents[2])
 
 if os.path.isabs(args.build_directory):
