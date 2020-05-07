@@ -241,7 +241,6 @@ jobs:
         echo "::set-env name=CCACHE_DIR::$GITHUB_WORKSPACE/.ccache"
 
         echo "::set-env name=cmake_args::\
-            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DENABLE_PCH=OFF"
@@ -249,7 +248,7 @@ jobs:
     - name: Configure (Linux)
       if: runner.os == 'Linux'
       shell: bash --noprofile --norc -eo pipefail -x {0}
-      run: cmake $cmake_args -H. -Bbuild -GNinja
+      run: cmake $cmake_args -H. -Bbuild -GNinja -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
 
     - name: Configure (MSVC)
       if: runner.os == 'Windows' && matrix.config.environment_script != ''
