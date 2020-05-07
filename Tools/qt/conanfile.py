@@ -31,7 +31,7 @@ class QtWebKitConan(ConanFile):
     url = "https://github.com/qtwebkit/qtwebkit"
     description = "Qt port of WebKit"
     topics = ("qt", "browser-engine", "webkit", "qt5", "qml", "qtwebkit")
-    settings = "os", "compiler", "build_type", "arch", "arch_build"
+    settings = "os", "compiler", "arch", "arch_build"
     generators = "cmake", "virtualenv", "txt"
     exports_sources = "../../*"
     no_copy_source = True
@@ -105,6 +105,9 @@ class QtWebKitConan(ConanFile):
             cmake.definitions["Qt5_DIR"] = os.path.join(
                 os.environ["QTDIR"], "lib", "cmake", "Qt5")
             print("Qt5 directory:" + cmake.definitions["Qt5_DIR"])
+
+        if "CMAKE_BUILD_TYPE" in os.environ:
+            cmake.build_type = os.environ["CMAKE_BUILD_TYPE"]
 
         if "CMAKEFLAGS" in os.environ:
             cmake_flags = shlex.split(os.environ["CMAKEFLAGS"])

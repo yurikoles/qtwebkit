@@ -116,6 +116,7 @@ parser.add_argument("--build", help="Execute the build step. When specified, con
 parser.add_argument("--install", help="Execute the install step. When specified, configure and build steps WILL run without changes", action="store_true")
 parser.add_argument("--profile", help="Name of conan profile provided by user. Note: compiler and profile options are mutually exclusive", type=str)
 parser.add_argument("--arch", help="32 bit or 64 bit build, leave blank for autodetect", default="default", choices=['x86', 'x64'])
+parser.add_argument("--build_type", help="Name of CMake build configuration to use", default="Release", choices=['', 'Release', 'Debug'])
 
 args = parser.parse_args()
 
@@ -154,6 +155,9 @@ if args.cmakeargs:
 
 if args.ninjaargs:
     os.environ["NINJAFLAGS"] = args.ninjaargs
+
+if args.build_type:
+    os.environ["CMAKE_BUILD_TYPE"] = args.build_type
 
 if not args.configure and not args.build:
     # If we have neither --configure nor --build, we should do both configure and build (but install only if requested)
