@@ -118,7 +118,7 @@ jobs:
       run: |
         py -m pip install -r Tools/qt/qt-downloader-requirements.txt
         QT_INSTALL_DIR="/c/Qt"
-        Tools/qt/qt-downloader windows desktop ${QT_VERSION} ${TOOLCHAIN} --output=${QT_INSTALL_DIR} --qt_modules="${QT_MODULES}"
+        py Tools/qt/qt-downloader windows desktop ${QT_VERSION} ${TOOLCHAIN} --output=${QT_INSTALL_DIR} --qt_modules="${QT_MODULES}"
         export QTDIR="${QT_INSTALL_DIR}/${QT_VERSION}/${DIR}"
         ls $QTDIR
         Tools/qt/license_writer.sh
