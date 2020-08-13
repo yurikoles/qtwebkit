@@ -125,8 +125,8 @@ class QtWebKitConan(ConanFile):
         else:
             ninja_flags = None
 
-        if "CMAKE_INSTALL_PREFIX" in cmake.definitions:
-            del cmake.definitions["CMAKE_INSTALL_PREFIX"]
+        if "CMAKE_INSTALL_PREFIX" in os.environ:
+            cmake.definitions["CMAKE_INSTALL_PREFIX"] = os.environ["CMAKE_INSTALL_PREFIX"]
 
         print(self.source_folder)
         print()
