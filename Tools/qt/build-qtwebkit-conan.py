@@ -115,7 +115,7 @@ parser.add_argument("--configure", help="Execute the configuration step. When sp
 parser.add_argument("--build", help="Execute the build step. When specified, configure won't run unless --configure is specified", action="store_true")
 parser.add_argument("--install", help="Execute the install step. When specified, configure and build steps WILL run without changes", action="store_true")
 parser.add_argument("--profile", help="Name of conan profile provided by user. Note: compiler and profile options are mutually exclusive", type=str)
-parser.add_argument("--arch", help="32 bit or 64 bit build, leave blank for autodetect", default="default", choices=['x86', 'x64'])
+parser.add_argument("--arch", help="32 bit or 64 bit build, leave blank for autodetect", default="default", choices=['x86', 'x86_64'])
 parser.add_argument("--build_type", help="Name of CMake build configuration to use", default="Release", choices=['', 'Release', 'Debug'])
 parser.add_argument("--install_prefix", help="Set installation prefix to the given path (defaults to Qt directory)", default=None)
 
