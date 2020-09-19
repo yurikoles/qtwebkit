@@ -133,7 +133,7 @@ private:
 
     size_t m_size;
     void* m_data;
-#if PLATFORM(COCOA)
+#if OS(DARWIN) && !USE(UNIX_DOMAIN_SOCKETS)
     Protection m_protection;
 #endif
 

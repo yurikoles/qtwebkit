@@ -30,7 +30,7 @@
 #include "MessageFlags.h"
 #include <stdio.h>
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 #include "ImportanceAssertion.h"
 #endif
 
@@ -102,7 +102,7 @@ bool Decoder::shouldUseFullySynchronousModeForTesting() const
     return m_messageFlags & UseFullySynchronousModeForTesting;
 }
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 void Decoder::setImportanceAssertion(std::unique_ptr<ImportanceAssertion> assertion)
 {
     m_importanceAssertion = WTFMove(assertion);

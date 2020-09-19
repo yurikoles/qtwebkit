@@ -39,14 +39,12 @@ else ()
 endif ()
 
 if (USE_MACH_PORTS)
-    list(APPEND WTF_FORWARDING_HEADERS_FILES
-        cocoa/MachSendRight.h
-    )
     list(APPEND WTF_SOURCES
         cocoa/MachSendRight.cpp
         cocoa/WorkQueueCocoa.cpp
     )
     list(APPEND WTF_PUBLIC_HEADERS
+        spi/cocoa/MachVMSPI.h
         spi/darwin/XPCSPI.h
     )
 endif()

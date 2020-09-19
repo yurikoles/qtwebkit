@@ -207,10 +207,15 @@ list(APPEND WebKit_SOURCES
 if (USE_MACH_PORTS)
     list(APPEND WebKit_INCLUDE_DIRECTORIES
         "${WEBKIT_DIR}/Platform/IPC/cocoa"
+        "${WEBKIT_DIR}/Platform/cocoa"
         "${WEBKIT_DIR}/Platform/mac"
+        "${WEBKIT_DIR}/Platform/spi/Cocoa"
+        "${WEBKIT_DIR}/Platform/spi/mac"
+
     )
     list(APPEND WebKit_SOURCES
         Platform/IPC/cocoa/ConnectionCocoa.mm
+        Platform/IPC/cocoa/MachMessage.cpp
 
         Platform/cocoa/SharedMemoryCocoa.cpp
 

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 
 #include <mach/message.h>
 
@@ -60,4 +60,4 @@ private:
 
 }
 
-#endif // PLATFORM(MAC)
+#endif // PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))

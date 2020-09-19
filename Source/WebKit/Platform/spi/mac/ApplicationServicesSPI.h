@@ -25,7 +25,7 @@
 
 #pragma once
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 
 #if USE(APPLE_INTERNAL_SDK)
 
@@ -63,4 +63,4 @@ typedef enum {
 extern AXClientType _AXGetClientForCurrentRequestUntrusted(void);
 #endif // HAVE(AX_CLIENT_TYPE)
 
-#endif // PLATFORM(MAC)
+#endif // PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))

@@ -53,13 +53,13 @@
 
 #endif
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 
 #import "ApplicationServicesSPI.h"
 
 extern "C" AXError _AXUIElementNotifyProcessSuspendStatus(AXSuspendStatus);
 
-#endif // PLATFORM(MAC)
+#endif // PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
 
 namespace IPC {
 
@@ -206,7 +206,7 @@ bool Connection::open()
         mach_port_guard(mach_task_self(), m_receivePort, reinterpret_cast<mach_port_context_t>(this), true);
 #endif
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
         mach_port_set_attributes(mach_task_self(), m_receivePort, MACH_PORT_DENAP_RECEIVER, (mach_port_info_t)0, 0);
 #endif
 
@@ -272,7 +272,9 @@ bool Connection::sendMessage(std::unique_ptr<MachMessage> message)
         return false;
 
     default:
+#if !PLATFORM(QT)
         WebKit::setCrashReportApplicationSpecificInformation((__bridge CFStringRef)[NSString stringWithFormat:@"Unhandled error code %x, message '%s::%s'", kr, message->messageReceiverName().data(), message->messageName().data()]);
+#endif
         CRASH();
     }
 }
@@ -479,8 +481,10 @@ static mach_msg_header_t* readFromMachPort(mach_port_t machPort, ReceiveBuffer& 
     }
 
     if (kr != MACH_MSG_SUCCESS) {
+#if !PLATFORM(QT)
 #if !ASSERT_DISABLED
         WebKit::setCrashReportApplicationSpecificInformation((__bridge CFStringRef)[NSString stringWithFormat:@"Unhandled error code %x from mach_msg, receive port is %x", kr, machPort]);
+#endif
 #endif
         ASSERT_NOT_REACHED();
         return nullptr;
@@ -518,7 +522,7 @@ void Connection::receiveSourceEventHandler()
     if (!decoder)
         return;
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
     decoder->setImportanceAssertion(makeUnique<ImportanceAssertion>(header));
 #endif
 
@@ -615,7 +619,7 @@ bool Connection::kill()
     
 static void AccessibilityProcessSuspendedNotification(bool suspended)
 {
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
     _AXUIElementNotifyProcessSuspendStatus(suspended ? AXSuspendStatusSuspended : AXSuspendStatusRunning);
 #elif PLATFORM(IOS_FAMILY)
     UIAccessibilityPostNotification(kAXPidStatusChangedNotification, @{ @"pid" : @(getpid()), @"suspended" : @(suspended) });

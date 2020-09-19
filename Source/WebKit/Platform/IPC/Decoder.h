@@ -58,7 +58,7 @@ public:
     ShouldDispatchWhenWaitingForSyncReply shouldDispatchMessageWhenWaitingForSyncReply() const;
     bool shouldUseFullySynchronousModeForTesting() const;
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
     void setImportanceAssertion(std::unique_ptr<ImportanceAssertion>);
 #endif
 
@@ -203,7 +203,7 @@ private:
 
     uint64_t m_destinationID;
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || (PLATFORM(QT) && USE(MACH_PORTS))
     std::unique_ptr<ImportanceAssertion> m_importanceAssertion;
 #endif
 

@@ -26,7 +26,7 @@
 #include "config.h"
 #include "MachMessage.h"
 
-#if PLATFORM(COCOA)
+#if PLATFORM(COCOA) || (PLATFORM(QT) && USE(MACH_PORTS))
 
 #include <mach/mach.h>
 
@@ -71,4 +71,4 @@ void MachMessage::leakDescriptors()
 
 }
 
-#endif // PLATFORM(COCOA)
+#endif // PLATFORM(COCOA) || (PLATFORM(QT) && USE(MACH_PORTS))
