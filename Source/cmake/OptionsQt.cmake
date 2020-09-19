@@ -385,11 +385,10 @@ if (APPLE AND CMAKE_SYSTEM_VERSION VERSION_LESS 14.0.0)
     message(FATAL_ERROR "macOS 10.10 or higher is required to build and run QtWebKit")
 endif ()
 
-# QTFIXME
-#set(ENABLE_WEBCORE OFF)
 set(ENABLE_WEBKIT_LEGACY ON)
-#set(ENABLE_WEBKIT ON)
-set(ENABLE_WEBKIT OFF)
+if (WIN32)
+    set(ENABLE_WEBKIT OFF)
+endif ()
 
 if (SHARED_CORE)
     set(WebCoreTestSupport_LIBRARY_TYPE SHARED)
