@@ -46,9 +46,7 @@
 typedef const struct __CFData* CFDataRef;
 #endif
 
-#if !PLATFORM(QT)
 OBJC_CLASS NSString;
-#endif
 
 #if OS(WINDOWS)
 typedef void *HANDLE;

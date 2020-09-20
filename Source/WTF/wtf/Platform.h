@@ -1246,6 +1246,7 @@
 
 #if PLATFORM(QT)
 #ifdef __cplusplus
+#define Q_FORWARD_DECLARE_OBJC_CLASS(classname) OBJC_CLASS classname
 #include <qglobal.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5,8,0)
 #include <QtGui/qtguiglobal.h>
