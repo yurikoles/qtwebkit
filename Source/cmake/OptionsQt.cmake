@@ -456,6 +456,7 @@ endif ()
 
 if (APPLE)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+    find_library(FOUNDATION_LIBRARY Foundation)
     if (QT_STATIC_BUILD)
         find_library(CARBON_LIBRARY Carbon)
         find_library(COCOA_LIBRARY Cocoa)

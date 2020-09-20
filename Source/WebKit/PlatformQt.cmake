@@ -218,6 +218,7 @@ if (USE_MACH_PORTS)
     )
     list(APPEND WebKit_LIBRARIES
         objc
+        ${FOUNDATION_LIBRARY}
     )
 elseif (WIN32)
     list(APPEND WebKit_SOURCES
