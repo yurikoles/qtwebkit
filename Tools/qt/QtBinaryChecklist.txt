@@ -1,30 +1,35 @@
-include/QtWebKit/{{version}}/QtWebKit/private/qhttpheader_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquicknetworkreply_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquicknetworkrequest_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquickurlschemedelegate_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquickwebpage_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquickwebpage_p_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquickwebview_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qquickwebview_p_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qtwebsecurityorigin_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebchannelwebkittransport_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebdatabase_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebdownloaditem_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebdownloaditem_p_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebelement_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebhistory_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebiconimageprovider_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebkittest_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebloadrequest_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationhistory_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationhistory_p_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationrequest_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebpermissionrequest_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebplugindatabase_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebpreferences_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebpreferences_p_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebscriptworld_p.h
-include/QtWebKit/{{version}}/QtWebKit/private/qwebsecurityorigin_p.h
+{% if wk2 %}
+    include/QtWebKit/{{version}}/QtWebKit/private/qhttpheader_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquicknetworkreply_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquicknetworkrequest_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquickurlschemedelegate_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquickwebpage_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquickwebpage_p_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquickwebview_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qquickwebview_p_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qtwebsecurityorigin_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebchannelwebkittransport_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebdatabase_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebdownloaditem_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebdownloaditem_p_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebelement_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebhistory_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebiconimageprovider_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebkittest_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebloadrequest_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationhistory_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationhistory_p_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebnavigationrequest_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebpermissionrequest_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebplugindatabase_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebpreferences_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebpreferences_p_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebscriptworld_p.h
+    include/QtWebKit/{{version}}/QtWebKit/private/qwebsecurityorigin_p.h
+    qml/QtWebKit/plugins.qmltypes
+    qml/QtWebKit/qmldir
+    qml/QtWebKit/experimental/qmldir
+{% endif %}
 include/QtWebKit/QWebDatabase
 include/QtWebKit/QWebElement
 include/QtWebKit/QWebElementCollection
@@ -87,9 +92,6 @@ mkspecs/modules/qt_lib_webkit.pri
 mkspecs/modules/qt_lib_webkit_private.pri
 mkspecs/modules/qt_lib_webkitwidgets.pri
 mkspecs/modules/qt_lib_webkitwidgets_private.pri
-qml/QtWebKit/plugins.qmltypes
-qml/QtWebKit/qmldir
-qml/QtWebKit/experimental/qmldir
 
 {% if release %}
     lib/cmake/Qt5WebKit/WebKitTargets-release.cmake
@@ -189,6 +191,11 @@ qml/QtWebKit/experimental/qmldir
     bin/icudt{{icu_version}}.dll
     bin/icuin{{icu_version}}.dll
     bin/icuuc{{icu_version}}.dll
+    {% if wk2 %}
+        bin/QtWebNetworkProcess.exe
+        bin/QtWebProcess.exe
+        bin/QtWebStorageProcess.exe
+    {% endif %}
 
     {% if toolchain=="msvc" %}
         bin/libxml2.dll
@@ -246,11 +253,13 @@ qml/QtWebKit/experimental/qmldir
 
 
 {% if os=="linux" or os=="macos" %}
-    libexec/QtWebNetworkProcess
-    libexec/QtWebProcess
-    libexec/QtWebStorageProcess
-    qml/QtWebKit/experimental/libqmlwebkitexperimentalplugin.so
-    qml/QtWebKit/libqmlwebkitplugin.so
+    {% if wk2 %}
+        libexec/QtWebNetworkProcess
+        libexec/QtWebProcess
+        libexec/QtWebStorageProcess
+        qml/QtWebKit/experimental/libqmlwebkitexperimentalplugin.so
+        qml/QtWebKit/libqmlwebkitplugin.so
+    {% endif %}
 {% endif %}
 
 {% if os=="linux" or os=="windows" %}
