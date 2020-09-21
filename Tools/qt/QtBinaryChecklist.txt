@@ -158,6 +158,28 @@ mkspecs/modules/qt_lib_webkitwidgets_private.pri
     lib/QtWebKit.framework/Versions/{{major}}/Headers/qwebpluginfactory.h
     lib/QtWebKit.framework/Versions/{{major}}/Headers/qwebsecurityorigin.h
     lib/QtWebKit.framework/Versions/{{major}}/Headers/qwebsettings.h
+    {% if wk2 %}
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquicknetworkreply_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquicknetworkrequest_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquickurlschemedelegate_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquickwebpage_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquickwebpage_p_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquickwebview_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qquickwebview_p_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qtwebsecurityorigin_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebchannelwebkittransport_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebdownloaditem_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebdownloaditem_p_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebiconimageprovider_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebkittest_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebloadrequest_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebnavigationhistory_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebnavigationhistory_p_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebnavigationrequest_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebpermissionrequest_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebpreferences_p.h
+        lib/QtWebKit.framework/Versions/{{major}}/Headers/{{version}}/QtWebKit/private/qwebpreferences_p_p.h
+    {% endif %}
     lib/QtWebKit.framework/Versions/{{major}}/QtWebKit
     lib/QtWebKit.framework/Versions/{{major}}/Resources/Info.plist
     lib/QtWebKit.framework/Versions/Current
