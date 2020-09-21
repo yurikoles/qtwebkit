@@ -204,6 +204,19 @@ list(APPEND WebKit_SOURCES
     WebProcess/qt/WebProcessQt.cpp
 )
 
+if (COMPILER_IS_GCC_OR_CLANG)
+    set_source_files_properties(
+        UIProcess/API/qt/qquicknetworkreply.cpp
+        UIProcess/API/qt/qquicknetworkrequest.cpp
+        UIProcess/API/qt/qquickurlschemedelegate.cpp
+        UIProcess/API/qt/qquickwebpage.cpp
+        UIProcess/API/qt/qquickwebview.cpp
+        UIProcess/API/qt/qwebiconimageprovider.cpp
+    PROPERTIES
+        COMPILE_FLAGS -frtti
+    )
+endif ()
+
 if (USE_MACH_PORTS)
     list(APPEND WebKit_INCLUDE_DIRECTORIES
         "${WEBKIT_DIR}/Platform/IPC/cocoa"

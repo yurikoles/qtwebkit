@@ -310,6 +310,16 @@ install(
 )
 
 file(GLOB WebKitLegacy_PRIVATE_HEADERS qt/Api/*_p.h)
+
+# This is needed to install WK2 private headers into macOS bundle
+if (ENABLE_WEBKIT)
+    file(GLOB WebKit_PRIVATE_HEADERS "${WEBKIT_DIR}/UIProcess/API/qt/*_p.h")
+    foreach (_src ${WebKit_PRIVATE_HEADERS})
+        set_property(SOURCE ${_src} PROPERTY SKIP_AUTOMOC ON)
+    endforeach ()
+    list(APPEND WebKitLegacy_PRIVATE_HEADERS ${WebKit_PRIVATE_HEADERS})
+endif ()
+
 install(
     FILES
         ${WebKitLegacy_PRIVATE_HEADERS}

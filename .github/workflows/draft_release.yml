@@ -8,7 +8,7 @@ on:
 env:
   # Cannot put build number here because build number is not yet known when final commit has to be done
   QTWEBKIT_BUILD_NUMBER: ${{ secrets.QTWEBKIT_BUILD_NUMBER }}
-  QT_VERSION: 5.14.1
+  QT_VERSION: 5.15.1
   QTWEBKIT_BRANCH: 5.212
   QTWEBKIT_DOWNLOAD_ROOT: "https://download.qt.io/snapshots/ci/qtwebkit"
   QTWEBKIT_SNAPSHOTS_REPO: "git://code.qt.io/qt/qtwebkit.git"
