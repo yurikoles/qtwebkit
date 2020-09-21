@@ -11,5 +11,5 @@ endif ()
 
 if (ENABLE_WEBKIT)
     add_subdirectory(MiniBrowser/qt)
-    add_subdirectory(WebKitTestRunner)
+#    add_subdirectory(WebKitTestRunner)
 endif ()
