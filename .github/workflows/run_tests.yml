@@ -66,3 +66,29 @@ jobs:
                cat /proc/sys/kernel/core_pattern
                find /home/runner/work/qtwebkit/qtwebkit -type f -name 'core*'
         continue-on-error: true
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: slapinid/qbat2-deps:latest
+      options: --ulimit core=-1
+    steps:
+      - name: download-qtwebkit
+        uses: actions/download-artifact@v2
+      - name: run-tests
+        run: |
+              unzip release.zip
+              ls -l . /
+              ulimit -c
+              cat /proc/sys/kernel/core_pattern
+              /usr/bin/env WEBKIT_CORE_DUMPS_DIRECTORY=/tmp /bin/bash /run-tests.sh
+              /usr/bin/env WEBKIT_OUTPUTDIR=WebKitBuild-Docker python Tools/BuildSlaveSupport/test-result-archive --platform qt --release archive
+              tar zcf core-archive.tar.gz /tmp/core*
+      - uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: layout-test-results.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: test-results-coredump
+          path: core-archive.tar.gz
