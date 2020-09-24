@@ -83,28 +83,25 @@ jobs:
         uses: actions/checkout@v2
         with:
             fetch-depth: 1
-#      - name: prepare
-#        id: prepare
-#        run: |
-#               ln -sf WebKitBuild-Docker WebKitBuild
-#               sudo chown -R 1000:1000 /home/runner/work/qtwebkit/qtwebkit
-#               echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
-#               ulimit -c unlimited
-      - name: prebuild-checks
-        id: prebuildcheck
+      - name: download-qtwebkit
+#        uses: actions/download-artifact@v2
         run: |
+          curl https://0x0.st/ilnc.zip -o release.zip
+          unzip release.zip
+          pwd
           ls
-          id
-          touch a
+      - name: prepare
+        id: prepare
+        run: |
+               ln -sf WebKitBuild-Docker WebKitBuild
+               sudo chown -R 1000:1000 /home/runner/work/qtwebkit/qtwebkit
+               echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
+               ulimit -c unlimited
       - uses: docker://slapinid/qbat2-deps:latest
         with:
-          args: /bin/ls
-      - uses: docker://slapinid/qbat2-deps:latest
-        with:
-          args: curl https://0x0.st/ilnc.zip -o release.zip
-#      - name: download-qtwebkit
-##        uses: actions/download-artifact@v2
-#        run: curl https://0x0.st/ilnc.zip -o release.zip
+          args: ls
+
+      
 #      - name: run-tests
 #        run: |
 #              unzip release.zip
