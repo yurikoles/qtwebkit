@@ -4,37 +4,37 @@ on:
     branches:
       - docker_build
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-        with:
-            fetch-depth: 1
-      - name: prepare
-        id: prepare
-        run: |
-               pwd
-               ln -sf WebKitBuild-Docker WebKitBuild
-               sudo chown -R 1000:1000 /home/runner/work/qtwebkit/qtwebkit
-               echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
-               ulimit -c unlimited
-      - uses: docker://slapinid/qbat2-deps:latest
-        with:
-          args: pwd
-      - name: prebuild-prepare
-        id: prebuildprep
-        uses: docker://slapinid/qbat2-deps:latest
-        with:
-          args: /bin/tar xvf /home/build/qtwebkit-libs.tar.bz2
-      - name: prebuild-checks
-        id: prebuildcheck
-        run: |
-               pwd
-               cat /proc/sys/kernel/core_pattern
-               ls -l . WebKitBuild-Docker
-               find ./WebKitBuild-Docker -type f -name 'qmake*'
-               ulimit -c unlimited
+#  build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: checkout
+#        uses: actions/checkout@v2
+#        with:
+#            fetch-depth: 1
+#      - name: prepare
+#        id: prepare
+#        run: |
+#               pwd
+#               ln -sf WebKitBuild-Docker WebKitBuild
+#               sudo chown -R 1000:1000 /home/runner/work/qtwebkit/qtwebkit
+#               echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
+#               ulimit -c unlimited
+#      - uses: docker://slapinid/qbat2-deps:latest
+#        with:
+#          args: pwd
+#      - name: prebuild-prepare
+#        id: prebuildprep
+#        uses: docker://slapinid/qbat2-deps:latest
+#        with:
+#          args: /bin/tar xvf /home/build/qtwebkit-libs.tar.bz2
+#      - name: prebuild-checks
+#        id: prebuildcheck
+#        run: |
+#               pwd
+#               cat /proc/sys/kernel/core_pattern
+#               ls -l . WebKitBuild-Docker
+#               find ./WebKitBuild-Docker -type f -name 'qmake*'
+#               ulimit -c unlimited
 #      - name: building
 #        id: build
 #        uses: docker://slapinid/qbat2-deps:latest
@@ -86,6 +86,9 @@ jobs:
       - name: download-qtwebkit
 #        uses: actions/download-artifact@v2
         run: |
+          ls
+          mkdir -p WebKitBuild/Release
+          cd WebKitBuild/Release
           curl https://0x0.st/ilnc.zip -o release.zip
           unzip release.zip
           pwd
@@ -99,14 +102,17 @@ jobs:
                ulimit -c unlimited
       - uses: docker://slapinid/qbat2-deps:latest
         with:
-          args: ls
+          args: ls WebKitBuild/Release
+      - name: run-tests
+        uses: docker://slapinid/qbat2-deps:latest
+        with:
+          args: /usr/bin/env WEBKIT_CORE_DUMPS_DIRECTORY=/tmp /bin/bash /run-tests.sh
 
-      
 #      - name: run-tests
 #        run: |
-#              unzip release.zip
 #              ls -l . /
 #              ulimit -c
+#              echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
 #              cat /proc/sys/kernel/core_pattern
 #              /usr/bin/env WEBKIT_CORE_DUMPS_DIRECTORY=/tmp /bin/bash /run-tests.sh
 #              /usr/bin/env WEBKIT_OUTPUTDIR=WebKitBuild-Docker python Tools/BuildSlaveSupport/test-result-archive --platform qt --release archive
