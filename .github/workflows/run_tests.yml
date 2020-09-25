@@ -83,12 +83,13 @@ jobs:
         uses: actions/checkout@v2
         with:
             fetch-depth: 1
+      - run: ln -sf WebKitBuild-Docker WebKitBuild
       - name: download-qtwebkit
 #        uses: actions/download-artifact@v2
         run: |
           ls
-          mkdir -p WebKitBuild/Release
-          cd WebKitBuild/Release
+          mkdir -p WebKitBuild-Docker/Release
+          cd WebKitBuild-Docker/Release
           curl https://0x0.st/ilnc.zip -o release.zip
           unzip release.zip
           pwd
@@ -96,13 +97,17 @@ jobs:
       - name: prepare
         id: prepare
         run: |
-               ln -sf WebKitBuild-Docker WebKitBuild
                sudo chown -R 1000:1000 /home/runner/work/qtwebkit/qtwebkit
                echo '/tmp/core-pid_%p-_-process_%E' | sudo tee /proc/sys/kernel/core_pattern
                ulimit -c unlimited
+      - name: prebuild-prepare
+        id: prebuildprep
+        uses: docker://slapinid/qbat2-deps:latest
+        with:
+          args: /bin/tar xvf /home/build/qtwebkit-libs.tar.bz2
       - uses: docker://slapinid/qbat2-deps:latest
         with:
-          args: ls WebKitBuild/Release
+          args: ls WebKitBuild
       - name: run-tests
         uses: docker://slapinid/qbat2-deps:latest
         with:
