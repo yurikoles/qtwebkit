@@ -111,7 +111,7 @@ jobs:
       - name: run-tests
         uses: docker://slapinid/qbat2-deps:latest
         with:
-          args: /usr/bin/env WEBKIT_CORE_DUMPS_DIRECTORY=/tmp /bin/bash /run-tests.sh
+          args: /usr/bin/env WEBKIT_CORE_DUMPS_DIRECTORY=/tmp /bin/bash -x /github/workspace/Tools/qt/run-tests.sh
 
 #      - name: run-tests
 #        run: |
