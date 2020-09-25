@@ -205,7 +205,7 @@ class QtPort(Port):
         if not 'WEBKIT_TESTFONTS' in os.environ:
             _log.error('\nThe WEBKIT_TESTFONTS environment variable is not defined or not set properly.')
             _log.error('You must set it before running the tests.')
-            _log.error('Use git to grab the actual fonts from https://github.com/carewolf/qtwebkit-testfonts.git')
+            _log.error('Use git to grab the actual fonts from https://github.com/qtwebkit/test-fonts.git')
             return False
         return result
 
