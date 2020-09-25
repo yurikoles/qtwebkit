@@ -84,6 +84,15 @@ jobs:
         with:
             fetch-depth: 1
       - run: ln -sf WebKitBuild-Docker WebKitBuild
+      - run: |
+          mkdir tmp
+          chmod 777 tmp
+      - uses: docker://slapinid/qbat2-deps:latest
+        with:
+          args: cp /home/build/qtwebkit-libs.tar.bz2 /github/workspace/tmp/
+      - run: |
+          cd tmp
+          /bin/bash -c "time -p /bin/tar xf qtwebkit-libs.tar.bz2"
       - name: download-qtwebkit
 #        uses: actions/download-artifact@v2
         run: |
@@ -104,10 +113,7 @@ jobs:
         id: prebuildprep
         uses: docker://slapinid/qbat2-deps:latest
         with:
-          args: /bin/tar xvf /home/build/qtwebkit-libs.tar.bz2
-      - uses: docker://slapinid/qbat2-deps:latest
-        with:
-          args: ls WebKitBuild
+          args: /bin/bash -c "time -p /bin/tar xf /home/build/qtwebkit-libs.tar.bz2"
       - name: run-tests
         uses: docker://slapinid/qbat2-deps:latest
         with:

@@ -178,8 +178,10 @@ class QtPort(Port):
         self._copy_value_from_environ_if_set(clean_env, 'QT_QPA_PLATFORM_PLUGIN_PATH')
         self._copy_value_from_environ_if_set(clean_env, 'QT_WEBKIT_DISABLE_UIPROCESS_DUMPPIXELS')
         if self._driver_class() == XvfbDriver and self._should_use_jhbuild():
+            _log.warning("self._jhbuild_wrapper=" + " ".join(self._jhbuild_wrapper))
             llvmpipe_libgl_path = self.host.executive.run_command(self._jhbuild_wrapper + ['printenv', 'LLVMPIPE_LIBGL_PATH'],
                                                                   error_handler=self.host.executive.ignore_error).strip()
+            _log.warning("llvmpipe_libgl_path=" + llvmpipe_libgl_path)
             if os.path.exists(os.path.join(llvmpipe_libgl_path, "libGL.so")):
                 # Force the Gallium llvmpipe software rasterizer
                 clean_env['LD_LIBRARY_PATH'] = llvmpipe_libgl_path
