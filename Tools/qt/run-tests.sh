@@ -8,5 +8,5 @@ ln -sf $(pwd) /var/tmp/qtwebkit-build
 Tools/Scripts/run-webkit-tests --qt -1 \
         --no-build --clobber-old-results \
         --no-show-results --no-new-test-results \
-        --child-processes=2 --results-directory=$(pwd)/layout-test-results
+        --child-processes=2 --results-directory=$(pwd)/layout-test-results fast
 tar zcf layout-tests.tar.gz $(pwd)/layout-test-results
