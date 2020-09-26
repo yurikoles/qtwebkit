@@ -21,3 +21,11 @@ use webkitdirs;
 
 my $scriptsDir = relativeScriptsDir();
 system("perl", "$scriptsDir/update-webkit-libs-jhbuild", "--qt", @ARGV) == 0 or die $!;
+
+my $jhbuildSourceDir = baseProductDir() . "/DependenciesQT/Source";
+my $jhbuildRootDir = baseProductDir() . "/DependenciesQT/Root";
+
+print "Copying Qt .debug files to $jhbuildRootDir/lib\n";
+system("find $jhbuildSourceDir/qt* -name '*.debug' -exec cp {} $jhbuildRootDir/lib \\;");
+print "Optimizing Qt .debug files\n";
+system("find $jhbuildRootDir/lib -name '*.debug' -exec dwz {} \\;");
