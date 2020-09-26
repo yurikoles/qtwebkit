@@ -29,3 +29,8 @@ print "Copying Qt .debug files to $jhbuildRootDir/lib\n";
 system("find $jhbuildSourceDir/qt* -name '*.debug' -exec cp {} $jhbuildRootDir/lib \\;");
 print "Optimizing Qt .debug files\n";
 system("find $jhbuildRootDir/lib -name '*.debug' -exec dwz {} \\;");
+
+my $mesaBuildDir = baseProductDir() . "/DependenciesQT/Build/Mesa/lib/gallium";
+print "Copying llvmpipe libGL.so to $jhbuildRootDir/lib/Mesa/gallium\n";
+mkdir "$jhbuildRootDir/lib/Mesa";
+system("cp -ax $mesaBuildDir $jhbuildRootDir/lib/Mesa") == 0 or die $!;
