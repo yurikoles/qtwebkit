@@ -22,13 +22,14 @@ use webkitdirs;
 my $scriptsDir = relativeScriptsDir();
 system("perl", "$scriptsDir/update-webkit-libs-jhbuild", "--qt", @ARGV) == 0 or die $!;
 
-my $jhbuildSourceDir = baseProductDir() . "/DependenciesQT/Source";
 my $jhbuildRootDir = baseProductDir() . "/DependenciesQT/Root";
 
-print "Copying Qt .debug files to $jhbuildRootDir/lib\n";
-system("find $jhbuildSourceDir/qt* -name '*.debug' -exec cp {} $jhbuildRootDir/lib \\;");
-print "Optimizing Qt .debug files\n";
-system("find $jhbuildRootDir/lib -name '*.debug' -exec dwz {} \\;");
+if (-f "$jhbuildRootDir/lib/qt_common.debug") {
+    print "Skipping optimization of Qt debug info - remove $jhbuildRootDir/lib/qt_common.debug if Qt was reinstalled\n";
+} else {
+    print "Optimizing Qt debug info\n";
+    system("dwz -m $jhbuildRootDir/lib/qt_common.debug -M qt_common.debug \$(find $jhbuildRootDir/lib -name 'libQt5*.so*' -type f)") == 0 or die $!;
+}
 
 my $mesaBuildDir = baseProductDir() . "/DependenciesQT/Build/Mesa/lib/gallium";
 print "Copying llvmpipe libGL.so to $jhbuildRootDir/lib/Mesa/gallium\n";
