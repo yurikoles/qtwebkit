@@ -25,7 +25,6 @@
  -confirm-license
 
  -force-debug-info
- -separate-debug-info
 
  -icu
  -openssl
