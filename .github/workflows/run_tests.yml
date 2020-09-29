@@ -1,0 +1,85 @@
+name: QtWebKit Build + Layout Tests
+
+on:
+  push:
+    branches:
+      - build_dependencies_docker
+
+env:
+  CCACHE_MAXSIZE: 30G
+
+jobs:
+  build_and_tests:
+    env:
+      NUMBER_OF_PROCESSORS: 5
+      RWT_THREADS: 4
+#      RWT_ARGS: fast
+    runs-on: xeon4c8t
+    container:
+      image: ghcr.io/qtwebkit/qbat2-base:latest
+      volumes:
+        - /home/annulen/gha-ccache:/github/home/.ccache
+        - /home/annulen/gha-jhbuild-cache:/github/home/.cache/jhbuild
+      options: --tmpfs /tmp:exec --read-only --user 1001:1001
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        clean: false
+
+    - name: Checkout fonts
+      uses: actions/checkout@v2
+      with:
+        repository: qtwebkit/test-fonts
+        path: test-fonts
+        clean: false
+
+    - name: Run update-qtwebkit-libs
+      run: |
+        Tools/Scripts/update-qtwebkit-libs
+
+    - name: ccache configuration
+      run: |
+        ccache -p
+        ccache -z
+
+    - name: Run webkit-build
+      run: |
+        CC=/usr/lib/ccache/clang \
+        CXX=/usr/lib/ccache/clang++ \
+        Tools/Scripts/build-webkit --qt
+
+        #python Tools/BuildSlaveSupport/built-product-archive --platform qt --release archive
+
+    - name: ccache stats
+      run: |
+        ccache -s
+
+    - name: Run tests
+      run: |
+        ulimit -c 0  # Suppress core dumps
+
+        export WEBKIT_TESTFONTS=$(pwd)/test-fonts USER="#$(id -u)"
+        Tools/Scripts/run-webkit-tests --no-build \
+          --qt -1 --no-new-test-results --child-processes=$RWT_THREADS -p \
+          --no-show-results  $RWT_ARGS
+      continue-on-error: true
+
+    - name: Compress results
+      run: |
+        tar czf layout-test-results.tar.gz WebKitBuild/Release/layout-test-results
+        rm -rf WebKitBuild/Release/layout-test-results
+
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: release-archive
+#        path: WebKitBuild/release.zip
+    - uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: layout-test-results.tar.gz
+
+    - name: Clean up workspace
+      run: |
+        rm -f layout-test-results.tar.gz
