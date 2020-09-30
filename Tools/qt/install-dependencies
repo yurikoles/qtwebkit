@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # This script needs to be run with root rights.
 if [ $UID -ne 0 ]; then
@@ -25,11 +25,22 @@ function checkInstaller {
     printNotSupportedMessageAndExit
 }
 
+# If the package $1 is available, prints it. Otherwise prints $2.
+# Useful for handling when a package is renamed on new versions of Debian/Ubuntu.
+function aptIfElse {
+    if apt-cache show $1 &>/dev/null; then
+        echo $1
+    else
+        echo $2
+    fi
+}
+
 function installDependenciesWithApt {
     # These are dependencies necessary for building Qt and QtWebKit.
     packages=" \
         g++ \
         binutils \
+        bubblewrap \
         libc6-dev \
         make \
         cmake \
@@ -42,15 +53,20 @@ function installDependenciesWithApt {
         python \
         ruby \
         libdbus-1-dev \
-        libenchant-dev \
+        libevent-dev \
+        libfile-copy-recursive-perl \
+        $(aptIfElse libgcrypt20-dev libgcrypt11-dev) \
         libgl1-mesa-dev \
         libglu1-mesa-dev \
         libhyphen-dev \
         libjpeg-dev \
-        libpng12-dev \
+        libopenjp2-7-dev \
+        libpng-dev \
+        libseccomp-dev \
         libsqlite3-dev \
-        libssl-dev \
+        libtasn1-6-dev \
         libwebp-dev \
+        libwoff-dev \
         libx11-dev \
         libx11-xcb-dev
         libxcb-glx0-dev
@@ -65,9 +81,11 @@ function installDependenciesWithApt {
         libxcb-shape0-dev \
         libxcb-randr0-dev \
         libxcb-render-util0-dev \
+        libxcomposite-dev \
         libxext-dev \
         libxfixes-dev \
         libxrender-dev \
+        libxslt1-dev \
         zlib1g-dev
         "
 
@@ -75,29 +93,54 @@ function installDependenciesWithApt {
     packages="$packages \
         apache2 \
         curl \
-        libapache2-mod-php5 \
+        fonts-liberation \
+        hyphen-en-us \
+        libapache2-mod-php \
+        libcgi-pm-perl \
+        libhttp-date-perl \
+        php-json \
+        python-psutil \
+        python-yaml \
+        ruby-json \
+        ruby-highline \
         xvfb"
 
-    # These are dependencies necessary for building GLib and GStreamer.
+    # These are dependencies necessary for update-qtwebkit-libs and jhbuild.
     packages="$packages \
-        git-core \
-        gettext \
-        libtool-bin \
         automake \
+        autopoint \
+        dwz \
+        git \
+        gettext \
+        patch \
+        libtool-bin \
         libfaad-dev \
+        libfdk-aac-dev \
         libmpg123-dev \
         libopus-dev \
         libtheora-dev \
         libvorbis-dev \
+        libxml-libxml-perl \
         "
 
     # These are dependencies necessary for building GLib and GStreamer.
     packages="$packages \
-        libjson-glib-dev \
         libpulse-dev \
         "
 
-    apt-get install $packages
+    if [ -n $BUILDING_DOCKER ]; then
+        # Additional stuff for Docker image
+        packages="$packages \
+            clang \
+            ccache \
+            gdb \
+            strace \
+            vim-tiny \
+            zstd \
+            "
+    fi
+
+    apt-get install -y --no-install-recommends $packages
 }
 
 checkInstaller
