@@ -12,7 +12,7 @@ jobs:
   build_and_tests:
     env:
       NUMBER_OF_PROCESSORS: 5
-      RWT_THREADS: 4
+      TEST_THREADS: 4
 #      RWT_ARGS: fast
     runs-on: xeon4c8t
     container:
@@ -56,30 +56,51 @@ jobs:
       run: |
         ccache -s
 
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: release-archive
+#        path: WebKitBuild/release.zip
+
     - name: Run tests
       run: |
         ulimit -c 0  # Suppress core dumps
 
         export WEBKIT_TESTFONTS=$(pwd)/test-fonts USER="#$(id -u)"
         Tools/Scripts/run-webkit-tests --no-build \
-          --qt -1 --no-new-test-results --child-processes=$RWT_THREADS -p \
+          --qt -1 --no-new-test-results --child-processes=$TEST_THREADS -p \
           --no-show-results  $RWT_ARGS
       continue-on-error: true
 
-    - name: Compress results
+    - name: Compress RWT results
       run: |
-        tar czf layout-test-results.tar.gz WebKitBuild/Release/layout-test-results
+        tar cf layout-test-results.tar WebKitBuild/Release/layout-test-results
+        zstd -12 --rm layout-test-results.tar
         rm -rf WebKitBuild/Release/layout-test-results
 
-#    - uses: actions/upload-artifact@v2
-#      with:
-#        name: release-archive
-#        path: WebKitBuild/release.zip
-    - uses: actions/upload-artifact@v2
+    - name: Upload RWT results
+      uses: actions/upload-artifact@v2
       with:
-        name: test-results
-        path: layout-test-results.tar.gz
+        path: layout-test-results.tar.zst
+        if-no-files-found: error
+
+    - name: Run JS tests
+      run: |
+        Tools/Scripts/run-javascriptcore-tests --qt --root=WebKitBuild/Release --no-build \
+            --make-runner --child-processes=$TEST_THREADS
+
+    - name: Compress JS tests results
+      run: |
+        tar cf jsc-stress-results.tar WebKitBuild/Release/bin/jsc-stress-results
+        zstd -12 --rm jsc-stress-results.tar
+        rm -rf WebKitBuild/Release/bin/jsc-stress-results
+
+    - name: Upload JS tests results
+      uses: actions/upload-artifact@v2
+      with:
+        path: jsc-stress-results.tar.zst
+        if-no-files-found: error
 
     - name: Clean up workspace
+      if: always()
       run: |
-        rm -f layout-test-results.tar.gz
+        rm -f layout-test-results.tar.zst jsc-stress-results.tar.zst
