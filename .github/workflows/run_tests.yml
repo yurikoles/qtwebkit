@@ -22,13 +22,22 @@ jobs:
       NUMBER_OF_PROCESSORS: 5   # For jhbuild and build-webkit
       TEST_THREADS: 4           # For test runners
 #      RWT_ARGS: fast
+
+    name: ${{ matrix.config.name }}
     runs-on: xeon4c8t
+
     container:
       image: ghcr.io/qtwebkit/qbat2-base:latest
       volumes:
         - /home/annulen/gha-ccache:/github/home/.ccache
         - /home/annulen/gha-jhbuild-cache:/github/home/.cache/jhbuild
       options: --tmpfs /tmp:exec --read-only --user 1001:1001
+
+    strategy:
+      matrix:
+        config:
+          - { name: Release, flag: '--release' }
+          - { name: Debug,   flag: '--debug' }
 
     steps:
     - name: Checkout
@@ -56,7 +65,7 @@ jobs:
       run: |
         CC=/usr/lib/ccache/clang \
         CXX=/usr/lib/ccache/clang++ \
-        Tools/Scripts/build-webkit --qt
+        Tools/Scripts/build-webkit --qt ${{ matrix.config.flag }}
 
         #python Tools/BuildSlaveSupport/built-product-archive --platform qt --release archive
 
@@ -74,41 +83,41 @@ jobs:
         ulimit -c 0  # Suppress core dumps
 
         export WEBKIT_TESTFONTS=$(pwd)/test-fonts USER="#$(id -u)"
-        Tools/Scripts/run-webkit-tests --no-build \
+        Tools/Scripts/run-webkit-tests --no-build ${{ matrix.config.flag }} \
           --qt -1 --no-new-test-results --child-processes=$TEST_THREADS -p \
           --no-show-results  $RWT_ARGS
       continue-on-error: true
 
     - name: Compress RWT results
       run: |
-        tar cf layout-test-results.tar WebKitBuild/Release/layout-test-results
-        zstd -12 --rm layout-test-results.tar
-        rm -rf WebKitBuild/Release/layout-test-results
+        tar cf layout-test-results-${{ matrix.config.name }}.tar WebKitBuild/${{ matrix.config.name }}/layout-test-results
+        zstd -12 --rm layout-test-results-${{ matrix.config.name }}.tar
+        rm -rf WebKitBuild/${{ matrix.config.name }}/layout-test-results
 
     - name: Upload RWT results
       uses: actions/upload-artifact@v2
       with:
-        path: layout-test-results.tar.zst
+        path: layout-test-results-${{ matrix.config.name }}.tar.zst
         if-no-files-found: error
 
     - name: Run JS tests
       run: |
-        Tools/Scripts/run-javascriptcore-tests --qt --root=WebKitBuild/Release --no-build \
+        Tools/Scripts/run-javascriptcore-tests --qt --root=WebKitBuild/${{ matrix.config.name }} --no-build \
             --make-runner --child-processes=$TEST_THREADS
 
     - name: Compress JS tests results
       run: |
-        tar cf jsc-stress-results.tar WebKitBuild/Release/bin/jsc-stress-results
-        zstd -12 --rm jsc-stress-results.tar
-        rm -rf WebKitBuild/Release/bin/jsc-stress-results
+        tar cf jsc-stress-results-${{ matrix.config.name }}.tar WebKitBuild/${{ matrix.config.name }}/bin/jsc-stress-results
+        zstd -12 --rm jsc-stress-results-${{ matrix.config.name }}.tar
+        rm -rf WebKitBuild/${{ matrix.config.name }}/bin/jsc-stress-results
 
     - name: Upload JS tests results
       uses: actions/upload-artifact@v2
       with:
-        path: jsc-stress-results.tar.zst
+        path: jsc-stress-results-${{ matrix.config.name }}.tar.zst
         if-no-files-found: error
 
     - name: Clean up workspace
       if: always()
       run: |
-        rm -f layout-test-results.tar.zst jsc-stress-results.tar.zst
+        rm -f layout-test-results-${{ matrix.config.name }}.tar.zst jsc-stress-results-${{ matrix.config.name }}.tar.zst
