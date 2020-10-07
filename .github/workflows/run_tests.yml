@@ -94,8 +94,9 @@ jobs:
 
     - name: Run JS tests
       run: |
-        Tools/Scripts/run-javascriptcore-tests --qt --root=WebKitBuild/${{ matrix.config.name }} --no-build \
+        Tools/Scripts/run-javascriptcore-tests --qt ${{ matrix.config.flag }} --no-build \
             --make-runner --child-processes=$TEST_THREADS
+      continue-on-error: true
 
     - name: Compress JS tests results
       run: |
