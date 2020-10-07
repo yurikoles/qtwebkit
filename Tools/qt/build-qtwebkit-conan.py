@@ -46,8 +46,8 @@ class ConanProfile:
     def create(self):
         run_command("conan profile new {0} --detect --force".format(self.name))
 
-    def get_arch(self):
-        return subprocess.check_output("conan profile get settings.arch_build {0}".format(self.name), shell=True).rstrip().decode('ascii')
+    def get(self, setting):
+        return subprocess.check_output(f"conan profile get settings.{setting} {self.name}", shell=True).rstrip().decode('ascii')
 
     def update(self, setting, value):
         run_command("conan profile update settings.{0}={1} {2}".format(setting, value, self.name))
@@ -58,12 +58,17 @@ def set_compiler_environment(cc, cxx):
     os.environ["CXX"] = cxx
 
 
-def create_profile(compiler, arch):
+def get_cc_cxx(compiler):
     compiler_preset = {
         "msvc": ["cl", "cl"],
         "clang": ["clang", "clang++"],
         "gcc": ["gcc", "g++"]
     }
+
+    return compiler_preset[compiler]
+
+
+def create_profile(compiler, arch):
     if not compiler:
         if platform.system() == "Windows":
             compiler = "msvc"
@@ -72,10 +77,11 @@ def create_profile(compiler, arch):
         elif platform.system() == "Linux":
             compiler = "gcc"
 
-    if not compiler in compiler_preset:
-        sys.exit("Error: Unknown Compiler " + compiler + " specified")
+    try:
+        cc, cxx = get_cc_cxx(compiler)
+    except KeyError:
+        sys.exit(f"Error: Unsupported compiler '{compiler}' specified")
 
-    cc, cxx = compiler_preset[compiler]
     profile = ConanProfile('qtwebkit_{0}_{1}'.format(compiler, arch))  # e.g. qtwebkit_msvc_x86
 
     if compiler == "msvc":
@@ -86,7 +92,7 @@ def create_profile(compiler, arch):
         profile.create()
 
     if arch == 'default':
-        arch = profile.get_arch()
+        arch = profile.get('arch_build')
 
     profile.update('arch', arch)
     profile.update('arch_build', arch)
@@ -99,6 +105,20 @@ def create_profile(compiler, arch):
             profile.update('compiler.exception', 'seh')
 
     return profile.name
+
+
+def set_environment_for_profile(profile_name):
+    profile = ConanProfile(profile_name)
+    compiler = profile.get('compiler')
+
+    if compiler == "Visual Studio":
+        compiler = "msvc"
+
+    try:
+        cc, cxx = get_cc_cxx(compiler)
+    except KeyError:
+        sys.exit(f"Error: Unsupported compiler '{compiler}' specified in profile '{profile_name}'")
+    set_compiler_environment(cc, cxx)
 
 
 parser = argparse.ArgumentParser(description='Build QtWebKit with Conan. For installation of build product into Qt, use --install option')
@@ -145,6 +165,7 @@ if not args.profile:
     profile_name = create_profile(args.compiler, args.arch)
 else:
     profile_name = args.profile
+    set_environment_for_profile(profile_name)
 
 build_vars = f'-o qt="{args.qt}" -o cmakeargs="{args.cmakeargs}" \
 -o build_type="{args.build_type}" '
