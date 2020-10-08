@@ -53,9 +53,23 @@ class ConanProfile:
         run_command("conan profile update settings.{0}={1} {2}".format(setting, value, self.name))
 
 
-def set_compiler_environment(cc, cxx):
-    os.environ["CC"] = cc
-    os.environ["CXX"] = cxx
+def set_env_variable(var, value, override):
+    if var in os.environ and len(os.environ[var]) != 0 and not os.environ[var].isspace():
+        old_value = os.environ[var]
+        if old_value != value:
+            if override:
+                print(f"Warning: overriding environment variable '{var}': '{old_value}' -> '{value}'")
+                os.environ[var] = value
+            else:
+                print(f"Note: using environment variable '{var}' = '{old_value}'. Undefine it to use '{value}' instead")
+
+    else:
+        os.environ[var] = value
+
+
+def set_compiler_environment(cc, cxx, override):
+    set_env_variable("CC", cc, override)
+    set_env_variable("CXX", cxx, override)
 
 
 def get_cc_cxx(compiler):
@@ -86,9 +100,9 @@ def create_profile(compiler, arch):
 
     if compiler == "msvc":
         profile.create()
-        set_compiler_environment(cc, cxx)
+        set_compiler_environment(cc, cxx, override=True)
     else:
-        set_compiler_environment(cc, cxx)
+        set_compiler_environment(cc, cxx, override=True)
         profile.create()
 
     if arch == 'default':
@@ -118,7 +132,7 @@ def set_environment_for_profile(profile_name):
         cc, cxx = get_cc_cxx(compiler)
     except KeyError:
         sys.exit(f"Error: Unsupported compiler '{compiler}' specified in profile '{profile_name}'")
-    set_compiler_environment(cc, cxx)
+    set_compiler_environment(cc, cxx, override=False)
 
 
 parser = argparse.ArgumentParser(description='Build QtWebKit with Conan. For installation of build product into Qt, use --install option')
