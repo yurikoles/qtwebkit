@@ -1,0 +1,124 @@
+name: WebKit Tests
+
+#####################################################################################################
+# !!!                                       WARNING                                             !!! #
+# !!!       This workflow uses self-hosted runner and MUST NOT be used for pull requests!       !!! #
+# !!! See https://github.community/t/self-hosted-runner-security-with-public-repositories/17860 !!! #
+# !!!                                                                                           !!! #
+#####################################################################################################
+
+on:
+  push:
+    branches:
+      - qtwebkit-5.212
+  # No pull_request here!
+
+env:
+  CCACHE_MAXSIZE: 30G
+
+jobs:
+  build_and_tests:
+    env:
+      NUMBER_OF_PROCESSORS: 5   # For jhbuild and build-webkit
+      TEST_THREADS: 4           # For test runners
+#      RWT_ARGS: fast
+
+    name: ${{ matrix.config.name }}
+    runs-on: xeon4c8t
+
+    container:
+      image: ghcr.io/qtwebkit/qbat2-base:latest
+      volumes:
+        - /home/annulen/gha-ccache:/github/home/.ccache
+        - /home/annulen/gha-jhbuild-cache:/github/home/.cache/jhbuild
+      options: --tmpfs /tmp:exec --read-only --user 1001:1001
+
+    strategy:
+      matrix:
+        config:
+          - { name: Release, flag: '--release' }
+          - { name: Debug,   flag: '--debug' }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        clean: false
+
+    - name: Checkout fonts
+      uses: actions/checkout@v2
+      with:
+        repository: qtwebkit/test-fonts
+        path: test-fonts
+        clean: false
+
+    - name: Run update-qtwebkit-libs
+      run: |
+        Tools/Scripts/update-qtwebkit-libs
+
+    - name: ccache configuration
+      run: |
+        ccache -p
+        ccache -z
+
+    - name: Run webkit-build
+      run: |
+        CC=/usr/lib/ccache/clang \
+        CXX=/usr/lib/ccache/clang++ \
+        Tools/Scripts/build-webkit --qt ${{ matrix.config.flag }}
+
+        #python Tools/BuildSlaveSupport/built-product-archive --platform qt --release archive
+
+    - name: ccache stats
+      run: |
+        ccache -s
+
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: release-archive
+#        path: WebKitBuild/release.zip
+
+    - name: Run tests
+      run: |
+        ulimit -c 0  # Suppress core dumps
+
+        export WEBKIT_TESTFONTS=$(pwd)/test-fonts USER="#$(id -u)"
+        Tools/Scripts/run-webkit-tests --no-build ${{ matrix.config.flag }} \
+          --qt -1 --no-new-test-results --child-processes=$TEST_THREADS -p \
+          --no-show-results  $RWT_ARGS
+      continue-on-error: true
+
+    - name: Compress RWT results
+      run: |
+        tar cf layout-test-results-${{ matrix.config.name }}.tar WebKitBuild/${{ matrix.config.name }}/layout-test-results
+        zstd -12 --rm layout-test-results-${{ matrix.config.name }}.tar
+        rm -rf WebKitBuild/${{ matrix.config.name }}/layout-test-results
+
+    - name: Upload RWT results
+      uses: actions/upload-artifact@v2
+      with:
+        path: layout-test-results-${{ matrix.config.name }}.tar.zst
+        if-no-files-found: error
+
+    - name: Run JS tests
+      run: |
+        Tools/Scripts/run-javascriptcore-tests --qt ${{ matrix.config.flag }} --no-build \
+            --make-runner --child-processes=$TEST_THREADS
+      continue-on-error: true
+
+    - name: Compress JS tests results
+      run: |
+        tar cf jsc-stress-results-${{ matrix.config.name }}.tar WebKitBuild/${{ matrix.config.name }}/bin/jsc-stress-results
+        zstd -12 --rm jsc-stress-results-${{ matrix.config.name }}.tar
+        rm -rf WebKitBuild/${{ matrix.config.name }}/bin/jsc-stress-results
+
+    - name: Upload JS tests results
+      uses: actions/upload-artifact@v2
+      with:
+        path: jsc-stress-results-${{ matrix.config.name }}.tar.zst
+        if-no-files-found: error
+
+    - name: Clean up workspace
+      if: always()
+      run: |
+        rm -f layout-test-results-${{ matrix.config.name }}.tar.zst jsc-stress-results-${{ matrix.config.name }}.tar.zst

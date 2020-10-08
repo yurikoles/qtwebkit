@@ -184,6 +184,7 @@
             md5sum="91ed4649c7c2e43a61f731d144f6f6d0">
       <patch file="gst-plugins-good-use-the-tfdt-decode-time.patch" strip="1"/>
       <patch file="gst-plugins-good-Revert-qtdemux-expose-streams-with-first-moof-for-fr.patch" strip="1"/>
+      <patch file="gst-plugins-good-fix-compatibility-with-glibc-2.30.patch" strip="1"/>
     </branch>
   </autotools>
 

@@ -124,7 +124,7 @@ sub cleanJhbuild()
         die "Cleaning jhbuild sources failed!";
     }
 
-    if (isGtk()) {
+    if (isGtk() || isQt()) {
         # GTK+ uses a separate build directory.
         system("rm -rf $jhbuildPath/Build");
     }
