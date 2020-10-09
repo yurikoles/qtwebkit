@@ -145,8 +145,11 @@ def get_qt_version(qt_path):
     qmake_path = os.path.join(qt_path, "bin", "qmake")
     qt_version = run_comman_output(f"{qmake_path} -query QT_VERSION").rstrip()
 
-    if not qt_version.startswith('5.'):
-        sys.exit("Can't find a working qmake in the specified Qt Root")
+    if not qt_version:
+        if qt_path:
+            sys.exit(f"Can't find working qmake in {qt_path}")
+        else:
+            sys.exit("Can't find working qmake in PATH")
 
     return qt_version
 
@@ -199,10 +202,11 @@ else:
     profile_name = args.profile
     set_environment_for_profile(profile_name)
 
-qt_version = None if args.ignore_qt_bundled_deps else get_qt_version(args.qt)
+build_vars = f'-o qt="{args.qt}" -o cmakeargs="{args.cmakeargs}" -o build_type="{args.build_type}"'
 
-build_vars = f'-o qt="{args.qt}" -o cmakeargs="{args.cmakeargs}" \
--o build_type="{args.build_type}" -o qt_version="{qt_version}"'
+if args.qt and not args.ignore_qt_bundled_deps:
+    qt_version = get_qt_version(args.qt)
+    build_vars += f' -o qt_version="{qt_version}"'
 
 if args.install_prefix:
     build_vars += ' -o install_prefix="{}"'.format(args.install_prefix)
