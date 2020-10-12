@@ -94,3 +94,4 @@ echo "Failed to set up $kernel_core_pattern"
 echo "Please run following command as root:"
 echo "    echo '$new_pattern' > '$kernel_core_pattern'"
 echo "-----------------------------------------------"
+return 1
