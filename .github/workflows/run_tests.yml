@@ -7,14 +7,49 @@ name: WebKit Tests
 # !!!                                                                                           !!! #
 #####################################################################################################
 
+#
+# This workflow is supposed to do the same things as done by buildbot slaves in upstream WebKit.
+#
+# Main difference is that buildbot slaves work in parallel, which in practise requires separate
+# machine for each tested configuration. In GitHub Actions we can run all "bots" sequentially on the
+# same machine. Also, if needed, parts of workflow may run on a different machine or in the cloud.
+#
+# WebKit bots use native environment of machine, while we use Docker image.
+#
+# Upstream steps (many things are not yet ported) can be found in
+#   Tools/BuildSlaveSupport/build.webkit.org-config/master.cfg (qtwebkit-5.212)
+#   Tools/BuildSlaveSupport/build.webkit.org-config/steps.py (qtwebkit-dev)
+#   Tools/BuildSlaveSupport/ews-build/steps.py (qtwebkit-dev)
+#
+# Corresponding step names from Buildbot are referenced in the comments after name: property
+#
+
 on:
   push:
     branches:
       - qtwebkit-5.212
+      - view_tests
   # No pull_request here!
+
+  workflow_dispatch:
+    inputs:
+      clean_build:
+        description: "Clean build"
+        required: true
+        default: 'false'
+  # No pull_request here!
+
 
 env:
   CCACHE_MAXSIZE: 30G
+  PUBLISH_ROOT: /var/www/html/results
+  PUBLISH_BASE_URL: http://ci.qtwebkit.dev/results
+
+# x-strategy: &strategy
+#   matrix:
+#     config:
+#     - { name: Release, flag: '--release' }
+#     - { name: Debug,   flag: '--debug' }
 
 jobs:
   build_and_tests:
@@ -23,8 +58,13 @@ jobs:
       TEST_THREADS: 4           # For test runners
 #      RWT_ARGS: fast
 
-    name: ${{ matrix.config.name }}
+    name: ${{ matrix.config.name }} - Build and Test
     runs-on: xeon4c8t
+    strategy: # *strategy
+      matrix:
+        config:
+        - { name: Release, flag: '--release', cmakeargs: '-DCMAKE_CXX_FLAGS=-g -DDEBUG_FISSION=ON' }
+        - { name: Debug,   flag: '--debug' }
 
     container:
       image: ghcr.io/qtwebkit/qbat2-base:latest
@@ -33,17 +73,16 @@ jobs:
         - /home/annulen/gha-jhbuild-cache:/github/home/.cache/jhbuild
       options: --tmpfs /tmp:exec --read-only --user 1001:1001
 
-    strategy:
-      matrix:
-        config:
-          - { name: Release, flag: '--release' }
-          - { name: Debug,   flag: '--debug' }
-
     steps:
+    # N/A:
+    # KillOldProcesses - we use fresh container
+    # DeleteStaleBuildFiles - git clean is enough
+
     - name: Checkout
+    # CheckOutSource
       uses: actions/checkout@v2
       with:
-        clean: false
+        clean: false # Don't want git clean
 
     - name: Checkout fonts
       uses: actions/checkout@v2
@@ -52,7 +91,13 @@ jobs:
         path: test-fonts
         clean: false
 
+    - name: Clean build if scheduled
+    # CleanBuildIfScheduled
+      if: github.event.inputs.clean_build == 'true'
+      run: git clean -dfx
+
     - name: Run update-qtwebkit-libs
+    # InstallQtDependencies
       run: |
         Tools/Scripts/update-qtwebkit-libs
 
@@ -62,10 +107,12 @@ jobs:
         ccache -z
 
     - name: Run webkit-build
+    # CompileWebKit
+      shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
         CC=/usr/lib/ccache/clang \
         CXX=/usr/lib/ccache/clang++ \
-        Tools/Scripts/build-webkit --qt ${{ matrix.config.flag }}
+        Tools/Scripts/build-webkit --qt ${{ matrix.config.flag }} --cmakeargs="${{ matrix.config.cmakeargs }}"
 
         #python Tools/BuildSlaveSupport/built-product-archive --platform qt --release archive
 
@@ -78,33 +125,75 @@ jobs:
 #        name: release-archive
 #        path: WebKitBuild/release.zip
 
-    - name: Run tests
+    - name: Run LayoutTests
+    # RunWebKitTests
+      shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
-        ulimit -c 0  # Suppress core dumps
+        pwd
+        mkdir -p cores
+        . Tools/qt/set-core-path.sh cores
 
         export WEBKIT_TESTFONTS=$(pwd)/test-fonts USER="#$(id -u)"
-        Tools/Scripts/run-webkit-tests --no-build ${{ matrix.config.flag }} \
-          --qt -1 --no-new-test-results --child-processes=$TEST_THREADS -p \
-          --no-show-results  $RWT_ARGS
+        Tools/Scripts/run-webkit-tests --no-build --qt -1 --no-new-test-results -p --no-show-results \
+          --clobber-old-results \
+          --exit-after-n-failures=500 \
+          --debug-rwt-logging \
+          --child-processes=$TEST_THREADS \
+          --build-number=$GITHUB_RUN_ID \
+          ${{ matrix.config.flag }} \
+          $RWT_ARGS | tee /tmp/rwt-${{ matrix.config.name }}.log
       continue-on-error: true
 
-    - name: Compress RWT results
+    - name: LayoutTests results
+      shell: bash --noprofile --norc -eo pipefail -x {0}
       run: |
-        tar cf layout-test-results-${{ matrix.config.name }}.tar WebKitBuild/${{ matrix.config.name }}/layout-test-results
+        report_url=$PUBLISH_BASE_URL/${{ matrix.config.name }}/${GITHUB_SHA:0:12}__$GITHUB_RUN_ID
+
+        results="$(cat /tmp/rwt-${{ matrix.config.name }}.log)"
+
+        # https://github.community/t/set-output-truncates-multiline-strings/16852/5
+        results="${results//'%'/'%25'}"
+        results="${results//$'\n'/'%0A'}"
+        results="${results//$'\r'/'%0D'}"
+
+        # Post test results to build results
+        echo "::warning file=$report_url::$results"
+
+    - name: Compress LayoutTests results
+      run: |
+        cd WebKitBuild/${{ matrix.config.name }}
+        tar cf layout-test-results-${{ matrix.config.name }}.tar layout-test-results
         zstd -12 --rm layout-test-results-${{ matrix.config.name }}.tar
-        rm -rf WebKitBuild/${{ matrix.config.name }}/layout-test-results
+        rm -rf layout-test-results
 
     - name: Upload RWT results
       uses: actions/upload-artifact@v2
       with:
-        path: layout-test-results-${{ matrix.config.name }}.tar.zst
+        name: layout-test-results-${{ matrix.config.name }}
+        path: WebKitBuild/${{ matrix.config.name }}/layout-test-results-${{ matrix.config.name }}.tar.zst
         if-no-files-found: error
 
     - name: Run JS tests
+    # RunJavaScriptCoreTests
       run: |
         Tools/Scripts/run-javascriptcore-tests --qt ${{ matrix.config.flag }} --no-build \
-            --make-runner --child-processes=$TEST_THREADS
+            --make-runner \
+            --child-processes=$TEST_THREADS \
+            --build-number=$GITHUB_RUN_ID | tee /tmp/jsc-${{ matrix.config.name }}.log
       continue-on-error: true
+
+    - name: JS tests results
+      shell: bash --noprofile --norc -eo pipefail -x {0}
+      run: |
+        results="$(awk '/(** The following JSC stress test failures have been introduced:|Results for JSC stress tests:)/,EOF' /tmp/jsc-${{ matrix.config.name }}.log)"
+
+        # https://github.community/t/set-output-truncates-multiline-strings/16852/5
+        results="${results//'%'/'%25'}"
+        results="${results//$'\n'/'%0A'}"
+        results="${results//$'\r'/'%0D'}"
+
+        # Post test results to build results
+        echo "::warning::$results"
 
     - name: Compress JS tests results
       run: |
@@ -115,10 +204,37 @@ jobs:
     - name: Upload JS tests results
       uses: actions/upload-artifact@v2
       with:
+        name: jsc-stress-results-${{ matrix.config.name }}
         path: jsc-stress-results-${{ matrix.config.name }}.tar.zst
         if-no-files-found: error
 
     - name: Clean up workspace
       if: always()
       run: |
-        rm -f layout-test-results-${{ matrix.config.name }}.tar.zst jsc-stress-results-${{ matrix.config.name }}.tar.zst
+        rm -f WebKitBuild/${{ matrix.config.name }}/layout-test-results-${{ matrix.config.name }}.tar.zst \
+          jsc-stress-results-${{ matrix.config.name }}.tar.zst
+
+  publish_tests:
+    needs: build_and_tests
+    name: ${{ matrix.config.name }} - Publish
+    runs-on: i5_4c4t
+    strategy: # *strategy
+      matrix:
+        config:
+        - { name: Release, flag: '--release' }
+        - { name: Debug,   flag: '--debug' }
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: layout-test-results-${{ matrix.config.name }}
+
+    - name: Extract test results
+    # ExtractTestResults
+      run: |
+        base_name=layout-test-results-${{ matrix.config.name }}
+        rm -f $base_name.tar
+        zstd -d --rm $base_name.tar.zst
+        tar xf $base_name.tar
+        mv layout-test-results $PUBLISH_ROOT/${{ matrix.config.name }}/${GITHUB_SHA:0:12}__$GITHUB_RUN_ID
