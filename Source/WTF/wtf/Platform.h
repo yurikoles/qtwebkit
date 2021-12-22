@@ -1058,8 +1058,15 @@
 #if PLATFORM(QT)
 #ifdef __cplusplus
 #include <qglobal.h>
+
 #if QT_VERSION >= QT_VERSION_CHECK(5,8,0)
 #include <QtGui/qtguiglobal.h>
+
+#include <QtNetwork/qtnetwork-config.h>
+#if !QT_CONFIG(bearermanagement)
+#define QT_NO_BEARERMANAGEMENT
+#endif
+
 #endif
 #endif
 #if defined(QT_OPENGL_ES_2) && !defined(USE_OPENGL_ES_2)
